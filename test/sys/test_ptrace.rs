@@ -1,9 +1,3 @@
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-    any(target_arch = "x86_64", target_arch = "x86")
-))]
-use memoffset::offset_of;
 use nix::errno::Errno;
 use nix::sys::ptrace;
 #[cfg(linux_android)]
@@ -12,6 +6,12 @@ use nix::unistd::getpid;
 
 #[cfg(linux_android)]
 use std::mem;
+#[cfg(all(
+    target_os = "linux",
+    target_env = "gnu",
+    any(target_arch = "x86_64", target_arch = "x86")
+))]
+use std::mem::offset_of;
 
 use crate::*;
 
