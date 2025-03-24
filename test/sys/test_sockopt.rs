@@ -241,6 +241,8 @@ fn test_so_type_unknown() {
     use nix::errno::Errno;
 
     require_capability!("test_so_type", CAP_NET_RAW);
+    // SOCK_PACKET is deprecated, but since it is used for testing here, we allow it
+    #[allow(deprecated)]
     let raw_fd = unsafe { libc::socket(libc::AF_PACKET, libc::SOCK_PACKET, 0) };
     assert!(raw_fd >= 0, "Error opening socket: {}", nix::Error::last());
     let sockfd = unsafe { OwnedFd::from_raw_fd(raw_fd) };
