@@ -439,7 +439,7 @@ pub unsafe fn mmap<F: AsFd>(
         libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), fd, offset)
     };
 
-    if ret == libc::MAP_FAILED {
+    if std::ptr::eq(ret, libc::MAP_FAILED) {
         Err(Errno::last())
     } else {
         // SAFETY: `libc::mmap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
@@ -471,7 +471,7 @@ pub unsafe fn mmap_anonymous(
         libc::mmap(ptr, length.into(), prot.bits(), flags.bits(), -1, 0)
     };
 
-    if ret == libc::MAP_FAILED {
+    if std::ptr::eq(ret, libc::MAP_FAILED) {
         Err(Errno::last())
     } else {
         // SAFETY: `libc::mmap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
@@ -520,7 +520,7 @@ pub unsafe fn mremap(
         )
     };
 
-    if ret == libc::MAP_FAILED {
+    if std::ptr::eq(ret, libc::MAP_FAILED) {
         Err(Errno::last())
     } else {
         // SAFETY: `libc::mremap` returns a valid non-null pointer or `libc::MAP_FAILED`, thus `ret`
