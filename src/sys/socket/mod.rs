@@ -290,6 +290,9 @@ libc_bitflags! {
     /// Additional socket options
     pub struct SockFlag: c_int {
         /// Set non-blocking mode on the new socket
+        ///
+        /// Note: macOS supports `NONBLOCK` through separate call to `fcntl`,
+        /// i.e. `nix::fcntl::fcntl(fd, F_SETFL(O_NONBLOCK))`
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
