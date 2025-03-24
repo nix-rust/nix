@@ -292,13 +292,16 @@ libc_bitflags! {
         /// Set non-blocking mode on the new socket
         ///
         /// Note: macOS supports `NONBLOCK` through separate call to `fcntl`,
-        /// i.e. `nix::fcntl::fcntl(fd, F_SETFL(O_NONBLOCK))`
+        /// e.g. `nix::fcntl::fcntl(fd, F_SETFL(O_NONBLOCK))`
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
                   solarish))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
+        ///
+        /// Note: macOS supports `CLOEXEC` through separate call to `fcntl`,
+        /// e.g. `nix::fcntl::fcntl(fd, F_SETFL(O_CLOEXEC))`
         #[cfg(any(linux_android,
                   freebsdlike,
                   netbsdlike,
