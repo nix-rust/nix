@@ -2549,6 +2549,17 @@ pub enum Shutdown {
     Both,
 }
 
+#[cfg(feature = "net")]
+impl From<net::Shutdown> for Shutdown {
+    fn from(value: net::Shutdown) -> Self {
+        match value {
+            net::Shutdown::Read => Shutdown::Read,
+            net::Shutdown::Write => Shutdown::Write,
+            net::Shutdown::Both => Shutdown::Both,
+        }
+    }
+}
+
 /// Shut down part of a full-duplex connection.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/shutdown.html)
