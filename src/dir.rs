@@ -287,6 +287,7 @@ impl Entry {
                          target_os = "fuchsia",
                          target_os = "haiku",
                          target_os = "hurd",
+                         target_os = "cygwin",
                          solarish,
                          linux_android,
                          apple_targets))] {

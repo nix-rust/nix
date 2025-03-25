@@ -19,7 +19,8 @@ cfg_if! {
         bsd,
         target_os = "android",
         target_os = "aix",
-        all(target_os = "linux", not(target_env = "gnu"))
+        all(target_os = "linux", not(target_env = "gnu")),
+        target_os = "cygwin"
     ))]{
         use libc::rlimit;
     }
@@ -49,7 +50,8 @@ libc_enum! {
             bsd,
             target_os = "android",
             target_os = "aix",
-            all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc")))
+            all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc"))),
+            target_os = "cygwin"
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {

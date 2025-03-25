@@ -327,6 +327,7 @@ pub fn test_socketpair() {
 }
 
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_recvmsg_sockaddr_un() {
     use nix::sys::socket::{
         self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
@@ -841,6 +842,7 @@ pub fn test_recvmsg_ebadf() {
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 pub fn test_scm_rights() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
@@ -1327,6 +1329,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
 // 2.12.0.  https://bugs.launchpad.net/qemu/+bug/1701808
 #[cfg_attr(qemu, ignore)]
 #[test]
+#[cfg_attr(target_os = "cygwin", ignore)]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{
         recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags,
@@ -1707,6 +1710,7 @@ pub fn test_listen_maxbacklog() {
 pub fn test_listen_wrongbacklog() {
     use nix::sys::socket::Backlog;
 
+    #[cfg(not(target_os = "cygwin"))]
     assert!(Backlog::new(libc::SOMAXCONN + 1).is_err());
     assert!(Backlog::new(-2).is_err());
 }
@@ -3152,7 +3156,12 @@ fn can_use_cmsg_space() {
     let _ = cmsg_space!(u8);
 }
 
-#[cfg(not(any(linux_android, target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    linux_android,
+    target_os = "redox",
+    target_os = "haiku",
+    target_os = "cygwin"
+)))]
 #[test]
 fn can_open_routing_socket() {
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};

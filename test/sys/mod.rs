@@ -19,7 +19,8 @@ mod test_aio;
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
-    target_os = "hurd"
+    target_os = "hurd",
+    target_os = "cygwin"
 )))]
 mod test_ioctl;
 #[cfg(not(target_os = "redox"))]

@@ -111,7 +111,7 @@ libc_enum! {
         #[cfg(not(any(linux_android, target_os = "emscripten",
                       target_os = "fuchsia", target_os = "redox",
                       target_os = "haiku", target_os = "aix",
-                      target_os = "solaris")))]
+                      target_os = "solaris", target_os = "cygwin")))]
         /// Information request
         SIGINFO,
     }
@@ -190,7 +190,8 @@ impl FromStr for Signal {
                 target_os = "redox",
                 target_os = "aix",
                 target_os = "haiku",
-                target_os = "solaris"
+                target_os = "solaris",
+                target_os = "cygwin"
             )))]
             "SIGINFO" => Signal::SIGINFO,
             _ => return Err(Errno::EINVAL),
@@ -275,7 +276,8 @@ impl Signal {
                 target_os = "redox",
                 target_os = "aix",
                 target_os = "haiku",
-                target_os = "solaris"
+                target_os = "solaris",
+                target_os = "cygwin"
             )))]
             Signal::SIGINFO => "SIGINFO",
         }
@@ -359,7 +361,7 @@ const SIGNALS: [Signal; 30] = [
     SIGURG, SIGPOLL, SIGIO, SIGSTOP, SIGTSTP, SIGCONT, SIGTTIN, SIGTTOU,
     SIGVTALRM, SIGPROF, SIGXCPU, SIGXFSZ, SIGTRAP,
 ];
-#[cfg(target_os = "solaris")]
+#[cfg(any(target_os = "solaris", target_os = "cygwin"))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 30] = [
     SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
@@ -374,7 +376,8 @@ const SIGNALS: [Signal; 30] = [
     target_os = "aix",
     target_os = "redox",
     target_os = "haiku",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "cygwin"
 )))]
 #[cfg(feature = "signal")]
 const SIGNALS: [Signal; 31] = [

@@ -631,7 +631,8 @@ cfg_if! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "cygwin"
 )))]
 fn test_acct() {
     use std::process::Command;
@@ -1222,12 +1223,16 @@ fn test_access_file_exists() {
 #[cfg(not(target_os = "redox"))]
 #[test]
 fn test_user_into_passwd() {
-    // get the UID of the "nobody" user
-    #[cfg(not(target_os = "haiku"))]
-    let test_username = "nobody";
-    // "nobody" unavailable on haiku
-    #[cfg(target_os = "haiku")]
-    let test_username = "user";
+    let test_username = if cfg!(target_os = "haiku") {
+        // "nobody" unavailable on haiku
+        "user"
+    } else if cfg!(target_os = "cygwin") {
+        // the Windows admin user
+        "Administrator"
+    } else {
+        // get the UID of the "nobody" user
+        "nobody"
+    };
 
     let nobody = User::from_name(test_username).unwrap().unwrap();
     let pwd: libc::passwd = nobody.into();

@@ -1,6 +1,11 @@
 use nix::sys::pthread::*;
 
-#[cfg(any(target_env = "musl", target_os = "redox", target_env = "ohos"))]
+#[cfg(any(
+    target_env = "musl",
+    target_os = "redox",
+    target_env = "ohos",
+    target_os = "cygwin"
+))]
 #[test]
 fn test_pthread_self() {
     let tid = pthread_self();
@@ -10,7 +15,8 @@ fn test_pthread_self() {
 #[cfg(not(any(
     target_env = "musl",
     target_os = "redox",
-    target_env = "ohos"
+    target_env = "ohos",
+    target_os = "cygwin"
 )))]
 #[test]
 fn test_pthread_self() {

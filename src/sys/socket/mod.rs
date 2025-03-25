@@ -43,7 +43,8 @@ pub use self::addr::{AddressFamily, UnixAddr};
     solarish,
     target_os = "haiku",
     target_os = "hurd",
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "cygwin",
 )))]
 #[cfg(feature = "net")]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
@@ -51,7 +52,8 @@ pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
     solarish,
     target_os = "haiku",
     target_os = "hurd",
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "cygwin",
 ))]
 #[cfg(feature = "net")]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
@@ -1023,7 +1025,7 @@ impl ControlMessageOwned {
                 let cred: libc::cmsgcred = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmCreds(cred.into())
             }
-            #[cfg(not(any(target_os = "aix", target_os = "haiku")))]
+            #[cfg(not(any(target_os = "aix", target_os = "haiku", target_os = "cygwin")))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = unsafe { ptr::read_unaligned(p as *const _) };
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
@@ -1372,13 +1374,15 @@ impl ControlMessage<'_> {
     /// The value of CMSG_LEN on this message.
     /// Safe because CMSG_LEN is always safe
     #[cfg(any(target_os = "android",
-              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos")))))]
+              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))),
+              target_os = "cygwin"))]
     fn cmsg_len(&self) -> usize {
         unsafe{CMSG_LEN(self.len() as libc::c_uint) as usize}
     }
 
     #[cfg(not(any(target_os = "android",
-              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))))))]
+              all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))),
+              target_os = "cygwin")))]
     fn cmsg_len(&self) -> libc::c_uint {
         unsafe{CMSG_LEN(self.len() as libc::c_uint)}
     }
