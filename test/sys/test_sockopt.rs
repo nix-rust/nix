@@ -1171,3 +1171,26 @@ fn test_exclbind() {
         Err(Errno::EADDRINUSE)
     );
 }
+
+#[cfg(target_os = "illumos")]
+#[test]
+fn test_solfilter() {
+    use nix::errno::Errno;
+    let s = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    let data = std::ffi::OsStr::new("httpf");
+    let attach = sockopt::FilterAttach;
+    let detach = sockopt::FilterDetach;
+
+    // These 2 options won't work unless the needed kernel module is installed:
+    // https://github.com/nix-rust/nix/pull/2611#issuecomment-2750237782
+    //
+    // So we only test the binding here
+    assert_eq!(Err(Errno::ENOENT), setsockopt(&s, attach, data));
+    assert_eq!(Err(Errno::ENOENT), setsockopt(&s, detach, data));
+}

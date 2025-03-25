@@ -1,8 +1,8 @@
 //! Socket options as used by `setsockopt` and `getsockopt`.
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 use super::SetSockOpt;
 use crate::sys::time::TimeVal;
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
@@ -11,7 +11,7 @@ use std::ffi::CString;
 use std::ffi::{CStr, OsStr, OsString};
 use std::mem::{self, MaybeUninit};
 use std::os::unix::ffi::OsStrExt;
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 use std::os::unix::io::{AsFd, AsRawFd};
 
 // Constants
@@ -1483,6 +1483,58 @@ impl SetSockOpt for TcpTlsRx {
     }
 }
 
+#[cfg(target_os = "illumos")]
+#[derive(Copy, Clone, Debug)]
+/// Attach a named filter to this socket to be able to
+/// defer when anough byte had been buffered by the kernel
+pub struct FilterAttach;
+
+#[cfg(target_os = "illumos")]
+impl SetSockOpt for FilterAttach {
+    type Val = OsStr;
+
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()> {
+        if val.len() > libc::FILNAME_MAX as usize {
+            return Err(Errno::EINVAL);
+        }
+        unsafe {
+            let res = libc::setsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_FILTER,
+                libc::FIL_ATTACH,
+                val.as_bytes().as_ptr().cast(),
+                val.len() as libc::socklen_t,
+            );
+            Errno::result(res).map(drop)
+        }
+    }
+}
+
+#[cfg(target_os = "illumos")]
+#[derive(Copy, Clone, Debug)]
+/// Detach a socket filter previously attached with FIL_ATTACH
+pub struct FilterDetach;
+
+#[cfg(target_os = "illumos")]
+impl SetSockOpt for FilterDetach {
+    type Val = OsStr;
+
+    fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()> {
+        if val.len() > libc::FILNAME_MAX as usize {
+            return Err(Errno::EINVAL);
+        }
+        unsafe {
+            let res = libc::setsockopt(
+                fd.as_fd().as_raw_fd(),
+                libc::SOL_FILTER,
+                libc::FIL_DETACH,
+                val.as_bytes().as_ptr().cast(),
+                val.len() as libc::socklen_t,
+            );
+            Errno::result(res).map(drop)
+        }
+    }
+}
 /*
  *
  * ===== Accessor helpers =====
@@ -1800,7 +1852,7 @@ pub struct SetOsString<'a> {
     val: &'a OsStr,
 }
 
-#[cfg(any(target_os = "freebsd", linux_android))]
+#[cfg(any(target_os = "freebsd", linux_android, target_os = "illumos"))]
 impl<'a> Set<'a, OsString> for SetOsString<'a> {
     fn new(val: &OsString) -> SetOsString {
         SetOsString {

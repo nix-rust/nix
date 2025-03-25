@@ -2470,7 +2470,7 @@ pub trait GetSockOpt: Copy {
 
 /// Represents a socket option that can be set.
 pub trait SetSockOpt: Clone {
-    type Val;
+    type Val: ?Sized;
 
     /// Set the value of this socket option on the given socket.
     fn set<F: AsFd>(&self, fd: &F, val: &Self::Val) -> Result<()>;
