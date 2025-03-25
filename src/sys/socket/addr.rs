@@ -20,7 +20,7 @@ use crate::sys::socket::addr::netlink::NetlinkAddr;
 use crate::sys::socket::addr::sys_control::SysControlAddr;
 use crate::{NixPath, Result};
 use cfg_if::cfg_if;
-use memoffset::offset_of;
+use std::mem::offset_of;
 use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
