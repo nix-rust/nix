@@ -10,6 +10,7 @@ use libc::{self, c_int, c_void, socklen_t};
 use std::ffi::CString;
 use std::ffi::{CStr, OsStr, OsString};
 use std::mem::{self, MaybeUninit};
+use std::os::fd::OwnedFd;
 use std::os::unix::ffi::OsStrExt;
 #[cfg(any(linux_android, target_os = "illumos"))]
 use std::os::unix::io::{AsFd, AsRawFd};
@@ -192,6 +193,12 @@ macro_rules! sockopt_impl {
                       $name, GetOnly, $level, $flag, usize, $crate::sys::socket::sockopt::GetUsize);
     };
 
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, OwnedFd) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, GetOnly, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::GetOwnedFd);
+    };
+
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, bool) => {
         sockopt_impl!($(#[$attr])*
                       $name, SetOnly, $level, $flag, bool, $crate::sys::socket::sockopt::SetBool);
@@ -207,6 +214,12 @@ macro_rules! sockopt_impl {
                       $name, SetOnly, $level, $flag, usize, $crate::sys::socket::sockopt::SetUsize);
     };
 
+    ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, OwnedFd) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, SetOnly, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::SetOwnedFd);
+    };
+
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, bool) => {
         sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, bool, $crate::sys::socket::sockopt::GetBool, $crate::sys::socket::sockopt::SetBool);
@@ -220,6 +233,11 @@ macro_rules! sockopt_impl {
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, usize) => {
         sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, usize, $crate::sys::socket::sockopt::GetUsize, $crate::sys::socket::sockopt::SetUsize);
+    };
+
+    ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, OwnedFd) => {
+        sockopt_impl!($(#[$attr])*
+                      $name, Both, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::GetOwnedFd, $crate::sys::socket::sockopt::SetOwnedFd);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path,
@@ -661,6 +679,15 @@ sockopt_impl!(
     libc::SOL_SOCKET,
     libc::SO_PEERCRED,
     super::UnixCredentials
+);
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// Return the pidfd of the foreign process connected to this socket.
+    PeerPidfd,
+    GetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_PEERPIDFD,
+    OwnedFd
 );
 #[cfg(target_os = "freebsd")]
 #[cfg(feature = "net")]
@@ -1793,6 +1820,68 @@ pub struct SetUsize {
 impl<'a> Set<'a, usize> for SetUsize {
     fn new(val: &'a usize) -> SetUsize {
         SetUsize { val: *val as c_int }
+    }
+
+    fn ffi_ptr(&self) -> *const c_void {
+        &self.val as *const c_int as *const c_void
+    }
+
+    fn ffi_len(&self) -> socklen_t {
+        mem::size_of_val(&self.val) as socklen_t
+    }
+}
+
+
+/// Getter for a `OwnedFd` value.
+// Hide the docs, because it's an implementation detail of `sockopt_impl!`
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug)]
+pub struct GetOwnedFd {
+    len: socklen_t,
+    val: MaybeUninit<c_int>,
+}
+
+impl Get<OwnedFd> for GetOwnedFd {
+    fn uninit() -> Self {
+        GetOwnedFd {
+            len: mem::size_of::<c_int>() as socklen_t,
+            val: MaybeUninit::uninit(),
+        }
+    }
+
+    fn ffi_ptr(&mut self) -> *mut c_void {
+        self.val.as_mut_ptr().cast()
+    }
+
+    fn ffi_len(&mut self) -> *mut socklen_t {
+        &mut self.len
+    }
+
+    unsafe fn assume_init(self) -> OwnedFd {
+        use std::os::fd::{FromRawFd, RawFd};
+
+        assert_eq!(
+            self.len as usize,
+            mem::size_of::<c_int>(),
+            "invalid getsockopt implementation"
+        );
+        unsafe { OwnedFd::from_raw_fd(self.val.assume_init() as RawFd) }
+    }
+}
+
+/// Setter for an `OwnedFd` value.
+// Hide the docs, because it's an implementation detail of `sockopt_impl!`
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SetOwnedFd {
+    val: c_int,
+}
+
+impl<'a> Set<'a, OwnedFd> for SetOwnedFd {
+    fn new(val: &'a OwnedFd) -> SetOwnedFd {
+        use std::os::fd::AsRawFd;
+
+        SetOwnedFd { val: val.as_raw_fd() as c_int }
     }
 
     fn ffi_ptr(&self) -> *const c_void {

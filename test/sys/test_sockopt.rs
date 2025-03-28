@@ -753,6 +753,46 @@ fn can_get_peercred_on_unix_socket() {
     assert_ne!(a_cred.pid(), 0);
 }
 
+#[cfg(target_os = "linux")]
+fn pid_from_pidfd(pidfd: OwnedFd) -> u32 {
+    use std::fs::read_to_string;
+
+    let fd = pidfd.as_raw_fd();
+    let fdinfo = read_to_string(format!("/proc/self/fdinfo/{fd}")).unwrap();
+    let pidline = fdinfo.split('\n').find(|s| s.starts_with("Pid:")).unwrap();
+    pidline.split('\t').next_back().unwrap().parse().unwrap()
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn can_get_peerpidfd_on_unix_socket() {
+    use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
+
+    let (a, b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+
+    match (
+        getsockopt(&a, sockopt::PeerPidfd),
+        getsockopt(&b, sockopt::PeerPidfd),
+    ) {
+        (Ok(a_pidfd), Ok(b_pidfd)) => {
+            let a_pid = pid_from_pidfd(a_pidfd);
+            let b_pid = pid_from_pidfd(b_pidfd);
+            assert_eq!(a_pid, b_pid);
+            assert_ne!(a_pid, 0);
+        }
+        (Err(nix::Error::ENOPROTOOPT), Err(nix::Error::ENOPROTOOPT)) => {
+            // Pidfd can still be unsupported on some CI runners
+        }
+        (Err(err), _) | (_, Err(err)) => panic!("{err:?}"),
+    };
+}
+
 #[test]
 fn is_socket_type_unix() {
     use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
