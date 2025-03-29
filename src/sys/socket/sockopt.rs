@@ -1269,6 +1269,18 @@ sockopt_impl!(
     libc::SO_EXCLBIND,
     bool
 );
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// To be used with `ReusePort`,
+    /// we can then attach a BPF (classic)
+    /// to set how the packets are assigned
+    /// to the socket (e.g. cpu distribution).
+    AttachReusePortCbpf,
+    SetOnly,
+    libc::SOL_SOCKET,
+    libc::SO_ATTACH_REUSEPORT_CBPF,
+    libc::sock_fprog
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
