@@ -1960,8 +1960,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `SIGINFO` in `::nix::sys::signal` for the _macos_ target as well as
   `SIGPWR` and `SIGSTKFLT` in `::nix::sys::signal` for non-_macos_ targets.
   ([#361](https://github.com/nix-rust/nix/pull/361))
-- Added `TCP_INFO` sockopt to read TCP socket information on _linux_.
-  ([#2615](https://github.com/nix-rust/nix/pull/2615))
 
 ### Changed
 - Changed the structure `IoVec` in `::nix::sys::uio`.
