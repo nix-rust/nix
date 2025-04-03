@@ -164,7 +164,6 @@ fn test_so_tcp_maxseg() {
     use nix::sys::socket::{
         accept, bind, connect, getsockname, listen, Backlog, SockaddrIn,
     };
-    use nix::unistd::write;
     use std::net::SocketAddrV4;
     use std::str::FromStr;
 
@@ -184,14 +183,12 @@ fn test_so_tcp_maxseg() {
     let initial = getsockopt(&rsock, sockopt::TcpMaxSeg).unwrap();
     // Initial MSS is expected to be 536 (https://tools.ietf.org/html/rfc879#section-1) but some
     // platforms keep it even lower. This might fail if you've tuned your initial MSS to be larger
-    // than 700
+    // than `segsize`
+    let segsize: u32 = 873;
+    assert!(initial < segsize);
     cfg_if! {
         if #[cfg(linux_android)] {
-            let segsize: u32 = 873;
-            assert!(initial < segsize);
             setsockopt(&rsock, sockopt::TcpMaxSeg, &segsize).unwrap();
-        } else {
-            assert!(initial < 700);
         }
     }
 
@@ -203,20 +200,38 @@ fn test_so_tcp_maxseg() {
         SockProtocol::Tcp,
     )
     .unwrap();
+
     connect(ssock.as_raw_fd(), &sock_addr).unwrap();
+
     let rsess = accept(rsock.as_raw_fd()).unwrap();
     let rsess = unsafe { OwnedFd::from_raw_fd(rsess) };
-    write(&rsess, b"hello").unwrap();
-    let actual = getsockopt(&ssock, sockopt::TcpMaxSeg).unwrap();
-    // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
-    // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
+
     cfg_if! {
-        if #[cfg(linux_android)] {
-            assert!((segsize - 100) <= actual);
-            assert!(actual <= segsize);
+        if #[cfg(apple_targets)] {
+            // on apple targets (and unlike linux), we can only set the MSS on a *connected*
+            // socket. Also, the same MSS can't be read using getsockopt from the other end.
+
+            assert_ne!(segsize, getsockopt(&rsess, sockopt::TcpMaxSeg).unwrap());
+            setsockopt(&rsess, sockopt::TcpMaxSeg, &segsize).unwrap();
+            assert_eq!(segsize, getsockopt(&rsess, sockopt::TcpMaxSeg).unwrap());
+
+            assert_ne!(segsize, getsockopt(&ssock, sockopt::TcpMaxSeg).unwrap());
+            setsockopt(&ssock, sockopt::TcpMaxSeg, &segsize).unwrap();
+            assert_eq!(segsize, getsockopt(&ssock, sockopt::TcpMaxSeg).unwrap());
         } else {
-            assert!(initial < actual);
-            assert!(536 < actual);
+            use nix::unistd::write;
+
+            write(&rsess, b"hello").unwrap();
+            let actual = getsockopt(&ssock, sockopt::TcpMaxSeg).unwrap();
+            // Actual max segment size takes header lengths into account, max IPv4 options (60 bytes) + max
+            // TCP options (40 bytes) are subtracted from the requested maximum as a lower boundary.
+            if cfg!(linux_android) {
+                assert!((segsize - 100) <= actual);
+                assert!(actual <= segsize);
+            } else {
+                assert!(initial < actual);
+                assert!(536 < actual);
+            }
         }
     }
 }
