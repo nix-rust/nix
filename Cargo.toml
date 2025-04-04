@@ -75,7 +75,7 @@ zerocopy = ["fs", "uio"]
 [dev-dependencies]
 assert-impl = "0.1"
 parking_lot = "0.12"
-rand = "0.8"
+rand = "0.9"
 tempfile = "3.7.1"
 semver = "1.0.7"
 nix = { path = ".", features = ["acct", "aio", "dir", "env", "event", "fanotify",

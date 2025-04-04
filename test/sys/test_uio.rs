@@ -1,7 +1,7 @@
 use nix::sys::uio::*;
 use nix::unistd::*;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
+use rand::distr::Alphanumeric;
+use rand::{rng, Rng};
 use std::fs::OpenOptions;
 use std::io::IoSlice;
 use std::{cmp, iter};
@@ -19,7 +19,7 @@ use tempfile::tempfile;
 fn test_writev() {
     let mut to_write = Vec::with_capacity(16 * 128);
     for _ in 0..16 {
-        let s: String = thread_rng()
+        let s: String = rng()
             .sample_iter(&Alphanumeric)
             .map(char::from)
             .take(128)
@@ -35,7 +35,7 @@ fn test_writev() {
         let slice_len = if left <= 64 {
             left
         } else {
-            thread_rng().gen_range(64..cmp::min(256, left))
+            rng().random_range(64..cmp::min(256, left))
         };
         let b = &to_write[consumed..consumed + slice_len];
         iovecs.push(IoSlice::new(b));
@@ -61,7 +61,7 @@ fn test_writev() {
 #[test]
 #[cfg(not(target_os = "redox"))]
 fn test_readv() {
-    let s: String = thread_rng()
+    let s: String = rng()
         .sample_iter(&Alphanumeric)
         .map(char::from)
         .take(128)
@@ -74,7 +74,7 @@ fn test_readv() {
         let vec_len = if left <= 64 {
             left
         } else {
-            thread_rng().gen_range(64..cmp::min(256, left))
+            rng().random_range(64..cmp::min(256, left))
         };
         let v: Vec<u8> = iter::repeat(0u8).take(vec_len).collect();
         storage.push(v);
