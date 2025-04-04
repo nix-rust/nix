@@ -4,7 +4,7 @@ use nix::sys::socket::{
     getsockopt, setsockopt, socket, sockopt, AddressFamily, SockFlag,
     SockProtocol, SockType,
 };
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 
 // NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
@@ -124,7 +124,7 @@ fn test_so_buf() {
         SockProtocol::Udp,
     )
     .unwrap();
-    let bufsize: usize = thread_rng().gen_range(4096..131_072);
+    let bufsize: usize = rng().random_range(4096..131_072);
     setsockopt(&fd, sockopt::SndBuf, &bufsize).unwrap();
     let actual = getsockopt(&fd, sockopt::SndBuf).unwrap();
     assert!(actual >= bufsize);
