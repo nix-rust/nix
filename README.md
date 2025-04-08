@@ -118,7 +118,7 @@ changed in the future without bumping the major or minor version.
 Contributions are very welcome.  Please See [CONTRIBUTING](CONTRIBUTING.md) for
 additional details.
 
-Feel free to join us in [the nix-rust/nix](https://gitter.im/nix-rust/nix) channel on Gitter to
+Feel free to join us in [the nix-rust/nix](https://discord.com/invite/rkBeJUsmyd) channel on Discord to
 discuss `nix` development.
 
 ## License
