@@ -7,6 +7,7 @@
 
 use crate::errno::Errno;
 use crate::sys::signal::Signal;
+use crate::unistd::Pid;
 use crate::Result;
 
 use libc::{c_int, c_ulong, c_void};
@@ -223,6 +224,57 @@ pub fn set_vma_anon_name(addr: NonNull<c_void>, length: NonZeroUsize, name: Opti
         _ => std::ptr::null()
     };
     let res = unsafe { libc::prctl(libc::PR_SET_VMA, libc::PR_SET_VMA_ANON_NAME, addr.as_ptr(), length, nameref) };
+
+    Errno::result(res).map(drop)
+}
+
+/// Get the (scheduling) cookie of the calling thread
+pub fn get_sched_core() -> Result<u32> {
+    let mut cookie: u32 = 0;
+    let res = unsafe {
+        libc::prctl(
+            libc::PR_SCHED_CORE,
+            libc::PR_SCHED_CORE_GET,
+            &mut cookie, 0, 0)
+    };
+
+    match Errno::result(res) {
+        Ok(_) => Ok(cookie),
+        Err(e) => Err(e),
+    }
+}
+
+/// Set a cookie for the calling thread
+pub fn set_sched_core(cookie: u32) -> Result<()> {
+    let res = unsafe {
+        libc::prctl(
+            libc::PR_SCHED_CORE,
+            libc::PR_SCHED_CORE_CREATE,
+            &cookie, 0, 0)
+    };
+
+    Errno::result(res).map(drop)
+}
+
+/// Share the cookie with another thread
+pub fn share_sched_core_from(pid: Pid) -> Result<()> {
+    let res = unsafe {
+        libc::prctl(
+            libc::PR_SCHED_CORE,
+            libc::PR_SCHED_CORE_SHARE_FROM,
+            &pid, 0, 0)
+    };
+
+    Errno::result(res).map(drop)
+}
+/// Calling thread shares the same cookie with another thread
+pub fn share_sched_core_to(pid: Pid) -> Result<()> {
+    let res = unsafe {
+        libc::prctl(
+            libc::PR_SCHED_CORE,
+            libc::PR_SCHED_CORE_SHARE_TO,
+            &pid, 0, 0)
+    };
 
     Errno::result(res).map(drop)
 }

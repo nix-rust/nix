@@ -164,4 +164,33 @@ mod test_prctl {
         .unwrap_or_default();
         prctl::set_vma_anon_name(ptr, sz, None).unwrap_or_default();
     }
+
+    #[test]
+    fn test_sched_core() {
+        use nix::errno::Errno;
+        use nix::unistd::Pid;
+
+        let c: u32 = 1234;
+        let p = Pid::from_raw(0);
+        let mut err = prctl::set_sched_core(c).unwrap_err();
+        match err {
+            Errno::EINVAL | Errno::ESRCH | Errno::ENODEV => (),
+            e => panic!("unexpected error {e}"),
+        }
+        err = prctl::get_sched_core().unwrap_err();
+        match err {
+            Errno::EINVAL | Errno::ESRCH | Errno::ENODEV => (),
+            e => panic!("unexpected error {e}"),
+        }
+        err = prctl::share_sched_core_from(p).unwrap_err();
+        match err {
+            Errno::EINVAL | Errno::ESRCH | Errno::ENODEV => (),
+            e => panic!("unexpected error {e}"),
+        }
+        err = prctl::share_sched_core_to(p).unwrap_err();
+        match err {
+            Errno::EINVAL | Errno::ESRCH | Errno::ENODEV => (),
+            e => panic!("unexpected error {e}"),
+        }
+    }
 }
