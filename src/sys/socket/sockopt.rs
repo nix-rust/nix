@@ -1296,6 +1296,17 @@ sockopt_impl!(
     libc::SO_EXCLBIND,
     bool
 );
+#[cfg(target_os = "linux")]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Get tcp_info structure.
+    TcpInfo,
+    GetOnly,
+    libc::SOL_TCP,
+    libc::TCP_INFO,
+    libc::tcp_info
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
