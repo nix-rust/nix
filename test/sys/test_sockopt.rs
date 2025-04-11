@@ -1249,3 +1249,28 @@ fn test_solfilter() {
     assert_eq!(Err(Errno::ENOENT), setsockopt(&s, attach, data));
     assert_eq!(Err(Errno::ENOENT), setsockopt(&s, detach, data));
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_so_attach_reuseport_cbpf() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&fd, sockopt::ReusePort, &true).unwrap();
+    setsockopt(&fd, sockopt::ReuseAddr, &true).unwrap();
+    let mut flt: [libc::sock_filter; 2] = unsafe { std::mem::zeroed() };
+    flt[0].code = (libc::BPF_LD | libc::BPF_W | libc::BPF_ABS) as u16;
+    flt[0].k = (libc::SKF_AD_OFF + libc::SKF_AD_CPU) as u32;
+    flt[1].code = (libc::BPF_RET | 0x10) as u16;
+    let fp = libc::sock_fprog {
+        len: flt.len() as u16,
+        filter: flt.as_mut_ptr(),
+    };
+    setsockopt(&fd, sockopt::AttachReusePortCbpf, &fp).unwrap_or_else(|e| {
+        assert_eq!(e, nix::errno::Errno::ENOPROTOOPT);
+    });
+}
