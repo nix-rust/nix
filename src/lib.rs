@@ -97,6 +97,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(clippy::cast_ptr_alignment)]
 #![deny(unsafe_op_in_unsafe_fn)]
+// I found the change suggested by this rules could hurt code readability. I cannot
+// remeber every type's default value, in such cases, it forces me to open
+// the std doc to insepct the Default value, which is unnecessary with
+// `.unwrap_or(value)`.
+#![allow(clippy::unwrap_or_default)]
 
 // Re-exported external crates
 pub use libc;
