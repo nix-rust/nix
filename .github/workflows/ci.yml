@@ -78,10 +78,7 @@ jobs:
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
-    # Still use 20.04 for this CI step as test `test_prctl::test_set_vma_anon_name`
-    # would fail on 22.04 and 24.04 (at least for now)
-    # https://github.com/nix-rust/nix/issues/2418
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
     strategy:
       fail-fast: false
@@ -362,6 +359,13 @@ jobs:
 
       - name: install src
         run: rustup component add rust-src
+
+      # Cargo uses the latest version of libc(without lock file), which is, at the time of writing 
+      # this, 0.2.172. And the hurd target is broken with 0.2.172: https://github.com/rust-lang/libc/issues/4421
+      # So we need to downgrade it.
+      - name: downgrade libc to 0.2.171 on hurd
+        if: ${{ matrix.target == 'i686-unknown-hurd-gnu' }}
+        run: cargo update -p libc --precise 0.2.171
 
       - name: build
         uses: ./.github/actions/build
