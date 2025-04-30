@@ -2428,7 +2428,7 @@ mod tests {
             let addr = UnixAddr::new_abstract(name.as_bytes()).unwrap();
 
             let sun_path1 =
-                unsafe { &(*addr.as_ptr()).sun_path[..addr.path_len()] };
+                unsafe { &(&(*addr.as_ptr()).sun_path)[..addr.path_len()] };
             let sun_path2 = [
                 0, 110, 105, 120, 0, 97, 98, 115, 116, 114, 97, 99, 116, 0,
                 116, 101, 115, 116,
