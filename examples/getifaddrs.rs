@@ -30,7 +30,7 @@ fn main() {
             .address
             .as_ref()
             .and_then(SockaddrStorage::family)
-            .map(|af| format!("{:?}", af))
+            .map(|af| format!("{af:?}"))
             .unwrap_or("".to_owned());
         match (
             &addr.address,
@@ -39,16 +39,14 @@ fn main() {
             &addr.destination,
         ) {
             (Some(a), Some(nm), Some(b), None) => {
-                println!("\t{} {} netmask {} broadcast {}", family, a, nm, b)
+                println!("\t{family} {a} netmask {nm} broadcast {b}")
             }
             (Some(a), Some(nm), None, None) => {
-                println!("\t{} {} netmask {}", family, a, nm)
+                println!("\t{family} {a} netmask {nm}")
             }
-            (Some(a), None, None, None) => println!("\t{} {}", family, a),
-            (Some(a), None, None, Some(d)) => {
-                println!("\t{} {} -> {}", family, a, d)
-            }
-            x => todo!("{:?}", x),
+            (Some(a), None, None, None) => println!("\t{family} {a}"),
+            (Some(a), None, None, Some(d)) => println!("\t{family} {a} -> {d}"),
+            x => todo!("{x:?}"),
         }
     }
 }
