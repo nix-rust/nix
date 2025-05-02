@@ -38,7 +38,7 @@ libc_bitflags! {
     /// Additional parameters for [`mmap`].
     pub struct MapFlags: c_int {
         /// Compatibility flag. Ignored.
-        #[cfg(not(target_os = "solaris"))]
+        #[cfg(not(any(target_os = "solaris", target_os = "redox")))]
         MAP_FILE;
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
         MAP_SHARED;
@@ -82,7 +82,7 @@ libc_bitflags! {
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd")))]
+        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd", target_os = "redox")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(linux_android)]
@@ -281,7 +281,7 @@ libc_enum! {
         #[cfg(linux_android)]
         MADV_DODUMP,
         /// Specify that the application no longer needs the pages in the given range.
-        #[cfg(not(any(target_os = "aix", target_os = "hurd", target_os = "cygwin")))]
+        #[cfg(not(any(target_os = "aix", target_os = "hurd", target_os = "cygwin", target_os = "redox")))]
         MADV_FREE,
         /// Request that the system not flush the current range to disk unless it needs to.
         #[cfg(freebsdlike)]
@@ -357,7 +357,7 @@ libc_bitflags! {
     }
 }
 
-#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin", target_os = "redox")))]
 libc_bitflags! {
     /// Flags for [`mlockall`].
     pub struct MlockAllFlags: c_int {
@@ -400,7 +400,7 @@ pub unsafe fn munlock(addr: NonNull<c_void>, length: size_t) -> Result<()> {
 /// Locked pages never move to the swap area. For more information, see [`mlockall(2)`].
 ///
 /// [`mlockall(2)`]: https://man7.org/linux/man-pages/man2/mlockall.2.html
-#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin", target_os = "redox")))]
 pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
     unsafe { Errno::result(libc::mlockall(flags.bits())) }.map(drop)
 }
@@ -410,7 +410,7 @@ pub fn mlockall(flags: MlockAllFlags) -> Result<()> {
 /// For more information, see [`munlockall(2)`].
 ///
 /// [`munlockall(2)`]: https://man7.org/linux/man-pages/man2/munlockall.2.html
-#[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
+#[cfg(not(any(target_os = "haiku", target_os = "cygwin", target_os = "redox")))]
 pub fn munlockall() -> Result<()> {
     unsafe { Errno::result(libc::munlockall()) }.map(drop)
 }
