@@ -3782,6 +3782,139 @@ impl User {
             })
         }
     }
+
+    /// Construct an iterator over all users on the system.
+    ///
+    /// Call [`setpwent(3)`](https://pubs.opengroup.org/onlinepubs/7908799/xsh/setpwent.html),
+    /// [`getpwent(3)`](https://pubs.opengroup.org/onlinepubs/7908799/xsh/getpwent.html),
+    /// [`getpwent_r(3)`](https://man7.org/linux/man-pages/man3/getpwent_r.3.html) and
+    /// [`endpwent(3)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/endpwent.html)
+    /// under the hood.
+    ///
+    /// When encounters an error, [`AllUsers::next()`] will yield a
+    /// `Some(Err(Errno))`, stop iterating if this happens.
+    ///
+    /// # Safety
+    ///
+    /// This function is marked as `unsafe` cause `setpwent()` and `endpwent()`
+    /// will modify a global state, which will result in a data race if we have
+    /// multiple instances running at the same time.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use nix::unistd::User;
+    /// for opt_user in unsafe { User::all_users() } {
+    ///     match opt_user {
+    ///         Ok(user) => println!("{:?}", user),
+    ///         Err(errno) => {
+    ///             eprintln!("{:?}", errno);
+    ///             break;
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    // RedoxFS does not support passwd and android does not have /etc/passwd.
+    #[cfg(not(any(target_os = "redox", target_os = "android")))]
+    pub unsafe fn all_users() -> AllUsers {
+        libc::setpwent();
+
+        AllUsers
+    }
+}
+
+/// An iterator over the users of this system
+///
+/// This struct is constructed by [`User::all_users()`].
+// RedoxFS does not support passwd and android does not have /etc/passwd.
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+#[derive(Debug)]
+pub struct AllUsers;
+
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+impl Iterator for AllUsers {
+    type Item = Result<User>;
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_os = "linux", target_env = "gnu"),
+    ))]
+    // On these OSes, call `getpwent_r()`
+    fn next(&mut self) -> Option<Self::Item> {
+            #[cfg(target_os = "netbsd")]
+            Errno::clear();
+
+            let mut pwd = mem::MaybeUninit::<libc::passwd>::uninit();
+            let str_buf_size = match sysconf(SysconfVar::GETPW_R_SIZE_MAX) {
+                Ok(Some(n)) => n as usize,
+                Err(_) | Ok(None) => 4096,
+            };
+            let mut str_buf = Vec::with_capacity(str_buf_size);
+            let mut res: *mut libc::passwd = ptr::null_mut();
+            let ret = unsafe{
+                libc::getpwent_r(pwd.as_mut_ptr(), str_buf.as_mut_ptr(),
+                    str_buf_size, &mut res as *mut *mut libc::passwd)
+            };
+
+            // encounters an error
+            #[cfg(not(target_os = "linux"))]
+            if ret != 0 && res.is_null() {
+                #[cfg(target_os = "netbsd")]
+                return Some(Err(Errno::last()));
+                #[cfg(not(target_os = "netbsd"))]
+                return Some(Err(Errno::from_i32(ret)));
+            }
+            #[cfg(target_os = "linux")]
+            if ret != 0 && ret != libc::ENOENT && res.is_null() {
+                return Some(Err(Errno::from_i32(ret)));
+            }
+
+            // Now, all we need to do is to distinguish the successful case and
+            // the case where there are no more entries. Luckily, we can do this
+            // through `res`.
+
+            // no more entries
+            if res.is_null() {
+                None
+            }else {
+                // successful case
+                let pwd = unsafe{pwd.assume_init()};
+                Some(Ok(User::from(&pwd)))
+            }
+    }
+
+    #[cfg(not(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_os = "linux", target_env = "gnu")
+    )))]
+    // On other OSes, use `getpwent()`
+    fn next(&mut self) -> Option<Self::Item> {
+        Errno::clear();
+
+        let pwd = unsafe{libc::getpwent()};
+        if pwd.is_null() {
+                // errno is not set, no more entries
+                if Errno::last()  == Errno::from_i32(0){
+                        None
+                }else{
+                    Some(Err(Errno::last()))
+                }
+        }else {
+            Some(Ok(User::from(unsafe{&*pwd})))
+        }
+    }
+}
+
+
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+impl Drop for AllUsers {
+    fn drop(&mut self) {
+        unsafe{libc::endpwent()};
+    }
 }
 
 /// Representation of a Group, based on `libc::group`
@@ -3943,6 +4076,138 @@ impl Group {
                 libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res)
             })
         }
+    }
+
+    /// Construct an iterator over all groups on the system.
+    ///
+    /// Call [`setgrent(3)`](https://pubs.opengroup.org/onlinepubs/007908799/xsh/setgrent.html),
+    /// [`getgrent(3)`](https://pubs.opengroup.org/onlinepubs/7908799/xsh/getgrent.html),
+    /// [`getgrent_r(3)`](https://man7.org/linux/man-pages/man3/getgrent_r.3.html) and
+    /// [`endgrent(3)`](https://pubs.opengroup.org/onlinepubs/7908799/xsh/endgrent.html)
+    /// under the hood.
+    ///
+    /// When encounters an error, [`AllGroups::next()`] will yield a
+    /// `Some(Err(Errno))`, stop iterating if this happens.
+    ///
+    /// # Safety
+    ///
+    /// This function is marked as `unsafe` cause `setgrent()` and `endgrent()`
+    /// will modify a global state, which will result in a data race if we have
+    /// multiple instances running at the same time.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use nix::unistd::Group;
+    /// for opt_grp in unsafe { Group::all_groups() } {
+    ///     match opt_grp {
+    ///         Ok(grp) => println!("{:?}", grp),
+    ///         Err(errno) => {
+    ///             eprintln!("{:?}", errno);
+    ///             break;
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    #[cfg(not(any(target_os = "redox", target_os = "android")))]
+    // RedoxFS does not support passwd and android does not have /etc/group.
+    pub unsafe fn all_groups() -> AllGroups {
+        libc::setgrent();
+
+        AllGroups
+    }
+}
+
+/// An iterator over the groups of this system
+///
+/// This struct is constructed by [`Group::all_groups()`].
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+// RedoxFS does not support passwd and android does not have /etc/group.
+#[derive(Debug)]
+pub struct AllGroups;
+
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+impl Iterator for AllGroups {
+    type Item = Result<Group>;
+
+    #[cfg(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_os = "linux", target_env = "gnu"),
+    ))]
+    // On these OSes, call `getgrent_r()`
+    fn next(&mut self) -> Option<Self::Item> {
+            #[cfg(target_os = "netbsd")]
+            Errno::clear();
+
+            let mut grp = mem::MaybeUninit::<libc::group>::uninit();
+            let str_buf_size = match sysconf(SysconfVar::GETGR_R_SIZE_MAX) {
+                Ok(Some(n)) => n as usize,
+                Err(_) | Ok(None) => 4096,
+            };
+            let mut str_buf = Vec::with_capacity(str_buf_size);
+            let mut res: *mut libc::group = ptr::null_mut();
+            let ret = unsafe{
+                libc::getgrent_r(grp.as_mut_ptr(), str_buf.as_mut_ptr(),
+                    str_buf_size, &mut res as *mut *mut libc::group)
+            };
+
+            // encounters an error
+            #[cfg(not(target_os = "linux"))]
+            if ret != 0 && res.is_null() {
+                #[cfg(target_os = "netbsd")]
+                return Some(Err(Errno::last()));
+                #[cfg(not(target_os = "netbsd"))]
+                return Some(Err(Errno::from_i32(ret)));
+            }
+            #[cfg(target_os = "linux")]
+            if ret != 0 && ret != libc::ENOENT && res.is_null() {
+                return Some(Err(Errno::from_i32(ret)));
+            }
+
+            // Now, all we need to do is to distinguish the successful case and
+            // the case where there are no more entries. Luckily, we can do this
+            // through `res`.
+
+            // no more entries
+            if res.is_null() {
+                None
+            }else {
+                // successful case
+                let grp = unsafe{grp.assume_init()};
+                Some(Ok(Group::from(&grp)))
+            }
+    }
+
+    #[cfg(not(any(
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        all(target_os = "linux", target_env = "gnu"),
+    )))]
+    // On other OSes, use `getgrent()`
+    fn next(&mut self) -> Option<Self::Item> {
+        Errno::clear();
+
+        let grp = unsafe{libc::getgrent()};
+        if grp.is_null() {
+                // errno is not set, no more entries
+                if Errno::last()  == Errno::from_i32(0){
+                        None
+                }else{
+                    Some(Err(Errno::last()))
+                }
+        }else {
+            Some(Ok(Group::from(unsafe{&*grp})))
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "redox", target_os = "android")))]
+impl Drop for AllGroups {
+    fn drop(&mut self) {
+        unsafe{libc::endgrent()};
     }
 }
 }
