@@ -289,11 +289,7 @@ fn test_tcp_congestion() {
     let val = getsockopt(&fd, sockopt::TcpCongestion).unwrap();
     let bytes = val.as_os_str().as_bytes();
     for b in bytes.iter() {
-        assert_ne!(
-            *b, 0,
-            "OsString should contain no embedded NULs: {:?}",
-            val
-        );
+        assert_ne!(*b, 0, "OsString should contain no embedded NULs: {val:?}");
     }
     setsockopt(&fd, sockopt::TcpCongestion, &val).unwrap();
 
