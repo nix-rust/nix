@@ -347,7 +347,12 @@ jobs:
           - target: x86_64-unknown-openbsd
           - target: x86_64-unknown-haiku
           - target: armv7-unknown-linux-uclibceabihf
-          - target: i686-unknown-hurd-gnu
+          # Disable Hurd due to 
+          #     1. https://github.com/rust-lang/libc/issues/4421
+          #     2. https://github.com/nix-rust/nix/pull/2635#issuecomment-2842062528
+          # 
+          # We can bring it back when 1 gets fixed and it is applied to the std lib
+          # - target: i686-unknown-hurd-gnu
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -359,13 +364,6 @@ jobs:
 
       - name: install src
         run: rustup component add rust-src
-
-      # Cargo uses the latest version of libc(without lock file), which is, at the time of writing 
-      # this, 0.2.172. And the hurd target is broken with 0.2.172: https://github.com/rust-lang/libc/issues/4421
-      # So we need to downgrade it.
-      - name: downgrade libc to 0.2.171 on hurd
-        if: ${{ matrix.target == 'i686-unknown-hurd-gnu' }}
-        run: cargo update -p libc --precise 0.2.171
 
       - name: build
         uses: ./.github/actions/build
