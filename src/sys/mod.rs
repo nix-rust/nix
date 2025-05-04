@@ -52,7 +52,6 @@ feature! {
     pub mod memfd;
 }
 
-#[cfg(not(target_os = "redox"))]
 feature! {
     #![feature = "mman"]
     pub mod mman;
