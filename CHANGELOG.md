@@ -3,6 +3,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.30.1] - 2025-05-04
+
+### Fixed
+
+- doc.rs build
+  ([#2634](https://github.com/nix-rust/nix/pull/2634))
+
+
 ## [0.30.0] - 2025-04-29
 
 
