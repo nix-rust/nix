@@ -97,7 +97,7 @@ The following targets are supported by `nix`:
    <td>
     <li>armv7-unknown-linux-uclibceabihf</li>
     <li>powerpc64-unknown-linux-gnu</li>
-    <li>x86_64-fuchsia</li>
+    <li>x86_64-unknown-fuchsia</li>
     <li>x86_64-unknown-dragonfly</li>
     <li>x86_64-unknown-haiku</li>
     <li>x86_64-unknown-linux-gnux32</li>
