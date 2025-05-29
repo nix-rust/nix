@@ -1,4 +1,7 @@
-use nix::sched::{sched_getaffinity, sched_getcpu, sched_setaffinity, CpuSet};
+use nix::sched::{
+    sched_getaffinity, sched_getcpu, sched_getparam, sched_setaffinity,
+    sched_setscheduler, CpuSet, SchedParam,
+};
 use nix::unistd::Pid;
 
 #[test]
@@ -36,4 +39,40 @@ fn test_sched_affinity() {
 
     // Finally, reset the initial CPU set
     sched_setaffinity(Pid::from_raw(0), &initial_affinity).unwrap();
+}
+
+#[test]
+fn test_sched_priority() {
+    let pid = Pid::from_raw(0);
+    let sched = sched_getscheduler(pid).unwrap();
+    // default is NORMAL aka OTHER
+    assert_eq!(sched, Scheduler::SCHED_OTHER);
+
+    let priority = sched_getparam(pid).unwrap().sched_priority;
+    assert_eq!(priority, 0);
+
+    let max = sched_get_priority_max(Scheduler::SCHED_FIFO).unwrap();
+    let min = sched_get_priority_min(Scheduler::SCHED_FIFO).unwrap();
+
+    // can't set priority unless process has correct capabilities and PREEMPT_RT kernel
+    match sched_setscheduler(
+        pid,
+        Scheduler::SCHED_FIFO,
+        SchedParam::from_priority(max),
+    ) {
+        Ok(_) => {
+            assert_eq!(sched_getscheduler(pid).unwrap(), Scheduler::SCHED_FIFO);
+            assert_eq!(sched_getparam(pid).unwrap().sched_priority, max);
+        }
+        Err(nix::Error::Sys(nix::Error::EPERM)) => {
+            // expected, assert that it didn't change
+            assert_eq!(
+                sched_getscheduler(pid).unwrap(),
+                Scheduler::SCHED_OTHER
+            );
+        }
+        Err(e) => {
+            panic!("unexpected error: {}", e);
+        }
+    }
 }
