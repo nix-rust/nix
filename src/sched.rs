@@ -330,6 +330,15 @@ mod sched_priority {
     pub struct SchedParam {
         pub sched_priority: c_int,
     }
+
+    impl SchedParam {
+        pub fn from_priority(priority: c_int) -> Self {
+            SchedParam {
+                sched_priority: priority,
+            }
+        }
+    }
+
     impl From<SchedParam> for libc::sched_param {
         fn from(param: SchedParam) -> Self {
             libc::sched_param {
