@@ -316,6 +316,91 @@ mod sched_affinity {
     }
 }
 
+#[cfg(linux_android)]
+pub use self::sched_priority::*;
+
+#[cfg(linux_android)]
+mod sched_priority {
+    use crate::errno::Errno;
+    use crate::unistd::Pid;
+    use crate::Result;
+    use libc::{self, c_int};
+
+    #[repr(C)]
+    pub struct SchedParam {
+        pub sched_priority: c_int,
+    }
+    impl From<SchedParam> for libc::sched_param {
+        fn from(param: SchedParam) -> Self {
+            libc::sched_param {
+                sched_priority: param.sched_priority,
+            }
+        }
+    }
+    impl From<libc::sched_param> for SchedParam {
+        fn from(param: libc::sched_param) -> Self {
+            SchedParam {
+                sched_priority: param.sched_priority,
+            }
+        }
+    }
+
+    libc_enum! {
+        pub enum Scheduler {
+            SCHED_OTHER,
+            SCHED_FIFO,
+            SCHED_RR,
+            SCHED_BATCH,
+            SCHED_IDLE,
+            SCHED_DEADLINE,
+        }
+        impl TryFrom<c_int>
+    }
+
+    pub fn sched_get_priority_max(sched: Scheduler) -> Result<c_int> {
+        let res = unsafe { libc::sched_get_priority_max(sched as c_int) };
+        Errno::result(res).map(|int| int as c_int)
+    }
+
+    pub fn sched_get_priority_min(sched: Scheduler) -> Result<c_int> {
+        let res = unsafe { libc::sched_get_priority_min(sched as c_int) };
+        Errno::result(res).map(|int| int as c_int)
+    }
+
+    pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
+        let res = unsafe { libc::sched_getscheduler(pid.into()) };
+
+        Errno::result(res).and_then(|sched| Scheduler::try_from(sched))
+    }
+
+    pub fn sched_setscheduler(
+        pid: Pid,
+        sched: Scheduler,
+        param: SchedParam,
+    ) -> Result<()> {
+        let param: libc::sched_param = param.into();
+        let res = unsafe {
+            libc::sched_setscheduler(pid.into(), sched as c_int, &param)
+        };
+
+        Errno::result(res).map(drop)
+    }
+
+    pub fn sched_getparam(pid: Pid) -> Result<SchedParam> {
+        let mut param = libc::sched_param { sched_priority: 0 };
+        let res = unsafe { libc::sched_getparam(pid.into(), &mut param) };
+
+        Errno::result(res).map(|_| param.into())
+    }
+
+    pub fn sched_setparam(pid: Pid, param: SchedParam) -> Result<()> {
+        let param: libc::sched_param = param.into();
+        let res = unsafe { libc::sched_setparam(pid.into(), &param) };
+
+        Errno::result(res).map(drop)
+    }
+}
+
 /// Explicitly yield the processor to other threads.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
