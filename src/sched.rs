@@ -326,15 +326,16 @@ mod sched_priority {
     use crate::errno::Errno;
     use crate::unistd::Pid;
     use crate::Result;
-    use libc::{self, c_int};
+    use libc;
 
     #[repr(C)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct SchedParam {
-        pub sched_priority: c_int,
+        pub sched_priority: libc::c_int,
     }
 
     impl SchedParam {
-        pub fn from_priority(priority: c_int) -> Self {
+        pub fn from_priority(priority: libc::c_int) -> Self {
             SchedParam {
                 sched_priority: priority,
             }
@@ -357,6 +358,7 @@ mod sched_priority {
     }
 
     libc_enum! {
+        #[repr(i32)]
         pub enum Scheduler {
             SCHED_OTHER,
             SCHED_FIFO,
@@ -365,17 +367,17 @@ mod sched_priority {
             SCHED_IDLE,
             SCHED_DEADLINE,
         }
-        impl TryFrom<c_int>
+        impl TryFrom<libc::c_int>
     }
 
-    pub fn sched_get_priority_max(sched: Scheduler) -> Result<c_int> {
-        let res = unsafe { libc::sched_get_priority_max(sched as c_int) };
-        Errno::result(res).map(|int| int as c_int)
+    pub fn sched_get_priority_max(sched: Scheduler) -> Result<libc::c_int> {
+        let res = unsafe { libc::sched_get_priority_max(sched as libc::c_int) };
+        Errno::result(res).map(|int| int as libc::c_int)
     }
 
-    pub fn sched_get_priority_min(sched: Scheduler) -> Result<c_int> {
-        let res = unsafe { libc::sched_get_priority_min(sched as c_int) };
-        Errno::result(res).map(|int| int as c_int)
+    pub fn sched_get_priority_min(sched: Scheduler) -> Result<libc::c_int> {
+        let res = unsafe { libc::sched_get_priority_min(sched as libc::c_int) };
+        Errno::result(res).map(|int| int as libc::c_int)
     }
 
     pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
@@ -391,7 +393,7 @@ mod sched_priority {
     ) -> Result<()> {
         let param: libc::sched_param = param.into();
         let res = unsafe {
-            libc::sched_setscheduler(pid.into(), sched as c_int, &param)
+            libc::sched_setscheduler(pid.into(), sched as libc::c_int, &param)
         };
 
         Errno::result(res).map(drop)
