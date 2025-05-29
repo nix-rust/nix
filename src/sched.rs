@@ -321,6 +321,8 @@ pub use self::sched_priority::*;
 
 #[cfg(linux_android)]
 mod sched_priority {
+    use std::mem::MaybeUninit;
+
     use crate::errno::Errno;
     use crate::unistd::Pid;
     use crate::Result;
@@ -396,10 +398,11 @@ mod sched_priority {
     }
 
     pub fn sched_getparam(pid: Pid) -> Result<SchedParam> {
-        let mut param = libc::sched_param { sched_priority: 0 };
-        let res = unsafe { libc::sched_getparam(pid.into(), &mut param) };
+        let mut param: MaybeUninit<libc::sched_param> = MaybeUninit::uninit();
+        let res =
+            unsafe { libc::sched_getparam(pid.into(), param.as_mut_ptr()) };
 
-        Errno::result(res).map(|_| param.into())
+        Errno::result(res).map(|_| unsafe { param.assume_init() }.into())
     }
 
     pub fn sched_setparam(pid: Pid, param: SchedParam) -> Result<()> {
