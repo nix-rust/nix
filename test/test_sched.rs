@@ -1,7 +1,5 @@
-use nix::sched::{
-    sched_getaffinity, sched_getcpu, sched_getparam, sched_setaffinity,
-    sched_setscheduler, CpuSet, SchedParam,
-};
+use nix::errno::Errno;
+use nix::sched::{sched_get_priority_max, sched_get_priority_min, sched_getaffinity, sched_getcpu, sched_getparam, sched_getscheduler, sched_setaffinity, sched_setscheduler, CpuSet, SchedParam, Scheduler};
 use nix::unistd::Pid;
 
 #[test]
@@ -64,7 +62,7 @@ fn test_sched_priority() {
             assert_eq!(sched_getscheduler(pid).unwrap(), Scheduler::SCHED_FIFO);
             assert_eq!(sched_getparam(pid).unwrap().sched_priority, max);
         }
-        Err(nix::Error::Sys(nix::Error::EPERM)) => {
+        Err(Errno::EPERM) => {
             // expected, assert that it didn't change
             assert_eq!(
                 sched_getscheduler(pid).unwrap(),
