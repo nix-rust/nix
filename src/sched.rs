@@ -317,10 +317,18 @@ mod sched_affinity {
 }
 
 // musl has additional sched_param fields that we don't support yet
-#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
+#[cfg(all(
+    linux_android,
+    not(target_env = "musl"),
+    not(target_env = "ohos")
+))]
 pub use self::sched_priority::*;
 
-#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
+#[cfg(all(
+    linux_android,
+    not(target_env = "musl"),
+    not(target_env = "ohos")
+))]
 mod sched_priority {
     use std::mem::MaybeUninit;
 
