@@ -407,7 +407,7 @@ mod sched_priority {
     pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
         let res = unsafe { libc::sched_getscheduler(pid.into()) };
 
-        Errno::result(res).and_then(|sched| Scheduler::try_from(sched))
+        Errno::result(res).and_then(Scheduler::try_from)
     }
 
     /// Set the scheduler and parameters for a given process or thread.

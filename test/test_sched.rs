@@ -1,5 +1,9 @@
 use nix::errno::Errno;
-use nix::sched::{sched_get_priority_max, sched_get_priority_min, sched_getaffinity, sched_getcpu, sched_getparam, sched_getscheduler, sched_setaffinity, sched_setscheduler, CpuSet, SchedParam, Scheduler};
+use nix::sched::{
+    sched_get_priority_max, sched_get_priority_min, sched_getaffinity,
+    sched_getcpu, sched_getparam, sched_getscheduler, sched_setaffinity,
+    sched_setscheduler, CpuSet, SchedParam, Scheduler,
+};
 use nix::unistd::Pid;
 
 #[test]
