@@ -43,7 +43,7 @@ fn test_sched_affinity() {
     sched_setaffinity(Pid::from_raw(0), &initial_affinity).unwrap();
 }
 
-#[cfg(not(target_env = "musl"))]
+#[cfg(any(not(target_env = "musl"), not(target_env = "ohos")))]
 #[test]
 fn test_sched_priority() {
     let pid = Pid::from_raw(0);
