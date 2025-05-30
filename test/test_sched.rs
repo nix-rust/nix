@@ -1,4 +1,3 @@
-use nix::errno::Errno;
 #[cfg(not(target_env = "musl"))]
 use nix::sched::{
     sched_get_priority_max, sched_get_priority_min, sched_getparam,
@@ -68,7 +67,7 @@ fn test_sched_priority() {
             assert_eq!(sched_getscheduler(pid).unwrap(), Scheduler::SCHED_FIFO);
             assert_eq!(sched_getparam(pid).unwrap().sched_priority, max);
         }
-        Err(Errno::EPERM) => {
+        Err(nix::errno::Errno::EPERM) => {
             // expected, assert that it didn't change
             assert_eq!(
                 sched_getscheduler(pid).unwrap(),
