@@ -50,7 +50,7 @@ fn test_sched_priority() {
     assert_eq!(priority, 0);
 
     let max = sched_get_priority_max(Scheduler::SCHED_FIFO).unwrap();
-    let min = sched_get_priority_min(Scheduler::SCHED_FIFO).unwrap();
+    let _ = sched_get_priority_min(Scheduler::SCHED_FIFO).unwrap();
 
     // can't set priority unless process has correct capabilities and PREEMPT_RT kernel
     match sched_setscheduler(
