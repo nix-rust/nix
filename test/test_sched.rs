@@ -1,8 +1,3 @@
-#[cfg(not(target_env = "musl"))]
-use nix::sched::{
-    sched_get_priority_max, sched_get_priority_min, sched_getparam,
-    sched_getscheduler, sched_setscheduler, SchedParam, Scheduler,
-};
 use nix::sched::{sched_getaffinity, sched_getcpu, sched_setaffinity, CpuSet};
 use nix::unistd::Pid;
 
@@ -43,9 +38,14 @@ fn test_sched_affinity() {
     sched_setaffinity(Pid::from_raw(0), &initial_affinity).unwrap();
 }
 
-#[cfg(any(not(target_env = "musl"), not(target_env = "ohos")))]
+#[cfg(not(any(target_env = "musl", target_env = "ohos")))]
 #[test]
 fn test_sched_priority() {
+    use nix::sched::{
+        sched_get_priority_max, sched_get_priority_min, sched_getparam,
+        sched_getscheduler, sched_setscheduler, SchedParam, Scheduler,
+    };
+
     let pid = Pid::from_raw(0);
     let sched = sched_getscheduler(pid).unwrap();
     // default is NORMAL aka OTHER

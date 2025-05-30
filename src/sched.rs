@@ -354,6 +354,23 @@ mod sched_priority {
                 sched_priority: param.sched_priority,
             }
         }
+
+        // #[cfg(any(target_env = "musl", target_env = "ohos"))]
+        // fn from(param: SchedParam) -> Self {
+        //     // note: non-priority values are dummy values used by deadline scheduler,
+        //     // don't use this abstraction if you're using deadline.
+        //     let zero_ts = libc::timespec {
+        //         tv_sec: 0,
+        //         tv_nsec: 0,
+        //     };
+        //     libc::sched_param {
+        //         sched_priority: param.sched_priority,
+        //         sched_ss_low_priority: 0,
+        //         sched_ss_repl_period: zero_ts.clone(),
+        //         sched_ss_init_budget: zero_ts,
+        //         sched_ss_max_repl: 0,
+        //     }
+        // }
     }
     impl From<libc::sched_param> for SchedParam {
         fn from(param: libc::sched_param) -> Self {
