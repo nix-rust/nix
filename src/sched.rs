@@ -330,11 +330,15 @@ mod sched_priority {
 
     #[repr(C)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    /// Schedule parameters for a thread (currently only priority is supported).
     pub struct SchedParam {
+        /// Priority of the current schedule.
         pub sched_priority: libc::c_int,
     }
 
     impl SchedParam {
+        /// Create schedule parameters with a given priority. Priority must be between
+        /// min and max for the chosen schedule type.
         pub fn from_priority(priority: libc::c_int) -> Self {
             SchedParam {
                 sched_priority: priority,
@@ -399,17 +403,22 @@ mod sched_priority {
     }
 
     /// Get the current scheduler in use for a given process or thread.
-    /// Using `Pid::from_raw(0)` will fetch the scheduler for the current thread.
+    /// Using `Pid::from_raw(0)` will fetch the scheduler for the calling thread.
     pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
         let res = unsafe { libc::sched_getscheduler(pid.into()) };
 
         Errno::result(res).and_then(|sched| Scheduler::try_from(sched))
     }
 
-    /// Set the scheduler for a given process or thread.
-    /// Using `Pid::from_raw(0)` will set the scheduler for the current thread.
-    /// 
-    /// 
+    /// Set the scheduler and parameters for a given process or thread.
+    /// Using `Pid::from_raw(0)` will set the scheduler for the calling thread.
+    ///
+    /// SCHED_OTHER, SCHED_IDLE and SCHED_BATCH only support a priority of `0`, and can be used
+    /// outside a Linux PREEMPT_RT context.
+    ///
+    /// SCHED_FIFO and SCHED_RR allow priorities between the min and max inclusive.
+    ///
+    /// SCHED_DEADLINE cannot be set with this function, libc::sched_setattr must be used instead.
     pub fn sched_setscheduler(
         pid: Pid,
         sched: Scheduler,
@@ -423,6 +432,8 @@ mod sched_priority {
         Errno::result(res).map(drop)
     }
 
+    /// Get the schedule parameters (currently only priority) for a given thread.
+    /// Using `Pid::from_raw(0)` will return the parameters for the calling thread.
     pub fn sched_getparam(pid: Pid) -> Result<SchedParam> {
         let mut param: MaybeUninit<libc::sched_param> = MaybeUninit::uninit();
         let res =
@@ -431,6 +442,11 @@ mod sched_priority {
         Errno::result(res).map(|_| unsafe { param.assume_init() }.into())
     }
 
+    /// Set the schedule parameters (currently only priority) for a given thread.
+    /// Using `Pid::from_raw(0)` will return the parameters for the calling thread.
+    ///
+    /// Changing the priority to something other than `0` requires using a SCHED_FIFO or SCHED_RR
+    /// and using a Linux kernel with PREEMPT_RT enabled.
     pub fn sched_setparam(pid: Pid, param: SchedParam) -> Result<()> {
         let param: libc::sched_param = param.into();
         let res = unsafe { libc::sched_setparam(pid.into(), &param) };
