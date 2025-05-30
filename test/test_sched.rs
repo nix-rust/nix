@@ -38,7 +38,7 @@ fn test_sched_affinity() {
     sched_setaffinity(Pid::from_raw(0), &initial_affinity).unwrap();
 }
 
-#[cfg(not(any(target_env = "musl", target_env = "ohos")))]
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
 #[test]
 fn test_sched_priority() {
     use nix::sched::{
