@@ -317,11 +317,10 @@ mod sched_affinity {
 }
 
 // musl has additional sched_param fields that we don't support yet
-#[cfg(all(linux_android, not(target_env = "musl")))]
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
 pub use self::sched_priority::*;
 
-#[cfg(all(linux_android, not(target_env = "musl")))]
-#[cfg(linux_android)]
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
 mod sched_priority {
     use std::mem::MaybeUninit;
 
@@ -333,6 +332,7 @@ mod sched_priority {
     #[repr(C)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     /// Schedule parameters for a thread (currently only priority is supported).
+    /// This is a wrapper around `libc::sched_param`
     pub struct SchedParam {
         /// Priority of the current schedule.
         pub sched_priority: libc::c_int,
