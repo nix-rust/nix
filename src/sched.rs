@@ -359,33 +359,57 @@ mod sched_priority {
 
     libc_enum! {
         #[repr(i32)]
+        /// The type of scheduler for use with [`sched_getscheduler`] and [`sched_setscheduler`].
+        /// See [man_sched(7)](https://man7.org/linux/man-pages/man7/sched.7.html) for more details
+        /// on the differences in behavior.
         pub enum Scheduler {
+            /// The default scheduler on non-realtime linux - also known as SCHED_NORMAL.
             SCHED_OTHER,
+            /// The realtime FIFO scheduler. All FIFO threads have priority higher than 0 and
+            /// preempt SCHED_OTHER threads. Threads are executed in priority order, using
+            /// first-in-first-out lists to handle two threads with the same priority.
             SCHED_FIFO,
+            /// Round-robin scheduler
             SCHED_RR,
+            /// Batch scheduler, similar to SCHED_OTHER but assumes the thread is CPU intensive.
+            /// The kernel applies a mild penalty to switching to this thread.
+            /// As of Linux 2.6.16, the only valid priority is 0.
             SCHED_BATCH,
+            /// The idle scheduler only executes the thread when there are idle CPUs. SCHED_IDLE
+            /// threads have no progress guarantees.
             SCHED_IDLE,
+            /// Deadline scheduler, attempting to provide guaranteed latency for requests.
+            /// See the [linux kernel docs](https://docs.kernel.org/scheduler/sched-deadline.html)
+            /// for details.
             SCHED_DEADLINE,
         }
         impl TryFrom<libc::c_int>
     }
 
+    /// Get the highest priority value for a given scheduler.
     pub fn sched_get_priority_max(sched: Scheduler) -> Result<libc::c_int> {
         let res = unsafe { libc::sched_get_priority_max(sched as libc::c_int) };
         Errno::result(res).map(|int| int as libc::c_int)
     }
 
+    /// Get the lowest priority value for a given scheduler.
     pub fn sched_get_priority_min(sched: Scheduler) -> Result<libc::c_int> {
         let res = unsafe { libc::sched_get_priority_min(sched as libc::c_int) };
         Errno::result(res).map(|int| int as libc::c_int)
     }
 
+    /// Get the current scheduler in use for a given process or thread.
+    /// Using `Pid::from_raw(0)` will fetch the scheduler for the current thread.
     pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
         let res = unsafe { libc::sched_getscheduler(pid.into()) };
 
         Errno::result(res).and_then(|sched| Scheduler::try_from(sched))
     }
 
+    /// Set the scheduler for a given process or thread.
+    /// Using `Pid::from_raw(0)` will set the scheduler for the current thread.
+    /// 
+    /// 
     pub fn sched_setscheduler(
         pid: Pid,
         sched: Scheduler,
