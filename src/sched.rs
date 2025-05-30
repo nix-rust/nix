@@ -324,11 +324,7 @@ mod sched_affinity {
 ))]
 pub use self::sched_priority::*;
 
-#[cfg(all(
-    linux_android,
-    not(target_env = "musl"),
-    not(target_env = "ohos")
-))]
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
 mod sched_priority {
     use std::mem::MaybeUninit;
 
