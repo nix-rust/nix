@@ -390,8 +390,8 @@ mod sched_priority {
         /// See [man_sched(7)](https://man7.org/linux/man-pages/man7/sched.7.html) for more details
         /// on the differences in behavior.
         pub enum Scheduler {
-            /// The default scheduler on non-realtime linux - also known as SCHED_NORMAL.
-            SCHED_OTHER,
+            /// The default scheduler on non-realtime linux - also known as SCHED_OTHER.
+            SCHED_NORMAL,
             /// The realtime FIFO scheduler. All FIFO threads have priority higher than 0 and
             /// preempt SCHED_OTHER threads. Threads are executed in priority order, using
             /// first-in-first-out lists to handle two threads with the same priority.
