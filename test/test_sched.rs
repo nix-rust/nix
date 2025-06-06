@@ -49,7 +49,7 @@ fn test_sched_priority() {
     let pid = Pid::from_raw(0);
     let sched = sched_getscheduler(pid).unwrap();
     // default is NORMAL aka OTHER
-    assert_eq!(sched, Scheduler::SCHED_OTHER);
+    assert_eq!(sched, Scheduler::SCHED_NORMAL);
 
     let priority = sched_getparam(pid).unwrap().sched_priority;
     assert_eq!(priority, 0);
@@ -71,7 +71,7 @@ fn test_sched_priority() {
             // expected, assert that it didn't change
             assert_eq!(
                 sched_getscheduler(pid).unwrap(),
-                Scheduler::SCHED_OTHER
+                Scheduler::SCHED_NORMAL
             );
         }
         Err(e) => {
