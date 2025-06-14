@@ -701,7 +701,7 @@ impl<S> RecvMsg<'_, '_, S> {
     /// Iterate over the valid control messages pointed to by this msghdr. If
     /// allocated space for CMSGs was too small it is not safe to iterate,
     /// instead return an `Error::ENOBUFS` error.
-    pub fn cmsgs(&self) -> Result<CmsgIterator> {
+    pub fn cmsgs(&self) -> Result<CmsgIterator<'_>> {
 
         if self.mhdr.msg_flags & MSG_CTRUNC == MSG_CTRUNC {
             return Err(Errno::ENOBUFS);
