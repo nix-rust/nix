@@ -745,7 +745,7 @@ pub enum FcntlArg<'a> {
     F_SETFL(OFlag), // O_NONBLOCK
     /// Set or clear a file segment lock
     F_SETLK(&'a libc::flock),
-    /// Like [`F_SETLK`](FcntlArg::F_SETLK) except that if a shared or exclusive lock is blocked by
+    /// Like [`F_SETLK`] except that if a shared or exclusive lock is blocked by
     /// other locks, the process waits until the request can be satisfied.
     F_SETLKW(&'a libc::flock),
     /// Get the first lock that blocks the lock description
