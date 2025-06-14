@@ -753,7 +753,7 @@ pub enum FcntlArg<'a> {
     /// Acquire or release an open file description lock
     #[cfg(linux_android)]
     F_OFD_SETLK(&'a libc::flock),
-    /// Like [`F_OFD_SETLK`](FcntlArg::F_OFD_SETLK) except that if a conflicting lock is held on
+    /// Like [`F_OFD_SETLK`] except that if a conflicting lock is held on
     /// the file, then wait for that lock to be released.
     #[cfg(linux_android)]
     F_OFD_SETLKW(&'a libc::flock),
