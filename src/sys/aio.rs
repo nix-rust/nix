@@ -23,6 +23,7 @@
 //! [`cancel`](trait.Aio.html#method.cancel) or
 //! [`aio_cancel_all`](fn.aio_cancel_all.html), though the operating system may
 //! not support this for all filesystems and devices.
+#![allow(clippy::doc_overindented_list_items)] // It looks better this way
 #[cfg(target_os = "freebsd")]
 use std::io::{IoSlice, IoSliceMut};
 use std::{
@@ -572,8 +573,9 @@ impl<'a> AioRead<'a> {
     /// * `fd`:           File descriptor to read from
     /// * `offs`:         File offset
     /// * `buf`:          A memory buffer.  It must outlive the `AioRead`.
-    /// * `prio`:         If POSIX Prioritized IO is supported, then the operation
-    ///   will be prioritized at the process's priority level minus `prio`
+    /// * `prio`:         If POSIX Prioritized IO is supported, then the
+    ///                   operation will be prioritized at the process's
+    ///                   priority level minus `prio`.
     /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
         fd: BorrowedFd<'a>,
@@ -802,8 +804,9 @@ impl<'a> AioWrite<'a> {
     /// * `fd`:           File descriptor to write to
     /// * `offs`:         File offset
     /// * `buf`:          A memory buffer.  It must outlive the `AioWrite`.
-    /// * `prio`:         If POSIX Prioritized IO is supported, then the operation
-    ///   will be prioritized at the process's priority level minus `prio`
+    /// * `prio`:         If POSIX Prioritized IO is supported, then the
+    ///                   operation will be prioritized at the process's
+    ///                   priority level minus `prio`
     /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
         fd: BorrowedFd<'a>,
