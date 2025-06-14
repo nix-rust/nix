@@ -753,7 +753,7 @@ impl<'a> IntoIterator for &'a SigSet {
 }
 
 /// A signal handler.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash)]
 pub enum SigHandler {
     /// Default signal handling.
     SigDfl,
