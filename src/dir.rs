@@ -385,10 +385,8 @@ pub const unsafe fn dirent_const_time_strlen(dirent: *const libc::dirent64) -> u
     // the non-name bytes (d_type and padding) to avoid false null detection.
     // The 0x00FF_FFFF mask preserves only the 3 bytes where the name could start.
     // Branchless masking: avoids branching by using a mask that is either 0 or 0x00FF_FFFF
-    unsafe{std::hint::assert_unchecked(reclen % 8 ==0 && reclen >=24 )}; //tell the compiler is a multiple of 8 and within bounds
-    //this is safe because the kernel guarantees the above.
     //............................//special case short name check
-    let mask = 0x00FF_FFFFu64 * ((reclen ==24) as u64); // (multiply by 0 or 1)
+    let mask = 0x00FF_FFFFu64 * ((reclen ==24) as u64); // (multiply by 0 or 1) 
     // The mask is applied to the last word to isolate the relevant bytes.
     // The last word is masked to isolate the relevant bytes,
     //we're bit manipulating the last word (a byte/u64) to find the first null byte
