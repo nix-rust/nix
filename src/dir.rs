@@ -351,9 +351,6 @@ impl Entry {
 
 
 #[inline]
-#[allow(clippy::integer_division)] //i know reclen is always a multiple of 8, so this is fine
-#[allow(clippy::cast_possible_truncation)] //^
-#[allow(clippy::integer_division_remainder_used)] //division is fine.
 #[allow(clippy::ptr_as_ptr)] //safe to do this as u8 is aligned to 8 bytes
 #[allow(clippy::cast_lossless)] //shutup
 /// Const-fn strlen for dirent's `d_name` field using bit tricks, no SIMD, no overreads!!!
@@ -382,12 +379,10 @@ impl Entry {
 ///  `SWAR` (SIMD Within A Register) is used to find the first null byte in the `d_name` field of a `libc::dirent64` structure.
 pub const unsafe fn dirent_const_time_strlen(dirent: *const libc::dirent64) -> usize {
     const DIRENT_HEADER_START: usize = std::mem::offset_of!(libc::dirent64, d_name) + 1; //we're going backwards(to the start of d_name) so we add 1 to the offset
-    let reclen = unsafe { (*dirent).d_reclen as usize}; //THIS MACRO IS MODIFIED FROM THE STANDARD LIBRARY INTERNAL IMPLEMENTATION
-    //an internal macro, alternatively written as (my macro just makes it easy to access without worrying about alignment)
-    // let reclen = unsafe { (*dirent).d_reclen as u16 }; (do not access it via byte_offset!)
-    // Calculate find the  start of the d_name field
+    let reclen = unsafe { (*dirent).d_reclen as usize}; 
+    //find the record-length
     // THIS WILL ONLY WORK ON LITTLE-ENDIAN ARCHITECTURES, I CANT BE BOTHERED TO FIGURE THAT OUT, qemu isnt fun
-    // Calculate find the  start of the d_name field
+    // Calculate the  start of the d_name field
     let last_word = unsafe { *((dirent as *const u8).add(reclen - 8) as *const u64) };
     // Special case: When processing the 3rd u64 word (index 2), we need to mask
     // the non-name bytes (d_type and padding) to avoid false null detection.
