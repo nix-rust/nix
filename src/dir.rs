@@ -298,7 +298,80 @@ impl Entry {
         }
     }
 
+
+
+
+
+    /*
+    
+    pub const unsafe fn dirent_const_time_strlen(dirent: *const libc::dirent64) -> usize {
+    const DIRENT_HEADER_START: usize = std::mem::offset_of!(libc::dirent64, d_name) + 1; //we're going backwards(to the start of d_name) so we add 1 to the offset
+
+    //an internal macro, alternatively written as (my macro just makes it easy to access without worrying about alignment)
+    // let reclen = unsafe { (*dirent).d_reclen as usize }; (do not access it via byte_offset!)
+    // Calculate find the  start of the d_name field
+    // THIS WILL ONLY WORK ON LITTLE-ENDIAN ARCHITECTURES, I CANT BE BOTHERED TO FIGURE THAT OUT, qemu isnt fun
+    // Calculate find the  start of the d_name field
+    let last_word = unsafe { *((dirent as *const u8).add(reclen - 8) as *const u64) };
+    // Special case: When processing the 3rd u64 word (index 2), we need to mask
+    // the non-name bytes (d_type and padding) to avoid false null detection.
+    // The 0x00FF_FFFF mask preserves only the 3 bytes where the name could start.
+    // Branchless masking: avoids branching by using a mask that is either 0 or 0x00FF_FFFF
+    unsafe{std::hint::assert_unchecked(reclen % 8 ==0 && reclen >=24 )}; //tell the compiler is a multiple of 8 and within bounds
+    //this is safe because the kernel guarantees the above.
+    //............................//simpler divison here(lower register)
+    let mask = 0x00FF_FFFFu64 * ((reclen ==24) as u64); // (multiply by 0 or 1)
+    // The mask is applied to the last word to isolate the relevant bytes.
+    // The last word is masked to isolate the relevant bytes,
+    //we're bit manipulating the last word (a byte/u64) to find the first null byte
+    //this boils to a complexity of strlen over 8 bytes, which we then accomplish with a bit trick
+    // The mask is applied to the last word to isolate the relevant bytes.
+    // The last word is masked to isolate the relevant bytes, and then we find the first zero byte.
+    let candidate_pos = last_word | mask;
+    // The resulting value (`candidate_pos`) has:
+    // - Original name bytes preserved
+    // - Non-name bytes forced to 0xFF (guaranteed non-zero)
+    // - Maintains the exact position of any null bytes in the name
+    let zero_bit = candidate_pos.wrapping_sub(0x0101_0101_0101_0101)// 0x0101_0101_0101_0101 -> underflows the high bit if a byte is zero
+        & !candidate_pos//ensures only bytes that were zero retain the underflowed high bit.
+        & 0x8080_8080_8080_8080; //  0x8080_8080_8080_8080 -->This masks out the high bit of each byte, so we can find the first zero byte
+    // The trailing zeros of the zero_bit gives us the position of the first zero byte.
+    // We divide by 8 to convert the bit position to a byte position..
+    // We subtract 7 to get the correct offset in the d_name field.
+    //>> 3 converts from bit position to byte index (divides by 8)
+    
+
+    reclen  - DIRENT_HEADER_START - (7 - (zero_bit.trailing_zeros() >> 3) as usize)
+}
+
+    
+     */
+
+
+
+
+
+
+
+
     /// Returns the bare file name of this directory entry without any other leading path component.
+    /// 
+    #[cfg(target_arch = "x86_64")]//this specific change only tested on very limited systems, I'm unaware of any other systems that have this issue
+    ///PLEASE REMOVE THESE COMMENTS (OBVIOUSLY WHEN DONE))
+    /// This utilises a constant-time constant function strlen implementation that's faster than `libc::strlen`` (std library internal implementation)
+    /// The function used is described at the bottom of the file. Benchmarks at 
+    pub  const fn file_name(&self) -> &ffi::CStr {
+        let str_length = unsafe { dirent_const_time_strlen(&self.0)+1 };
+        unsafe{
+            //we need to transmute here because we're trying to match the original type of this implementation to not break it
+            std::mem::transmute(&*std::ptr::slice_from_raw_parts(self.0.d_name.as_ptr() as  *const u8, str_length))
+
+
+        //unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
+    }
+}
+
+    #[cfg(not(target_arch = "x86_64"))]
     pub fn file_name(&self) -> &ffi::CStr {
         unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
     }
@@ -325,4 +398,78 @@ impl Entry {
         #[cfg(any(solarish, target_os = "aix", target_os = "haiku"))]
         None
     }
+}
+
+
+
+
+
+#[inline]
+#[allow(clippy::integer_division)] //i know reclen is always a multiple of 8, so this is fine
+#[allow(clippy::cast_possible_truncation)] //^
+#[allow(clippy::integer_division_remainder_used)] //division is fine.
+#[allow(clippy::ptr_as_ptr)] //safe to do this as u8 is aligned to 8 bytes
+#[allow(clippy::cast_lossless)] //shutup
+/// Const-fn strlen for dirent's `d_name` field using bit tricks, no SIMD, no overreads!!!
+/// O(1) complexity, no branching, and no loops.
+///
+/// This function can't really be used in a const manner, I just took the win where I could! ( I thought it was cool too...)
+/// It's probably the most efficient way to calculate the length
+/// It calculates the length of the `d_name` field in a `libc::dirent64` structure without branching on the presence of null bytes.
+/// It needs to be used on  a VALID `libc::dirent64` pointer, and it assumes that the `d_name` field is null-terminated.
+/// Refererence<  https://graphics.stanford.edu/~seander/bithacks.html#HasZeroByte>    
+///                        
+/// Reference <https://github.com/Soveu/find/blob/master/src/dirent.rs>          
+///
+///
+/// Main idea:
+/// - We read the last 8 bytes of the `d_name` field, which is guaranteed to be null-terminated by the kernel.
+/// This is based on the observation that d_name is always null-terminated by the kernel,
+///  so we only need to scan at most 255 bytes. However, since we read the last 8 bytes and apply bit tricks,
+/// we can locate the null terminator with a single 64-bit read and mask, assuming alignment and endianness.
+///                    
+/// Combining all these tricks, i made this beautiful thing!
+/// # SAFETY
+/// This function is `unsafe` because it involves dereferencing raw pointers, pointer arithmetic, structure offsets...just everything.
+/// The caller must uphold the following invariants:
+/// - The `dirent` pointer must point to a valid `libc::dirent64` structure
+///  `SWAR` (SIMD Within A Register) is used to find the first null byte in the `d_name` field of a `libc::dirent64` structure.
+pub const unsafe fn dirent_const_time_strlen(dirent: *const libc::dirent64) -> usize {
+    const DIRENT_HEADER_START: usize = std::mem::offset_of!(libc::dirent64, d_name) + 1; //we're going backwards(to the start of d_name) so we add 1 to the offset
+    let reclen = unsafe { (*dirent).d_reclen as usize}; //THIS MACRO IS MODIFIED FROM THE STANDARD LIBRARY INTERNAL IMPLEMENTATION
+    //an internal macro, alternatively written as (my macro just makes it easy to access without worrying about alignment)
+    // let reclen = unsafe { (*dirent).d_reclen as u16 }; (do not access it via byte_offset!)
+    // Calculate find the  start of the d_name field
+    // THIS WILL ONLY WORK ON LITTLE-ENDIAN ARCHITECTURES, I CANT BE BOTHERED TO FIGURE THAT OUT, qemu isnt fun
+    // Calculate find the  start of the d_name field
+    let last_word = unsafe { *((dirent as *const u8).add(reclen - 8) as *const u64) };
+    // Special case: When processing the 3rd u64 word (index 2), we need to mask
+    // the non-name bytes (d_type and padding) to avoid false null detection.
+    // The 0x00FF_FFFF mask preserves only the 3 bytes where the name could start.
+    // Branchless masking: avoids branching by using a mask that is either 0 or 0x00FF_FFFF
+    unsafe{std::hint::assert_unchecked(reclen % 8 ==0 && reclen >=24 )}; //tell the compiler is a multiple of 8 and within bounds
+    //this is safe because the kernel guarantees the above.
+    //............................//special case short name check
+    let mask = 0x00FF_FFFFu64 * ((reclen ==24) as u64); // (multiply by 0 or 1)
+    // The mask is applied to the last word to isolate the relevant bytes.
+    // The last word is masked to isolate the relevant bytes,
+    //we're bit manipulating the last word (a byte/u64) to find the first null byte
+    //this boils to a complexity of strlen over 8 bytes, which we then accomplish with a bit trick
+    // The mask is applied to the last word to isolate the relevant bytes.
+    // The last word is masked to isolate the relevant bytes, and then we find the first zero byte.
+    let candidate_pos = last_word | mask;
+    // The resulting value (`candidate_pos`) has:
+    // - Original name bytes preserved
+    // - Non-name bytes forced to 0xFF (guaranteed non-zero)
+    // - Maintains the exact position of any null bytes in the name
+    let zero_bit = candidate_pos.wrapping_sub(0x0101_0101_0101_0101)// 0x0101_0101_0101_0101 -> underflows the high bit if a byte is zero
+        & !candidate_pos//ensures only bytes that were zero retain the underflowed high bit.
+        & 0x8080_8080_8080_8080; //  0x8080_8080_8080_8080 -->This masks out the high bit of each byte, so we can find the first zero byte
+    // The trailing zeros of the zero_bit gives us the position of the first zero byte.
+    // We divide by 8 to convert the bit position to a byte position..
+    // We subtract 7 to get the correct offset in the d_name field.
+    //>> 3 converts from bit position to byte index (divides by 8)
+    
+
+    reclen  - DIRENT_HEADER_START - (7 - (zero_bit.trailing_zeros() >> 3) as usize)
 }
