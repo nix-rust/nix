@@ -305,7 +305,7 @@ impl Entry {
      #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     ///PLEASE REMOVE THESE COMMENTS (OBVIOUSLY WHEN DONE))
     /// This utilises a constant-time constant function strlen implementation that's faster than `libc::strlen`` (std library internal implementation)
-    /// The function used is described at the bottom of the file. Benchmarks at 
+    /// The function used is described at the bottom of the file.
     pub  const fn file_name(&self) -> &ffi::CStr {
         let str_length = unsafe { dirent_const_time_strlen(&self.0)+1 };
         unsafe{
