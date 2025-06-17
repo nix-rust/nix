@@ -396,7 +396,7 @@ jobs:
             uname -a
           run: |
             export PATH=$HOME/.rust_solaris/bin:$PATH
-            cargo build --target x86_64-pc-solaris --all-targets --all-features && sudo cargo test
+            cargo build --target x86_64-pc-solaris --all-targets --all-features && sudo env PATH=$PATH cargo test
 
   # Test that we can build with the lowest version of all dependencies.
   # "cargo test" doesn't work because some of our dev-dependencies, like
