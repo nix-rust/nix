@@ -382,7 +382,7 @@ pub const unsafe fn dirent_const_time_strlen(dirent: *const libc::dirent64) -> u
     let reclen = unsafe { (*dirent).d_reclen as usize}; 
     //find the record-length
     // THIS WILL ONLY WORK ON LITTLE-ENDIAN ARCHITECTURES, I CANT BE BOTHERED TO FIGURE THAT OUT, qemu isnt fun
-    // Calculate the  start of the d_name field
+    // Calculate the  start of the d_name field (the final word)
     let last_word = unsafe { *((dirent as *const u8).add(reclen - 8) as *const u64) };
     // Special case: When processing the 3rd u64 word (index 2), we need to mask
     // the non-name bytes (d_type and padding) to avoid false null detection.
