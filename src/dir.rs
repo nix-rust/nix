@@ -301,7 +301,7 @@ impl Entry {
 
 
     /// Returns the bare file name of this directory entry without any other leading path component.
-    /// 
+    /// (I had to split the functions because one is const and one isn't, you can probably hack around that with a macro.
      #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     ///PLEASE REMOVE THESE COMMENTS (OBVIOUSLY WHEN DONE))
     /// This utilises a constant-time constant function strlen implementation that's faster than `libc::strlen`` (std library internal implementation)
@@ -311,11 +311,8 @@ impl Entry {
         unsafe{
             //we need to transmute here because we're trying to match the original type of this implementation to not break it
             std::mem::transmute(&*std::ptr::slice_from_raw_parts(self.0.d_name.as_ptr() as  *const u8, str_length))
-
-
-        //unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
+        }
     }
-}
 
     #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
     pub fn file_name(&self) -> &ffi::CStr {
