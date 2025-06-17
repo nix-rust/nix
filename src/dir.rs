@@ -302,7 +302,7 @@ impl Entry {
 
     /// Returns the bare file name of this directory entry without any other leading path component.
     /// 
-    #[cfg(target_arch = "x86_64")]//this specific change only tested on very limited systems, I'm unaware of any other systems that have this issue
+     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     ///PLEASE REMOVE THESE COMMENTS (OBVIOUSLY WHEN DONE))
     /// This utilises a constant-time constant function strlen implementation that's faster than `libc::strlen`` (std library internal implementation)
     /// The function used is described at the bottom of the file. Benchmarks at 
@@ -317,7 +317,7 @@ impl Entry {
     }
 }
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
     pub fn file_name(&self) -> &ffi::CStr {
         unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
     }
