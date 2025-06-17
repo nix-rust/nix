@@ -178,7 +178,7 @@ impl Termios {
     ///
     /// This is not part of `nix`'s public API because it requires additional work to maintain type
     /// safety.
-    pub(crate) fn get_libc_termios(&self) -> Ref<libc::termios> {
+    pub(crate) fn get_libc_termios(&self) -> Ref<'_, libc::termios> {
         {
             let mut termios = self.inner.borrow_mut();
             termios.c_iflag = self.input_flags.bits();
