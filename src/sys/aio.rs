@@ -314,7 +314,7 @@ pub trait Aio {
     fn error(self: Pin<&mut Self>) -> Result<()>;
 
     /// Returns the underlying file descriptor associated with the operation.
-    fn fd(&self) -> BorrowedFd;
+    fn fd(&self) -> BorrowedFd<'_>;
 
     /// Does this operation currently have any in-kernel state?
     ///
