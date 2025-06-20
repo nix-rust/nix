@@ -358,8 +358,8 @@ mod sched_priority {
                 sched_priority: param.sched_priority,
             }
         }
-
     }
+
     impl From<libc::sched_param> for SchedParam {
         fn from(param: libc::sched_param) -> Self {
             SchedParam {
