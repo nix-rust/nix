@@ -119,7 +119,7 @@ impl Dir {
     }
 
     /// Returns an iterator of `Result<Entry>` which rewinds when finished.
-    pub fn iter(&mut self) -> Iter {
+    pub fn iter(&mut self) -> Iter<'_> {
         Iter(self)
     }
 }
@@ -133,7 +133,7 @@ impl Dir {
 unsafe impl Send for Dir {}
 
 impl std::os::fd::AsFd for Dir {
-    fn as_fd(&self) -> std::os::fd::BorrowedFd {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd<'_> {
         let raw_fd = self.as_raw_fd();
 
         // SAFETY:
