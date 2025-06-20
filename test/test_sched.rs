@@ -75,7 +75,7 @@ fn test_sched_priority() {
             );
         }
         Err(e) => {
-            panic!("unexpected error: {}", e);
+            panic!("unexpected error: {e}");
         }
     }
 }
