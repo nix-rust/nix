@@ -73,6 +73,10 @@ fn test_sched_priority() {
                 sched_getscheduler(pid).unwrap(),
                 Scheduler::SCHED_NORMAL
             );
+            assert_eq!(
+                sched_getparam(pid).unwrap().sched_priority,
+                0
+            );
         }
         Err(e) => {
             panic!("unexpected error: {e}");

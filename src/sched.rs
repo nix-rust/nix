@@ -316,7 +316,7 @@ mod sched_affinity {
     }
 }
 
-// musl has additional sched_param fields that we don't support yet
+// musl & ohos have additional sched_param fields that we don't support yet
 #[cfg(all(
     linux_android,
     not(target_env = "musl"),
@@ -335,8 +335,8 @@ mod sched_priority {
 
     #[repr(C)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    /// Schedule parameters for a thread (currently only priority is supported).
-    /// This is a wrapper around `libc::sched_param`
+    /// Schedule parameters for a thread. Priority is the only supported parameter by the kernel
+    /// at the moment. This is a wrapper around `libc::sched_param`
     pub struct SchedParam {
         /// Priority of the current schedule.
         pub sched_priority: libc::c_int,
@@ -359,22 +359,6 @@ mod sched_priority {
             }
         }
 
-        // #[cfg(any(target_env = "musl", target_env = "ohos"))]
-        // fn from(param: SchedParam) -> Self {
-        //     // note: non-priority values are dummy values used by deadline scheduler,
-        //     // don't use this abstraction if you're using deadline.
-        //     let zero_ts = libc::timespec {
-        //         tv_sec: 0,
-        //         tv_nsec: 0,
-        //     };
-        //     libc::sched_param {
-        //         sched_priority: param.sched_priority,
-        //         sched_ss_low_priority: 0,
-        //         sched_ss_repl_period: zero_ts.clone(),
-        //         sched_ss_init_budget: zero_ts,
-        //         sched_ss_max_repl: 0,
-        //     }
-        // }
     }
     impl From<libc::sched_param> for SchedParam {
         fn from(param: libc::sched_param) -> Self {
@@ -393,10 +377,10 @@ mod sched_priority {
             /// The default scheduler on non-realtime linux - also known as SCHED_OTHER.
             SCHED_NORMAL,
             /// The realtime FIFO scheduler. All FIFO threads have priority higher than 0 and
-            /// preempt SCHED_OTHER threads. Threads are executed in priority order, using
+            /// preempt SCHED_NORMAL threads. Threads are executed in priority order, using
             /// first-in-first-out lists to handle two threads with the same priority.
             SCHED_FIFO,
-            /// Round-robin scheduler
+            /// Round-robin scheduler, similar to SCHED_FIFO but with a time quantum.
             SCHED_RR,
             /// Batch scheduler, similar to SCHED_OTHER but assumes the thread is CPU intensive.
             /// The kernel applies a mild penalty to switching to this thread.
@@ -441,7 +425,7 @@ mod sched_priority {
     ///
     /// SCHED_FIFO and SCHED_RR allow priorities between the min and max inclusive.
     ///
-    /// SCHED_DEADLINE cannot be set with this function, libc::sched_setattr must be used instead.
+    /// SCHED_DEADLINE cannot be set with this function, `libc::sched_setattr` must be used instead.
     pub fn sched_setscheduler(
         pid: Pid,
         sched: Scheduler,
