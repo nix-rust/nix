@@ -149,6 +149,7 @@ libc_enum! {
         /// An alias for RLIMIT_AS.
         RLIMIT_VMEM,
     }
+    impl TryFrom<i32>
 }
 
 /// Get the current processes resource limits
