@@ -26,6 +26,25 @@ cfg_if! {
     }
 }
 
+cfg_if! {
+    if #[cfg(any(
+            all(
+                target_os = "linux", any(target_env = "gnu", target_env = "uclibc")
+            ),
+            target_os = "hurd"
+    ))] {
+        type resource_repr_t = u32;
+    } else if #[cfg(any(
+        bsd,
+        target_os = "android",
+        target_os = "aix",
+        all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc"))),
+        target_os = "cygwin"
+    ))] {
+        type resource_repr_t = i32;
+    }
+}
+
 libc_enum! {
     /// Types of process resources.
     ///
@@ -149,7 +168,7 @@ libc_enum! {
         /// An alias for RLIMIT_AS.
         RLIMIT_VMEM,
     }
-    impl TryFrom<i32>
+    impl TryFrom<resource_repr_t>
 }
 
 /// Get the current processes resource limits
