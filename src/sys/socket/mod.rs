@@ -725,19 +725,43 @@ impl Iterator for CmsgIterator<'_> {
     type Item = ControlMessageOwned;
 
     fn next(&mut self) -> Option<ControlMessageOwned> {
-        match self.cmsghdr {
+        match self.next_raw() {
             None => None,   // No more messages
-            Some(hdr) => {
+            Some((hdr, _)) => {
                 // Get the data.
                 // Safe if cmsghdr points to valid data returned by recvmsg(2)
-                let cm = unsafe { Some(ControlMessageOwned::decode_from(hdr))};
+                unsafe { Some(ControlMessageOwned::decode_from(hdr))}
+            }
+        }
+    }
+}
+
+impl CmsgIterator<'_> {
+    pub fn next_raw(&mut self) -> Option<(&cmsghdr, &[u8])> {
+        match self.cmsghdr {
+            None => None,   // No more messages
+            Some(header) => {
+                // Get the data.
+                let p = unsafe { CMSG_DATA(header) };
+
+                // Determine the length of the control message data
+                // The cast is not unnecessary on all platforms.
+                #[allow(clippy::unnecessary_cast)]
+                let len = header as *const _ as usize + header.cmsg_len as usize
+                    - p as usize;
+
+                // Read the value as a slice (This slice is the same one that ControlMessageOwned::Unknown copies)
+                let value = unsafe { core::slice::from_raw_parts(p, len) };
+
                 // Advance the internal pointer.  Safe if mhdr and cmsghdr point
                 // to valid data returned by recvmsg(2)
                 self.cmsghdr = unsafe {
-                    let p = CMSG_NXTHDR(self.mhdr as *const _, hdr as *const _);
+                    let p = CMSG_NXTHDR(self.mhdr as *const _, header as *const _);
                     p.as_ref()
                 };
-                cm
+
+                // Return the header and data
+                Some((header, value))
             }
         }
     }
