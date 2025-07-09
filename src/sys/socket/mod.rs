@@ -725,14 +725,8 @@ impl Iterator for CmsgIterator<'_> {
     type Item = ControlMessageOwned;
 
     fn next(&mut self) -> Option<ControlMessageOwned> {
-        match self.next_raw() {
-            None => None,   // No more messages
-            Some((hdr, _)) => {
-                // Get the data.
-                // Safe if cmsghdr points to valid data returned by recvmsg(2)
-                unsafe { Some(ControlMessageOwned::decode_from(hdr))}
-            }
-        }
+        // Safe if cmsghdr points to valid data returned by recvmsg(2)
+        self.next_raw().map(|(hdr, _)| unsafe { ControlMessageOwned::decode_from(hdr) })
     }
 }
 
