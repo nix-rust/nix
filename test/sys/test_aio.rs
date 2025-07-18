@@ -70,15 +70,11 @@ mod aio_fsync {
     #[test]
     #[cfg_attr(any(target_os = "android", target_os = "linux"), ignore)]
     fn error() {
-        use std::mem;
-
-        const INITIAL: &[u8] = b"abcdef123456";
-        // Create an invalid AioFsyncMode
-        let mode = unsafe { mem::transmute::<i32, AioFsyncMode>(666) };
-        let mut f = tempfile().unwrap();
-        f.write_all(INITIAL).unwrap();
+        let mode = AioFsyncMode::O_SYNC;
+        // Operate on an invalid file descriptor.  Should get EBADF
+        let fd = unsafe { BorrowedFd::borrow_raw(i32::MAX) };
         let mut aiof =
-            Box::pin(AioFsync::new(f.as_fd(), mode, 0, SigevNotify::SigevNone));
+            Box::pin(AioFsync::new(fd, mode, 0, SigevNotify::SigevNone));
         let err = aiof.as_mut().submit();
         err.expect_err("assertion failed");
     }
