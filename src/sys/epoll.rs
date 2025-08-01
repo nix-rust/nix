@@ -62,7 +62,7 @@ impl EpollEvent {
         unsafe { mem::zeroed::<EpollEvent>() }
     }
 
-    pub const fn events(&self) -> EpollFlags {
+    pub fn events(&self) -> EpollFlags {
         EpollFlags::from_bits(self.event.events as c_int).unwrap()
     }
 
