@@ -929,7 +929,7 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 ///
 /// # Errors
 ///
-/// Returns [`Error(Errno::EOPNOTSUPP)`] if `handler` is
+/// Returns [`Errno::ENOTSUP`] if `handler` is
 /// [`SigAction`][SigActionStruct]. Use [`sigaction`][SigActionFn] instead.
 ///
 /// `signal` also returns any error from `libc::signal`, such as when an attempt
