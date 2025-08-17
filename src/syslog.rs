@@ -17,7 +17,7 @@ use std::ptr;
 // if the string it points to is changed, syslog() may start prepending the changed
 // string, and if the string it points to ceases to exist, the results are
 // undefined.  Most portable is to use a string constant.
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "redox"))]
 pub fn openlog(
     ident: Option<&'static std::ffi::CStr>,
     logopt: LogFlags,
@@ -215,7 +215,7 @@ libc_bitflags! {
         /// which file descriptors are allocated.
         LOG_NDELAY;
         /// Write the message to standard error output as well to the system log.
-        #[cfg(not(any(solarish, target_os = "redox", target_os = "cygwin")))]
+        #[cfg(not(any(solarish, target_os = "cygwin")))]
         LOG_PERROR;
     }
 }
