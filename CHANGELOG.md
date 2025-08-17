@@ -469,6 +469,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Added `mq_timedreceive` to `::nix::mqueue`.
   ([#1966])(https://github.com/nix-rust/nix/pull/1966)
 - Added `LocalPeerPid` to `nix::sys::socket::sockopt` for macOS. ([#1967](https://github.com/nix-rust/nix/pull/1967))
+- Added `IpAddSourceMembership`, `IpDropSourceMembership` to `nix::sys::socket::sockopt` on all platforms except Fuchsia, Haiku, NetBSD, OpenBSD.
+  ([#2008])(https://github.com/nix-rust/nix/pull/2008)
 - Added `TFD_TIMER_CANCEL_ON_SET` to `::nix::sys::time::TimerSetTimeFlags` on Linux and Android.
   ([#2040](https://github.com/nix-rust/nix/pull/2040))
 - Added `SOF_TIMESTAMPING_OPT_ID` and `SOF_TIMESTAMPING_OPT_TSONLY` to `nix::sys::socket::TimestampingFlag`.
