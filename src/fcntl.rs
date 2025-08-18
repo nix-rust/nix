@@ -444,22 +444,24 @@ pub fn renameat<P1: ?Sized + NixPath, P2: ?Sized + NixPath, Fd1: std::os::fd::As
 }
 }
 
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg(target_os = "linux")]
 #[cfg(feature = "fs")]
-libc_bitflags! {
+bitflags::bitflags! {
     /// Flags for use with [`renameat2`].
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
+    #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[repr(transparent)]
     pub struct RenameFlags: u32 {
         /// Atomically exchange `old_path` and `new_path`.
-        RENAME_EXCHANGE;
+        const RENAME_EXCHANGE = 1 << 1;
         /// Don't overwrite `new_path` of the rename.  Return an error if `new_path` already
         /// exists.
-        RENAME_NOREPLACE;
+        const RENAME_NOREPLACE = 1 << 0;
         /// creates a "whiteout" object at the source of the rename at the same time as performing
         /// the rename.
         ///
         /// This operation makes sense only for overlay/union filesystem implementations.
-        RENAME_WHITEOUT;
+        const RENAME_WHITEOUT = 1 << 2;
     }
 }
 
@@ -471,7 +473,7 @@ feature! {
 ///
 /// # See Also
 /// * [`rename`](https://man7.org/linux/man-pages/man2/rename.2.html)
-#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[cfg(target_os = "linux")]
 pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath, Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd>(
     old_dirfd: Fd1,
     old_path: &P1,
@@ -483,7 +485,10 @@ pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath, Fd1: std::os::fd::A
 
     let res = old_path.with_nix_path(|old_cstr| {
         new_path.with_nix_path(|new_cstr| unsafe {
-            libc::renameat2(
+            // Use raw syscall instead of libc::renameat2 to support musl libc and other
+            // environments where the libc function may not be available.
+            libc::syscall(
+                libc::SYS_renameat2,
                 old_dirfd.as_fd().as_raw_fd(),
                 old_cstr.as_ptr(),
                 new_dirfd.as_fd().as_raw_fd(),
@@ -492,7 +497,7 @@ pub fn renameat2<P1: ?Sized + NixPath, P2: ?Sized + NixPath, Fd1: std::os::fd::A
             )
         })
     })??;
-    Errno::result(res).map(drop)
+    Errno::result(res as c_int).map(drop)
 }
 
 fn wrap_readlink_result(mut v: Vec<u8>, len: ssize_t) -> Result<OsString> {

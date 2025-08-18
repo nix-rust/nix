@@ -8,15 +8,7 @@ use nix::fcntl::{openat, readlinkat, renameat};
 #[cfg(target_os = "linux")]
 use nix::fcntl::{openat2, OpenHow, ResolveFlag};
 
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-    any(
-        target_arch = "x86_64",
-        target_arch = "powerpc",
-        target_arch = "s390x"
-    )
-))]
+#[cfg(target_os = "linux")]
 use nix::fcntl::{renameat2, RenameFlags};
 #[cfg(not(target_os = "redox"))]
 use nix::sys::stat::Mode;
@@ -132,15 +124,7 @@ fn test_renameat() {
 }
 
 #[test]
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-    any(
-        target_arch = "x86_64",
-        target_arch = "powerpc",
-        target_arch = "s390x"
-    )
-))]
+#[cfg(target_os = "linux")]
 fn test_renameat2_behaves_like_renameat_with_no_flags() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -161,15 +145,7 @@ fn test_renameat2_behaves_like_renameat_with_no_flags() {
 }
 
 #[test]
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-    any(
-        target_arch = "x86_64",
-        target_arch = "powerpc",
-        target_arch = "s390x"
-    )
-))]
+#[cfg(target_os = "linux")]
 fn test_renameat2_exchange() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
@@ -206,15 +182,7 @@ fn test_renameat2_exchange() {
 }
 
 #[test]
-#[cfg(all(
-    target_os = "linux",
-    target_env = "gnu",
-    any(
-        target_arch = "x86_64",
-        target_arch = "powerpc",
-        target_arch = "s390x"
-    )
-))]
+#[cfg(target_os = "linux")]
 fn test_renameat2_noreplace() {
     let old_dir = tempfile::tempdir().unwrap();
     let old_dirfd =
