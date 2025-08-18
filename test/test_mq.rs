@@ -4,6 +4,7 @@ use std::str;
 use nix::errno::Errno;
 use nix::mqueue::{
     mq_attr_member_t, mq_close, mq_open, mq_receive, mq_send, mq_timedreceive,
+    mq_timedsend, mq_unlink,
 };
 use nix::mqueue::{MQ_OFlag, MqAttr};
 use nix::sys::stat::Mode;
@@ -87,6 +88,68 @@ fn test_mq_timedreceive() {
     mq_close(mqd1).unwrap();
     mq_close(mqd0).unwrap();
     assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
+}
+
+#[test]
+fn test_mq_timedsend() {
+    const MSG_SIZE: mq_attr_member_t = 32;
+    let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = "/a_nix_test_queue_timedsend";
+
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r0 = mq_open(mq_name, oflag0, mode, Some(&attr));
+    if let Err(Errno::ENOSYS) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd0 = r0.unwrap();
+    let msg_to_send = "msg_1";
+    let abstime =
+        clock_gettime(ClockId::CLOCK_REALTIME).unwrap() + TimeSpec::seconds(1);
+    mq_timedsend(&mqd0, msg_to_send.as_bytes(), 1, &abstime).unwrap();
+
+    let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+    let mqd1 = mq_open(mq_name, oflag1, mode, Some(&attr)).unwrap();
+    let mut buf = [0u8; 32];
+    let mut prio = 0u32;
+    let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
+    assert_eq!(prio, 1);
+
+    mq_close(mqd1).unwrap();
+    mq_close(mqd0).unwrap();
+    assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
+    mq_unlink(mq_name).unwrap();
+}
+
+#[test]
+fn test_mq_timedsend_full() {
+    const MSG_SIZE: mq_attr_member_t = 32;
+    let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = "/a_nix_test_queue_fill";
+
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY | MQ_OFlag::O_CLOEXEC;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r0 = mq_open(mq_name, oflag0, mode, Some(&attr));
+    if let Err(Errno::ENOSYS) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd0 = r0.unwrap();
+    let msg_to_send = "msg_1";
+    for _i in 0..10 {
+        mq_send(&mqd0, msg_to_send.as_bytes(), 1).unwrap();
+    }
+
+    let abstime =
+        clock_gettime(ClockId::CLOCK_REALTIME).unwrap() + TimeSpec::seconds(1);
+    assert_eq!(
+        mq_timedsend(&mqd0, msg_to_send.as_bytes(), 1, &abstime),
+        Err(Errno::ETIMEDOUT)
+    );
+
+    mq_close(mqd0).unwrap();
+    mq_unlink(mq_name).unwrap();
 }
 
 #[test]
