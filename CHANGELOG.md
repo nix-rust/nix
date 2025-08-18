@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [0.30.1] - 2025-05-04
 
+
+### Added
+
+- Add `TryFrom` trait implementation between `i32`/`u32` and `Resource`
+  ([#2645](https://github.com/nix-rust/nix/pull/2645))
+
 ### Fixed
 
 - doc.rs build
