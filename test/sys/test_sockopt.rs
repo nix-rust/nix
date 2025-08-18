@@ -1270,3 +1270,34 @@ pub fn test_so_attach_reuseport_cbpf() {
         assert_eq!(e, nix::errno::Errno::ENOPROTOOPT);
     });
 }
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+#[test]
+pub fn test_set_get_ip_mtu_discover() {
+    use sockopt::{IpMtuDiscover, Ipv4MtuDiscover};
+
+    let values = [
+        IpMtuDiscover::Dont,
+        IpMtuDiscover::Want,
+        IpMtuDiscover::Do,
+        IpMtuDiscover::Probe,
+        #[cfg(linux_android)]
+        IpMtuDiscover::Interface,
+        #[cfg(linux_android)]
+        IpMtuDiscover::Omit,
+    ];
+
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    for value in values {
+        setsockopt(&fd, Ipv4MtuDiscover, &value).unwrap();
+        let v = getsockopt(&fd, Ipv4MtuDiscover).unwrap();
+        assert_eq!(v, value);
+    }
+}

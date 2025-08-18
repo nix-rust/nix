@@ -1574,6 +1574,85 @@ impl SetSockOpt for FilterDetach {
         }
     }
 }
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+/// "Path MTU Discovery" setting for an IPv4/IPv6 socket.
+pub enum IpMtuDiscover {
+    /// Never do Path MTU Discovery.
+    Dont,
+    /// Use per-route settings.
+    Want,
+    /// Always do Path MTU Discovery.
+    Do,
+    /// Set DF but ignore Path MTU.
+    Probe,
+    #[cfg(linux_android)]
+    /// Always use interface MTU (ignores dst PMTU) but don't set DF flag.
+    /// Also incoming ICMP frag_needed notifications will be ignored on
+    /// this socket to prevent accepting spoofed ones.
+    Interface,
+    #[cfg(linux_android)]
+    /// Weaker version of `Interface`, which allows packets to get
+    /// fragmented if they exceed the interface MTU.
+    Omit,
+}
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+impl From<IpMtuDiscover> for c_int {
+    fn from(value: IpMtuDiscover) -> Self {
+        match value {
+            IpMtuDiscover::Dont => libc::IP_PMTUDISC_DONT,
+            IpMtuDiscover::Want => libc::IP_PMTUDISC_WANT,
+            IpMtuDiscover::Do => libc::IP_PMTUDISC_DO,
+            IpMtuDiscover::Probe => libc::IP_PMTUDISC_PROBE,
+            #[cfg(linux_android)]
+            IpMtuDiscover::Interface => libc::IP_PMTUDISC_INTERFACE,
+            #[cfg(linux_android)]
+            IpMtuDiscover::Omit => libc::IP_PMTUDISC_OMIT,
+        }
+    }
+}
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+impl TryFrom<c_int> for IpMtuDiscover {
+    type Error = ();
+
+    fn try_from(value: c_int) -> std::result::Result<Self, Self::Error> {
+        match value {
+            libc::IP_PMTUDISC_DONT => Ok(IpMtuDiscover::Dont),
+            libc::IP_PMTUDISC_WANT => Ok(IpMtuDiscover::Want),
+            libc::IP_PMTUDISC_DO => Ok(IpMtuDiscover::Do),
+            libc::IP_PMTUDISC_PROBE => Ok(IpMtuDiscover::Probe),
+            #[cfg(linux_android)]
+            libc::IP_PMTUDISC_INTERFACE => Ok(IpMtuDiscover::Interface),
+            #[cfg(linux_android)]
+            libc::IP_PMTUDISC_OMIT => Ok(IpMtuDiscover::Omit),
+            _ => Err(()),
+        }
+    }
+}
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+sockopt_impl!(
+    /// Set or get the "Path MTU Discovery" setting for an IPv4 socket.
+    Ipv4MtuDiscover,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_MTU_DISCOVER,
+    IpMtuDiscover
+);
+
+#[cfg(any(linux_android, target_os = "cygwin"))]
+sockopt_impl!(
+    /// Set or get the "Path MTU Discovery" setting for an IPv6 socket.
+    Ipv6MtuDiscover,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IP_MTU_DISCOVER,
+    IpMtuDiscover
+);
+
 /*
  *
  * ===== Accessor helpers =====
