@@ -1120,7 +1120,7 @@ sockopt_impl!(
     libc::IP_ORIGDSTADDR,
     bool
 );
-#[cfg(target_os = "linux")]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1132,7 +1132,7 @@ sockopt_impl!(
     libc::UDP_SEGMENT,
     libc::c_int
 );
-#[cfg(target_os = "linux")]
+#[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]

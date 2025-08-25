@@ -111,7 +111,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(target_os = "linux")] {
+    if #[cfg(linux_android)] {
         #[macro_export] macro_rules! require_kernel_version {
             ($name:expr, $version_requirement:expr) => {
                 use semver::{Version, VersionReq};
