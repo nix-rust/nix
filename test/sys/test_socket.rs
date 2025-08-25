@@ -462,7 +462,7 @@ mod recvfrom {
         assert_eq!(AddressFamily::Inet, from.unwrap().family().unwrap());
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(linux_android)]
     mod udp_offload {
         use super::*;
         use nix::sys::socket::sockopt::{UdpGroSegment, UdpGsoSegment};
