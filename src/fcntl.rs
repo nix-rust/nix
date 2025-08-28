@@ -171,10 +171,9 @@ libc_bitflags!(
         #[cfg(linux_android)]
         O_NOATIME;
         /// Don't attach the device as the process' controlling terminal.
-        #[cfg(not(target_os = "redox"))]
         O_NOCTTY;
         /// Same as `O_NONBLOCK`.
-        #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "cygwin")))]
+        #[cfg(not(any(target_os = "haiku", target_os = "cygwin")))]
         O_NDELAY;
         /// `open()` will fail if the given path is a symbolic link.
         O_NOFOLLOW;
