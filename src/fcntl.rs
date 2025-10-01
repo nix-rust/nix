@@ -1038,6 +1038,7 @@ pub unsafe trait Flockable: std::os::fd::AsRawFd {}
 pub struct Flock<T: Flockable>(T);
 
 #[cfg(not(any(target_os = "redox", target_os = "solaris")))]
+#[allow(clippy::unnecessary_unwrap)] // https://github.com/rust-lang/rust-clippy/issues/15744
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
         let res = Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) });
