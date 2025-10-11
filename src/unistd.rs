@@ -1815,6 +1815,26 @@ pub fn setgid(gid: Gid) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
+/// Set the real/effective group ID
+///
+/// See also [setregid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setregid.html)
+#[inline]
+pub fn setregid(rgid: Gid, egid: Gid) -> Result<()> {
+    let res = unsafe { libc::setregid(rgid.into(), egid.into()) };
+
+    Errno::result(res).map(drop)
+}
+
+/// Set the real/effective user ID
+///
+/// See also [setreuid(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/setreuid.html)
+#[inline]
+pub fn setreuid(ruid: Uid, euid: Uid) -> Result<()> {
+    let res = unsafe { libc::setreuid(ruid.into(), euid.into()) };
+
+    Errno::result(res).map(drop)
+}
 }
 
 feature! {
