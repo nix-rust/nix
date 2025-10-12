@@ -14,10 +14,6 @@ permissions:
 
 env: 
   MSRV: 1.69.0
-  # Rust's Loongarch support merged in 1.71.0
-  MSRV_LOONGARCH: 1.71.0
-  # Minimal Rust version to support all 3 official OpenHarmony targets as tier2
-  MSRV_OHOS: 1.78.0 
   RUSTFLAGS: -Dwarnings
 
 jobs:
@@ -32,7 +28,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+          toolchain: stable
           components: clippy
 
       - name: build
@@ -59,7 +55,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+          toolchain: stable
           components: clippy
 
       - name: build
@@ -79,7 +75,7 @@ jobs:
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
     runs-on: ubuntu-24.04
-    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds]
     strategy:
       fail-fast: false
       matrix:
@@ -108,8 +104,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          # Use a newer version rustc if the target is Loongarch, remove this workaround after MSRV is newer than 1.71.0
-          toolchain: "${{ matrix.target == 'loongarch64-unknown-linux-gnu' && env.MSRV_LOONGARCH || env.MSRV }}"
+          toolchain: stable
           components: clippy
 
       # cross relies on docker or podman, GitHub Acton already has it installed.
@@ -156,7 +151,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+          toolchain: stable
           components: clippy
 
       - name: install targets
@@ -193,7 +188,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-          toolchain: '${{ env.MSRV }}'
+          toolchain: stable
           components: clippy
 
       - name: install targets
@@ -212,38 +207,11 @@ jobs:
       - name: before_cache_script
         run: sudo rm -rf $CARGO_HOME/registry/index;
 
-  rust_stable:
-    runs-on: ubuntu-latest
-    env: 
-      TARGET: x86_64-unknown-linux-gnu
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
-      - name: setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with: 
-          components: clippy
-
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          TARGET: '${{ env.TARGET }}'
-
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          TARGET: '${{ env.TARGET }}'
-
-      - name: before_cache_script
-        run: sudo rm -rf $CARGO_HOME/registry/index
-
-
 
   # Tasks for cross-compiling, but no testing
   cross_compiling:
     runs-on: ubuntu-latest
-    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds]
     env:
       BUILD: check
     strategy:
@@ -282,8 +250,7 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@master
         with: 
-           # Use a newer version rustc if it is OpenHarmony, remove this workaround after MSRV is newer than 1.78.0 
-          toolchain: "${{ contains(matrix.target, 'ohos')  && env.MSRV_OHOS || env.MSRV }}" 
+          toolchain: stable
           components: clippy
 
       - name: install targets
@@ -299,10 +266,54 @@ jobs:
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
 
+  # Check that Nix will build on the MSRV, on a variety of operating systems.
+  # But don't check the tests.  Those are not required to build on MSRV.
+  msrv:
+    runs-on: ubuntu-latest
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds]
+    env:
+      BUILD: check
+      NOCLIPPY: true
+      NODOC: true
+      NOHACK: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-linux-android
+          - target: x86_64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-musl
+          - target: aarch64-apple-darwin
+          - target: x86_64-unknown-freebsd
+          - target: x86_64-unknown-netbsd
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with: 
+          toolchain: $MSRV
+
+      - name: install targets
+        run: rustup target add ${{ matrix.target }}
+
+      - name: build
+        uses: ./.github/actions/build
+        with:
+          TARGET: '${{ matrix.target }}'
+          BUILD: '${{ env.BUILD }}'
+          NOCLIPPY: '${{ matrix.NOCLIPPY  }}'
+          NODOC: '${{ matrix.NODOC  }}'
+          NOHACK: '${{ matrix.NOHACK  }}'
+
+      - name: before_cache_script
+        run: rm -rf $CARGO_HOME/registry/index
+
 
   redox:
     runs-on: ubuntu-latest
-    needs: [rustfmt, minver, macos, x86_64_linux_native_builds, rust_stable]
+    needs: [rustfmt, minver, macos, x86_64_linux_native_builds]
     env: 
       TARGET: x86_64-unknown-redox
       CLIPPYFLAGS: -D warnings

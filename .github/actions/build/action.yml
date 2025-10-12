@@ -30,6 +30,16 @@ inputs:
     required: false
     default: 
 
+  NOCLIPPY:
+    description: "whether to run cargo clippy"
+    required: false
+    default: false
+
+  NODOC:
+    description: "whether to run cargo doc"
+    required: false
+    default: false
+
   NOHACK:
     description: "whether to run cargo hack"
     required: false
@@ -55,10 +65,12 @@ runs:
       run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features  
 
     - name: doc
+      if: inputs.NODOC == 'false'
       shell: bash
       run: ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
 
     - name: clippy
+      if: inputs.NOCLIPPY == 'false'
       shell: bash
       run: ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
 
