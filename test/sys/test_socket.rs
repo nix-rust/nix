@@ -1859,7 +1859,21 @@ pub fn test_recv_ipv4pktinfo() {
     bind(receive.as_raw_fd(), &lo).expect("bind failed");
     let sa: SockaddrIn =
         getsockname(receive.as_raw_fd()).expect("getsockname failed");
-    setsockopt(&receive, Ipv4PacketInfo, &true).expect("setsockopt failed");
+    cfg_if! {
+        if #[cfg(target_os = "netbsd")] {
+            let pi = libc::in_pktinfo {
+                ipi_ifindex: 0,
+                ipi_addr: libc::in_addr { s_addr: 0 },
+            };
+        } else {
+            let pi = libc::in_pktinfo {
+                ipi_ifindex: 0,
+                ipi_addr: libc::in_addr { s_addr: 0 },
+                ipi_spec_dst: libc::in_addr { s_addr: 0 },
+            };
+        }
+    }
+    setsockopt(&receive, Ipv4PacketInfo, &pi).expect("setsockopt failed");
 
     {
         let slice = [1u8, 2, 3, 4, 5, 6, 7, 8];
