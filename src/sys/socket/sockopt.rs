@@ -1052,12 +1052,12 @@ sockopt_impl!(
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Pass an `IP_PKTINFO` ancillary message that contains a pktinfo
-    /// structure that supplies some information about the incoming packet.
+    /// structure that supplies some information about the outgoing packet.
     Ipv4PacketInfo,
     Both,
     libc::IPPROTO_IP,
     libc::IP_PKTINFO,
-    bool
+    libc::in_pktinfo
 );
 #[cfg(any(linux_android, bsd))]
 #[cfg(feature = "net")]
@@ -1077,12 +1077,12 @@ sockopt_impl!(
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Pass an `IPV6_PKTINFO` ancillary message that contains a in6_pktinfo
-    /// structure that supplies some information about the incoming packet.
+    /// structure that supplies some information about the outgoing packet.
     Ipv6PacketInfo,
     Both,
     libc::IPPROTO_IPV6,
     libc::IPV6_PKTINFO,
-    bool
+    libc::in6_pktinfo
 );
 #[cfg(bsd)]
 #[cfg(feature = "net")]
