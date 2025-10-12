@@ -21,6 +21,11 @@ inputs:
     required: false
     default: -D warnings
 
+  TARGETS:
+    description: 'Build all targets or only default?'
+    required: false
+    default: "--all-targets"
+
   TOOL: 
     description: 'Tool used to involve the BUILD command, can be cargo or cross'
     required: false
@@ -62,7 +67,7 @@ runs:
 
     - name: build
       shell: bash
-      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features  
+      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} ${{ inputs.TARGETS }} --all-features
 
     - name: doc
       if: inputs.NODOC == 'false'

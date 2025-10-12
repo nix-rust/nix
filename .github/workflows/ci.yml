@@ -276,6 +276,7 @@ jobs:
       NOCLIPPY: true
       NODOC: true
       NOHACK: true
+      TARGETS: ""
     strategy:
       fail-fast: false
       matrix:
@@ -302,10 +303,11 @@ jobs:
         uses: ./.github/actions/build
         with:
           TARGET: '${{ matrix.target }}'
+          TARGETS: '${{ env.TARGETS }}'
           BUILD: '${{ env.BUILD }}'
-          NOCLIPPY: '${{ matrix.NOCLIPPY  }}'
-          NODOC: '${{ matrix.NODOC  }}'
-          NOHACK: '${{ matrix.NOHACK  }}'
+          NOCLIPPY: '${{ env.NOCLIPPY  }}'
+          NODOC: '${{ env.NODOC  }}'
+          NOHACK: '${{ env.NOHACK  }}'
 
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
