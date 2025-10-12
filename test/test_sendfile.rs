@@ -258,7 +258,7 @@ fn test_sendfilev() {
         + &trailer_strings.concat();
 
     // Verify the message that was sent
-    assert_eq!(bytes_written, expected_string.as_bytes().len());
+    assert_eq!(bytes_written, expected_string.len());
 
     let mut read_string = String::new();
     let bytes_read = rd.read_to_string(&mut read_string).unwrap();
