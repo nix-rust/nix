@@ -127,6 +127,7 @@ jobs:
           SUDO: ""
           TOOL: cross
           RUSTFLAGS: --cfg qemu -D warnings
+          RUSTDOCFLAGS: --cfg qemu
 
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index

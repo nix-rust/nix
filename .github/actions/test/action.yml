@@ -19,6 +19,10 @@ inputs:
     required: false
     default: -D warnings -A unknown-lints
 
+  RUSTDOCFLAGS:
+    required: false
+    default: -D warnings
+
 runs:
   using: "composite"
   steps:
@@ -26,6 +30,7 @@ runs:
       shell: bash
       run: |
         echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
+        echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
 
     - name: test
       shell: bash
