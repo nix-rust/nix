@@ -1308,6 +1308,15 @@ sockopt_impl!(
     libc::SO_ATTACH_REUSEPORT_CBPF,
     libc::sock_fprog
 );
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// Used to collect information about this socket.
+    TcpInfo,
+    GetOnly,
+    libc::SOL_TCP,
+    libc::TCP_INFO,
+    libc::tcp_info
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
