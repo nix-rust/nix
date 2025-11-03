@@ -1041,8 +1041,10 @@ pub struct Flock<T: Flockable>(T);
 impl<T: Flockable> Drop for Flock<T> {
     fn drop(&mut self) {
         let res = Errno::result(unsafe { libc::flock(self.0.as_raw_fd(), libc::LOCK_UN) });
-        if res.is_err() && !std::thread::panicking() {
-            panic!("Failed to remove flock: {}", res.unwrap_err());
+        if let Err(e) = res {
+            if !std::thread::panicking() {
+                panic!("Failed to remove flock: {}", e);
+            }
         }
     }
 }
