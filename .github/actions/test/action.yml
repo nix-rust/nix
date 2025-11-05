@@ -31,6 +31,8 @@ runs:
       run: |
         echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
         echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
+        # Enable backtrace to make debugging easier
+        echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
 
     - name: test
       shell: bash
