@@ -456,7 +456,7 @@ impl<'a> AioFsync<'a> {
     /// * `fd`:           File descriptor to sync.
     /// * `mode`:         Whether to sync file metadata too, or just data.
     /// * `prio`:         If POSIX Prioritized IO is supported, then the
-    ///   operation will be prioritized at the process's priority level minus 
+    ///   operation will be prioritized at the process's priority level minus
     ///   `prio`.
     /// * `sigev_notify`: Determines how you will be notified of event completion.
     pub fn new(
@@ -1141,17 +1141,29 @@ pub fn aio_suspend(
 /// `EINTR`, in which case some but not all operations may have been submitted.
 /// In that case, you must check the status of each individual operation, and
 /// possibly resubmit some.
-/// 
+///
 // Do not run this doc test on:
 //   * aarch64-unknown-linux-musl
 //   * i686-unknown-linux-musl
 // because it hangs on these targets. After further debugging, we think this is
-// likely a bug of musl. Since we only test our bindings and do not intend to 
+// likely a bug of musl. Since we only test our bindings and do not intend to
 // fix the underlying libc bug, we skip this test here.
 // See this thread for the discussion of this issue:
 // https://github.com/nix-rust/nix/pull/2689#issuecomment-3419813159
-#[cfg_attr(all(target_env = "musl", any(target_arch = "aarch64", target_arch = "x86")), doc = " ```no_run")]
-#[cfg_attr(not(all(target_env = "musl", any(target_arch = "aarch64", target_arch = "x86"))), doc = " ```")]
+#[cfg_attr(
+    all(
+        target_env = "musl",
+        any(target_arch = "aarch64", target_arch = "x86")
+    ),
+    doc = " ```no_run"
+)]
+#[cfg_attr(
+    not(all(
+        target_env = "musl",
+        any(target_arch = "aarch64", target_arch = "x86")
+    )),
+    doc = " ```"
+)]
 /// # use libc::c_int;
 /// # use std::os::unix::io::AsFd;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
