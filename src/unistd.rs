@@ -1262,13 +1262,23 @@ pub fn execveat<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ///   descriptors will remain identical after daemonizing.
 /// * `noclose = false`: The process' stdin, stdout, and stderr will point to
 ///   `/dev/null` after daemonizing.
+///
+/// # Safety
+///
+/// Running in the child process of a fork is unsafe, with issues that are
+/// specially pronounced for multithreaded processes.  The documentation for
+/// [CommandExt::pre_exec] discusses some of these issues, and [`rust-lang`
+/// issue 39575] has a few further examples.
+///
+/// [CommandExt::pre_exec]: std::os::unix::process::CommandExt::pre_exec
+/// [`rust-lang` issue 39575]: https://github.com/rust-lang/rust/issues/39575
 #[cfg(any(
         linux_android,
         freebsdlike,
         solarish,
         netbsdlike
 ))]
-pub fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
+pub unsafe fn daemon(nochdir: bool, noclose: bool) -> Result<()> {
     let res = unsafe { libc::daemon(nochdir as c_int, noclose as c_int) };
     Errno::result(res).map(drop)
 }
