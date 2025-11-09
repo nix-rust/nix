@@ -1430,3 +1430,11 @@ fn test_group_from() {
     assert_eq!(group.gid, group_id);
     assert_eq!(group.name, "wheel");
 }
+
+#[test]
+fn test_setregid_setreuid() {
+    let uid = Uid::from_raw(0);
+    let gid = Gid::from_raw(0);
+    assert_eq!(setreuid(uid, uid).err().unwrap(), Errno::EPERM);
+    assert_eq!(setregid(gid, gid).err().unwrap(), Errno::EPERM);
+}
