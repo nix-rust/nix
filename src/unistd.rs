@@ -3940,7 +3940,21 @@ impl Group {
         // at `grp`.
         unsafe {
             Group::from_anything(|grp, cbuf, cap, res| {
-                libc::getgrnam_r(name.as_ptr(), grp, cbuf, cap, res)
+                let converted_cap = {
+                // The AIX signature of 'getgrnam_r()' differs from the POSIX 
+                // specification, which expects 'buf_size' to be of type 
+                // 'size_t', whereas AIX uses'int'
+                    #[cfg(target_os = "aix")]
+                    {
+                        cap as i32
+                    }
+                    #[cfg(not(target_os = "aix"))]
+                    {
+                        cap
+                    }
+                };
+
+                libc::getgrnam_r(name.as_ptr(), grp, cbuf, converted_cap, res)
             })
         }
     }
