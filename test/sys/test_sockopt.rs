@@ -1270,3 +1270,16 @@ pub fn test_so_attach_reuseport_cbpf() {
         assert_eq!(e, nix::errno::Errno::ENOPROTOOPT);
     });
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+pub fn test_so_tcp_info() {
+    let fd = socket(
+        AddressFamily::Inet6,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    getsockopt(&fd, sockopt::TcpInfo).unwrap();
+}
