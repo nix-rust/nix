@@ -58,6 +58,58 @@ fn test_mq_send_and_receive() {
     assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
 }
 
+extern "C" fn signal_catcher(_: libc::c_int) {}
+
+#[test]
+fn test_mq_send_receive_notify() {
+    let action = nix::sys::signal::SigAction::new(
+        nix::sys::signal::SigHandler::Handler(signal_catcher),
+        nix::sys::signal::SaFlags::SA_RESTART,
+        nix::sys::signal::SigSet::empty(),
+    );
+    unsafe {
+        nix::sys::signal::sigaction(nix::sys::signal::Signal::SIGUSR1, &action)
+            .unwrap()
+    };
+    //let _ = SIGNAL_FLAG.fetch_and(false, std::sync::atomic::Ordering::SeqCst);
+    const MSG_SIZE: mq_attr_member_t = 32;
+    let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
+    let mq_name = "/a_nix_test_queue";
+
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY | MQ_OFlag::O_EXCL;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let _ = nix::mqueue::mq_unlink(mq_name);
+    let r0 = mq_open(mq_name, oflag0, mode, Some(&attr));
+    if let Err(Errno::ENOSYS) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+    let mqd1 = mq_open(mq_name, oflag1, mode, Some(&attr)).unwrap();
+    nix::mqueue::mq_notify(
+        &mqd1,
+        nix::sys::signal::SigEvent::new(
+            nix::sys::signal::SigevNotify::SigevSignal {
+                signal: nix::sys::signal::Signal::SIGUSR1,
+                si_value: 0,
+            },
+        ),
+    )
+    .unwrap();
+    let mqd0 = r0.unwrap();
+    let msg_to_send = "msg_1";
+    mq_send(&mqd0, msg_to_send.as_bytes(), 1).unwrap();
+
+    let mut buf = [0u8; 32];
+    let mut prio = 0u32;
+    let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
+    assert_eq!(prio, 1);
+
+    mq_close(mqd1).unwrap();
+    mq_close(mqd0).unwrap();
+    assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
+}
+
 #[test]
 fn test_mq_timedreceive() {
     const MSG_SIZE: mq_attr_member_t = 32;
