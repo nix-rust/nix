@@ -772,7 +772,9 @@ pub enum ControlMessageOwned {
     ///
     /// # Examples
     ///
-    /// ```
+#[cfg_attr(all(target_env = "musl", target_pointer_width = "32"), doc = "See <https://github.com/nix-rust/nix/issues/2698> for notes regarding 32-bit musl")]
+#[cfg_attr(all(target_env = "musl", target_pointer_width = "32"), doc = "```no_run")]
+#[cfg_attr(any(not(target_env = "musl"), target_pointer_width = "64"), doc="```")]
     /// # #[macro_use] extern crate nix;
     /// # use nix::sys::socket::*;
     /// # use nix::sys::time::*;
