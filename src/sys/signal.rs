@@ -428,7 +428,11 @@ pub const SIGUNUSED : Signal = SIGSYS;
 cfg_if! {
     if #[cfg(target_os = "redox")] {
         type SaFlags_t = libc::c_ulong;
+    } else if #[cfg(all(target_env = "uclibc", target_arch = "mips"))] {
+        // MIPS uclibc uses unsigned (c_uint) for sa_flags
+        type SaFlags_t = libc::c_uint;
     } else if #[cfg(target_env = "uclibc")] {
+        // Modern uclibc-ng typically uses c_ulong
         type SaFlags_t = libc::c_ulong;
     } else {
         type SaFlags_t = libc::c_int;
@@ -437,32 +441,66 @@ cfg_if! {
 }
 
 #[cfg(feature = "signal")]
-libc_bitflags! {
-    /// Controls the behavior of a [`SigAction`]
-    #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
-    pub struct SaFlags: SaFlags_t {
-        /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
-        /// generated only when a child process exits, not when a child process
-        /// stops.
-        SA_NOCLDSTOP;
-        /// When catching a [`Signal::SIGCHLD`] signal, the system will not
-        /// create zombie processes when children of the calling process exit.
-        #[cfg(not(target_os = "hurd"))]
-        SA_NOCLDWAIT;
-        /// Further occurrences of the delivered signal are not masked during
-        /// the execution of the handler.
-        SA_NODEFER;
-        /// The system will deliver the signal to the process on a signal stack,
-        /// specified by each thread with sigaltstack(2).
-        SA_ONSTACK;
-        /// The handler is reset back to the default at the moment the signal is
-        /// delivered.
-        SA_RESETHAND;
-        /// Requests that certain system calls restart if interrupted by this
-        /// signal.  See the man page for complete details.
-        SA_RESTART;
-        /// This flag is controlled internally by Nix.
-        SA_SIGINFO;
+cfg_if! {
+    if #[cfg(all(target_env = "uclibc", target_arch = "mips"))] {
+        // MIPS uclibc needs explicit casting from i32 to u32
+        libc_bitflags! {
+            /// Controls the behavior of a [`SigAction`]
+            #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
+            pub struct SaFlags: SaFlags_t {
+                /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
+                /// generated only when a child process exits, not when a child process
+                /// stops.
+                SA_NOCLDSTOP as SaFlags_t;
+                /// When catching a [`Signal::SIGCHLD`] signal, the system will not
+                /// create zombie processes when children of the calling process exit.
+                #[cfg(not(target_os = "hurd"))]
+                SA_NOCLDWAIT as SaFlags_t;
+                /// Further occurrences of the delivered signal are not masked during
+                /// the execution of the handler.
+                SA_NODEFER as SaFlags_t;
+                /// The system will deliver the signal to the process on a signal stack,
+                /// specified by each thread with sigaltstack(2).
+                SA_ONSTACK as SaFlags_t;
+                /// The handler is reset back to the default at the moment the signal is
+                /// delivered.
+                SA_RESETHAND as SaFlags_t;
+                /// Requests that certain system calls restart if interrupted by this
+                /// signal.  See the man page for complete details.
+                SA_RESTART as SaFlags_t;
+                /// This flag is controlled internally by Nix.
+                SA_SIGINFO as SaFlags_t;
+            }
+        }
+    } else {
+        libc_bitflags! {
+            /// Controls the behavior of a [`SigAction`]
+            #[cfg_attr(docsrs, doc(cfg(feature = "signal")))]
+            pub struct SaFlags: SaFlags_t {
+                /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
+                /// generated only when a child process exits, not when a child process
+                /// stops.
+                SA_NOCLDSTOP;
+                /// When catching a [`Signal::SIGCHLD`] signal, the system will not
+                /// create zombie processes when children of the calling process exit.
+                #[cfg(not(target_os = "hurd"))]
+                SA_NOCLDWAIT;
+                /// Further occurrences of the delivered signal are not masked during
+                /// the execution of the handler.
+                SA_NODEFER;
+                /// The system will deliver the signal to the process on a signal stack,
+                /// specified by each thread with sigaltstack(2).
+                SA_ONSTACK;
+                /// The handler is reset back to the default at the moment the signal is
+                /// delivered.
+                SA_RESETHAND;
+                /// Requests that certain system calls restart if interrupted by this
+                /// signal.  See the man page for complete details.
+                SA_RESTART;
+                /// This flag is controlled internally by Nix.
+                SA_SIGINFO;
+            }
+        }
     }
 }
 
