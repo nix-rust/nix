@@ -207,3 +207,5 @@ feature! {
     #![feature = "time"]
     pub mod timer;
 }
+
+pub mod msg;
