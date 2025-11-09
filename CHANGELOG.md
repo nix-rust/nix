@@ -3,6 +3,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [Unreleased] - ReleaseDate
+
+### Added
+
+- Added `mq_timedsend` to `::nix::mqueue`.
+  ([#2650](https://github.com/nix-rust/nix/pull/2650))
+
 ## [0.30.1] - 2025-05-04
 
 ### Fixed

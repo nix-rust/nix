@@ -235,6 +235,26 @@ feature! {
         };
         Errno::result(res).map(|r| r as usize)
     }
+    /// Send a message to a message queue with a timeout
+    ///
+    /// See also ['mq_timedsend(2)'](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html)
+    pub fn mq_timedsend(
+        mqdes: &MqdT,
+        message: &[u8],
+        msg_prio: u32,
+        abstime: &TimeSpec,
+    ) -> Result<()> {
+        let res = unsafe {
+            libc::mq_timedsend(
+                mqdes.0,
+                message.as_ptr().cast(),
+                message.len(),
+                msg_prio,
+                abstime.as_ref(),
+            )
+        };
+        Errno::result(res).map(drop)
+    }
 }
 
 /// Send a message to a message queue
