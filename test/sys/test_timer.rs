@@ -1,6 +1,6 @@
 use nix::sys::signal::{
-    sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet, SigevNotify,
-    Signal,
+    rt_sigaction, SaFlags, SigAction, SigEvent, SigHandler, SigSet,
+    SigevNotify, Signal, SignalValue,
 };
 use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 use nix::time::ClockId;
@@ -9,12 +9,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-const SIG: Signal = Signal::SIGALRM;
+const SIG: SignalValue = SignalValue::Standard(Signal::SIGALRM);
 static ALARM_CALLED: AtomicBool = AtomicBool::new(false);
 
 pub extern "C" fn handle_sigalarm(raw_signal: libc::c_int) {
     let signal = Signal::try_from(raw_signal).unwrap();
-    if signal == SIG {
+    if SignalValue::Standard(signal) == SIG {
         ALARM_CALLED.store(true, Ordering::Release);
     }
 }
@@ -36,7 +36,7 @@ fn alarm_fires() {
     let signal_action =
         SigAction::new(handler, SaFlags::SA_RESTART, SigSet::empty());
     let old_handler = unsafe {
-        sigaction(SIG, &signal_action)
+        rt_sigaction(SIG, &signal_action)
             .expect("unable to set signal handler for alarm")
     };
 
@@ -97,6 +97,7 @@ fn alarm_fires() {
     drop(timer);
     thread::sleep(TIMER_PERIOD);
     unsafe {
-        sigaction(SIG, &old_handler).expect("unable to reset signal handler");
+        rt_sigaction(SIG, &old_handler)
+            .expect("unable to reset signal handler");
     }
 }

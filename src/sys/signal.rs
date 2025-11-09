@@ -387,6 +387,168 @@ const SIGNALS: [Signal; 31] = [
     SIGPROF, SIGWINCH, SIGIO, SIGSYS, SIGEMT, SIGINFO,
 ];
 
+// Support for real-time signals
+/// Operating system signal value
+#[cfg(target_os = "linux")]
+#[cfg(any(feature = "aio", feature = "signal"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SignalValue {
+    /// Standard signal (passed as a Signal enum value)
+    Standard(Signal),
+    /// Real-time signal (passed as libc::c_int, which is interpreted as SIGRTMIN+n)
+    Realtime(libc::c_int),
+}
+
+// Support for real-time signals
+/// Operating system signal value
+#[cfg(not(target_os = "linux"))]
+#[cfg(any(feature = "signal", feature = "aio"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SignalValue {
+    /// Standard signal (passed as a Signal enum value)
+    Standard(Signal),
+}
+
+#[cfg(any(feature = "aio", feature = "signal"))]
+impl SignalValue {
+    #[cfg(target_os = "linux")]
+    #[allow(dead_code)]
+    unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
+        // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
+        match self {
+            SignalValue::Standard(s) => s as libc::c_int,
+            SignalValue::Realtime(n) => libc::SIGRTMIN() + n,
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    #[allow(dead_code)]
+    unsafe fn convert_to_int_unchecked(self) -> libc::c_int {
+        // Note: dead code is allowed, since this is a private method that can remain unused on some platforms
+        match self {
+            SignalValue::Standard(s) => s as libc::c_int,
+        }
+    }
+
+    /// Check whether this enum contains a valid signal for this operating system
+    #[cfg(target_os = "linux")]
+    pub fn is_valid(&self) -> bool {
+        match self {
+            SignalValue::Standard(_) => true,
+            SignalValue::Realtime(n) => {
+                *n >= 0 && *n <= libc::SIGRTMAX() - libc::SIGRTMIN()
+            }
+        }
+    }
+
+    /// Check whether this enum contains a valid signal for this operating system
+    #[cfg(not(target_os = "linux"))]
+    pub fn is_valid(&self) -> bool {
+        match self {
+            SignalValue::Standard(_) => true,
+        }
+    }
+}
+
+#[cfg(feature = "signal")]
+impl From<SignalValue> for String {
+    #[cfg(target_os = "linux")]
+    fn from(x: SignalValue) -> Self {
+        match x {
+            SignalValue::Standard(s) => s.to_string(),
+            SignalValue::Realtime(n) => {
+                String::from("SIGRTMIN+") + &n.to_string()
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn from(x: SignalValue) -> Self {
+        match x {
+            SignalValue::Standard(s) => s.to_string(),
+        }
+    }
+}
+
+#[cfg(feature = "signal")]
+impl TryFrom<i32> for SignalValue {
+    type Error = Errno;
+
+    #[cfg(target_os = "linux")]
+    fn try_from(x: i32) -> Result<Self> {
+        if x < libc::SIGRTMIN() {
+            match Signal::try_from(x) {
+                Ok(s) => Ok(SignalValue::Standard(s)),
+                Err(e) => Err(e),
+            }
+        } else {
+            Ok(SignalValue::Realtime(x - libc::SIGRTMIN()))
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: i32) -> Result<Self> {
+        match Signal::try_from(x) {
+            Ok(s) => Ok(SignalValue::Standard(s)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+#[cfg(feature = "signal")]
+impl TryFrom<SignalValue> for i32 {
+    type Error = Errno;
+
+    #[cfg(target_os = "linux")]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s as i32),
+            SignalValue::Realtime(n) => {
+                let v = libc::SIGRTMIN() + n;
+                if v <= libc::SIGRTMAX() {
+                    Ok(v)
+                } else {
+                    Err(Errno::EINVAL)
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s as i32),
+        }
+    }
+}
+
+#[cfg(feature = "signal")]
+impl From<Signal> for SignalValue {
+    fn from(x: Signal) -> Self {
+        SignalValue::Standard(x)
+    }
+}
+
+#[cfg(feature = "signal")]
+impl TryFrom<SignalValue> for Signal {
+    type Error = Errno;
+
+    #[cfg(target_os = "linux")]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s),
+            SignalValue::Realtime(_) => Err(Errno::EINVAL),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn try_from(x: SignalValue) -> Result<Self> {
+        match x {
+            SignalValue::Standard(s) => Ok(s),
+        }
+    }
+}
+
 feature! {
 #![feature = "signal"]
 
@@ -394,6 +556,12 @@ feature! {
 /// Iterate through all signals defined by this operating system
 pub struct SignalIterator {
     next: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+/// Iterate through all signals defined by this operating system, both standard and realtime
+pub struct SignalValueIterator {
+    next: libc::c_int,
 }
 
 impl Iterator for SignalIterator {
@@ -410,10 +578,63 @@ impl Iterator for SignalIterator {
     }
 }
 
+impl Iterator for SignalValueIterator {
+    type Item = SignalValue;
+
+    #[cfg(target_os = "linux")]
+    fn next(&mut self) -> Option<SignalValue> {
+        let next_signal = match SignalValue::try_from(self.next) {
+           Ok(s) => {
+              self.next += 1;
+              s
+           }
+           Err(_) => {
+              // Some standard signals seem to be missing on some architectures, to fix that, iterator must skip unrecognized standard signals instead of leaping to SIGRTMIN
+              while self.next < libc::SIGRTMIN()
+              {
+                 self.next += 1;
+                 match SignalValue::try_from(self.next)
+                 {
+                    Ok(s) => {
+                        self.next += 1;
+                        return if s.is_valid() { Some(s) } else { None };
+                    },
+                    Err(_) => { continue; },
+                 };
+              }
+              self.next = libc::SIGRTMIN() + 1;
+              SignalValue::Realtime(0)
+           },
+        };
+        if next_signal.is_valid() { Some(next_signal) } else { None }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    fn next(&mut self) -> Option<SignalValue> {
+        let next_signal = match SignalValue::try_from(self.next) {
+           Ok(s) => {
+              self.next += 1;
+              s
+           }
+           Err(_) => {
+              return None;
+           },
+        };
+        if next_signal.is_valid() { Some(next_signal) } else { None }
+    }
+}
+
 impl Signal {
     /// Iterate through all signals defined by this OS
     pub const fn iterator() -> SignalIterator {
         SignalIterator{next: 0}
+    }
+}
+
+impl SignalValue {
+    /// Iterate through all signals defined by this OS
+    pub const fn iterator() -> SignalValueIterator {
+        SignalValueIterator{next: 1}
     }
 }
 
@@ -525,6 +746,14 @@ impl SigSet {
         unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
     }
 
+    /// Add the specified signal to the set.
+    #[doc(alias("sigaddset"))]
+    pub fn rt_add(&mut self, signal: SignalValue) -> Result<()> {
+        let n = libc::c_int::try_from(signal)?;
+        unsafe { libc::sigaddset(&mut self.sigset as *mut libc::sigset_t, n) };
+        Ok(())
+    }
+
     /// Remove all signals from this set.
     #[doc(alias("sigemptyset"))]
     pub fn clear(&mut self) {
@@ -535,6 +764,14 @@ impl SigSet {
     #[doc(alias("sigdelset"))]
     pub fn remove(&mut self, signal: Signal) {
         unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, signal as libc::c_int) };
+    }
+
+    /// Remove the specified signal from this set.
+    #[doc(alias("sigdelset"))]
+    pub fn rt_remove(&mut self, signal: SignalValue) -> Result<()> {
+        let n = libc::c_int::try_from(signal)?;
+        unsafe { libc::sigdelset(&mut self.sigset as *mut libc::sigset_t, n) };
+        Ok(())
     }
 
     /// Return whether this set includes the specified signal.
@@ -549,8 +786,24 @@ impl SigSet {
         }
     }
 
+    /// Return whether this set includes the specified signal.
+    #[doc(alias("sigismember"))]
+    pub fn rt_contains(&self, signal: SignalValue) -> bool {
+        let n = match libc::c_int::try_from(signal) {
+            Ok(v) => { v },
+            Err(_) => { return false; },
+        };
+        let res = unsafe { libc::sigismember(&self.sigset as *const libc::sigset_t, n) };
+
+        match res {
+            1 => true,
+            0 => false,
+            _ => unreachable!("unexpected value from sigismember"),
+        }
+    }
+
     /// Returns an iterator that yields the signals contained in this set.
-    pub fn iter(&self) -> SigSetIter<'_> {
+    pub fn iter(&self) -> SignalSetIter<'_> {
         self.into_iter()
     }
 
@@ -594,6 +847,20 @@ impl SigSet {
 
         Errno::result(res).map(|_| unsafe {
             Signal::try_from(signum.assume_init()).unwrap()
+        })
+    }
+
+    /// Suspends execution of the calling thread until one of the signals in the
+    /// signal mask becomes pending, and returns the accepted signal.
+    #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
+    pub fn rt_wait(&self) -> Result<SignalValue> {
+        use std::convert::TryFrom;
+
+        let mut signum = mem::MaybeUninit::uninit();
+        let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
+
+        Errno::result(res).map(|_| unsafe {
+            SignalValue::try_from(signum.assume_init()).unwrap()
         })
     }
 
@@ -648,6 +915,17 @@ impl From<Signal> for SigSet {
     }
 }
 
+impl From<SignalValue> for SigSet {
+    fn from(signal: SignalValue) -> Self {
+        let mut result = SigSet::empty();
+        match result.rt_add(signal)
+        {
+            Ok(_) => { result },
+            Err(_) => { result },
+        }
+    }
+}
+
 impl BitOr for Signal {
     type Output = SigSet;
 
@@ -665,6 +943,18 @@ impl BitOr<Signal> for SigSet {
     fn bitor(mut self, rhs: Signal) -> Self::Output {
         self.add(rhs);
         self
+    }
+}
+
+impl BitOr<SignalValue> for SigSet {
+    type Output = SigSet;
+
+    fn bitor(mut self, rhs: SignalValue) -> Self::Output {
+        match self.rt_add(rhs)
+        {
+           Ok(_) => { self },
+           Err(_) => { self },
+        }
     }
 }
 
@@ -692,9 +982,27 @@ impl Extend<Signal> for SigSet {
     }
 }
 
+impl Extend<SignalValue> for SigSet {
+    fn extend<T>(&mut self, iter: T)
+    where T: IntoIterator<Item = SignalValue> {
+        for signal in iter {
+            let _ = self.rt_add(signal);
+        }
+    }
+}
+
 impl FromIterator<Signal> for SigSet {
     fn from_iter<T>(iter: T) -> Self
     where T: IntoIterator<Item = Signal> {
+        let mut sigset = SigSet::empty();
+        sigset.extend(iter);
+        sigset
+    }
+}
+
+impl FromIterator<SignalValue> for SigSet {
+    fn from_iter<T>(iter: T) -> Self
+    where T: IntoIterator<Item = SignalValue> {
         let mut sigset = SigSet::empty();
         sigset.extend(iter);
         sigset
@@ -725,12 +1033,34 @@ impl Hash for SigSet {
 /// Iterator for a [`SigSet`].
 ///
 /// Call [`SigSet::iter`] to create an iterator.
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "openbsd",
+    target_os = "dragonfly",
+    target_os = "redox"
+)))]
 pub struct SigSetIter<'a> {
     sigset: &'a SigSet,
     inner: SignalIterator,
 }
 
+/// Iterator for a [`SigSet`].
+///
+/// Call [`SigSet::iter`] to create an iterator.
+#[derive(Clone, Debug)]
+pub struct SignalSetIter<'a> {
+    sigset: &'a SigSet,
+    inner: SignalValueIterator,
+}
+
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "openbsd",
+    target_os = "dragonfly",
+    target_os = "redox"
+)))]
 impl Iterator for SigSetIter<'_> {
     type Item = Signal;
     fn next(&mut self) -> Option<Signal> {
@@ -744,11 +1074,32 @@ impl Iterator for SigSetIter<'_> {
     }
 }
 
-impl<'a> IntoIterator for &'a SigSet {
+impl Iterator for SignalSetIter<'_> {
+    type Item = SignalValue;
+    fn next(&mut self) -> Option<SignalValue> {
+        loop {
+            match self.inner.next() {
+                None => return None,
+                Some(signal) if self.sigset.rt_contains(signal) => return Some(signal),
+                Some(_signal) => continue,
+            }
+        }
+    }
+}
+
+/*impl<'a> IntoIterator for &'a SigSet {
     type Item = Signal;
     type IntoIter = SigSetIter<'a>;
     fn into_iter(self) -> Self::IntoIter {
         SigSetIter { sigset: self, inner: Signal::iterator() }
+    }
+} // */
+
+impl<'a> IntoIterator for &'a SigSet {
+    type Item = SignalValue;
+    type IntoIter = SignalSetIter<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        SignalSetIter { sigset: self, inner: SignalValue::iterator() }
     }
 }
 
@@ -885,6 +1236,55 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
                               oldact.as_mut_ptr()) };
 
     Errno::result(res).map(|_| SigAction { sigaction: unsafe { oldact.assume_init() } })
+}
+
+/// Changes the action taken by a process on receipt of a specific signal.
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
+/// action for the given signal. If `sigaction` fails, no new signal handler is installed.
+///
+/// # Safety
+///
+/// * Signal handlers may be called at any point during execution, which limits
+///   what is safe to do in the body of the signal-catching function. Be certain
+///   to only make syscalls that are explicitly marked safe for signal handlers
+///   and only share global data using atomics.
+///
+/// * There is also no guarantee that the old signal handler was installed
+///   correctly.  If it was installed by this crate, it will be.  But if it was
+///   installed by, for example, C code, then there is no guarantee its function
+///   pointer is valid.  In that case, this function effectively dereferences a
+///   raw pointer of unknown provenance.
+pub unsafe fn rt_sigaction(signal: SignalValue, sigaction: &SigAction) -> Result<SigAction> {
+    let mut oldact = mem::MaybeUninit::<libc::sigaction>::uninit();
+
+    let res = unsafe { libc::sigaction(libc::c_int::try_from(signal)?,
+                              &sigaction.sigaction as *const libc::sigaction,
+                              oldact.as_mut_ptr()) };
+
+    Errno::result(res).map(|_| SigAction { sigaction: unsafe { oldact.assume_init() } })
+}
+
+/// Changes the action taken by a process on receipt of a specific signal, without retrieving the old sigaction value (by passing the null pointer to the "oldact" argument)
+///
+/// `signal` can be any signal except `SIGKILL` or `SIGSTOP`. On success, it returns the previous
+/// action for the given signal. If `sigaction` fails, no new signal handler is installed.
+///
+/// # Safety
+///
+/// * Signal handlers may be called at any point during execution, which limits
+///   what is safe to do in the body of the signal-catching function. Be certain
+///   to only make syscalls that are explicitly marked safe for signal handlers
+///   and only share global data using atomics.
+pub unsafe fn sigaction_noretrieve(signal: SignalValue, sigaction: &SigAction) -> Result<()> {
+    let res = unsafe { libc::sigaction(libc::c_int::try_from(signal)?,
+                              &sigaction.sigaction as *const libc::sigaction,
+                              std::ptr::null_mut()) };
+
+    match Errno::result(res) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
 /// Signal management (see [signal(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/signal.html))
@@ -1049,6 +1449,35 @@ pub fn kill<T: Into<Option<Signal>>>(pid: Pid, signal: T) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Send a signal to a process
+///
+/// # Arguments
+///
+/// * `pid` -    Specifies which processes should receive the signal.
+///   - If positive, specifies an individual process.
+///   - If zero, the signal will be sent to all processes whose group
+///     ID is equal to the process group ID of the sender.  This is a
+#[cfg_attr(target_os = "fuchsia", doc = "variant of `killpg`.")]
+#[cfg_attr(not(target_os = "fuchsia"), doc = "variant of [`killpg`].")]
+///   - If `-1` and the process has super-user privileges, the signal
+///     is sent to all processes exclusing system processes.
+///   - If less than `-1`, the signal is sent to all processes whose
+///     process group ID is equal to the absolute value of `pid`.
+/// * `signal` - Signal to send. If `None`, error checking is performed
+///              but no signal is actually sent.
+///
+/// See Also
+/// [`kill(2)`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/kill.html)
+pub fn send_signal<T: Into<Option<SignalValue>>>(pid: Pid, signal: T) -> Result<()> {
+    let res = unsafe { libc::kill(pid.into(),
+                                  match signal.into() {
+                                      Some(s) => libc::c_int::try_from(s)?,
+                                      None => 0,
+                                  }) };
+
+    Errno::result(res).map(drop)
+}
+
 /// Send a signal to a process group
 ///
 /// # Arguments
@@ -1070,11 +1499,41 @@ pub fn killpg<T: Into<Option<Signal>>>(pgrp: Pid, signal: T) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+/// Send a signal to a process group
+///
+/// # Arguments
+///
+/// * `pgrp` -   Process group to signal.  If less then or equal 1, the behavior
+///              is platform-specific.
+/// * `signal` - Signal to send. If `None`, `killpg` will only preform error
+///              checking and won't send any signal.
+///
+/// See Also [killpg(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/killpg.html).
+#[cfg(not(target_os = "fuchsia"))]
+pub fn rt_killpg<T: Into<Option<SignalValue>>>(pgrp: Pid, signal: T) -> Result<()> {
+    let res = unsafe { libc::killpg(pgrp.into(),
+                                  match signal.into() {
+                                      Some(s) => libc::c_int::try_from(s)?,
+                                      None => 0,
+                                  }) };
+
+    Errno::result(res).map(drop)
+}
+
 /// Send a signal to the current thread
 ///
 /// See Also [raise(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/raise.html)
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
+
+    Errno::result(res).map(drop)
+}
+
+/// Send a signal to the current thread
+///
+/// See Also [raise(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/raise.html)
+pub fn raise_signal(signal: SignalValue) -> Result<()> {
+    let res = unsafe { libc::raise(libc::c_int::try_from(signal)?) };
 
     Errno::result(res).map(drop)
 }
@@ -1102,7 +1561,7 @@ pub enum SigevNotify<'fd> {
     /// Notify by delivering a signal to the process.
     SigevSignal {
         /// Signal to deliver
-        signal: Signal,
+        signal: SignalValue,
         /// Will be present in the `si_value` field of the [`libc::siginfo_t`]
         /// structure of the queued signal.
         si_value: libc::intptr_t
@@ -1135,7 +1594,7 @@ pub enum SigevNotify<'fd> {
     ))]
     SigevThreadId {
         /// Signal to send
-        signal: Signal,
+        signal: SignalValue,
         /// LWP ID of the thread to notify
         thread_id: type_of_thread_id,
         /// Will be present in the `si_value` field of the [`libc::siginfo_t`]
@@ -1321,7 +1780,7 @@ mod sigevent {
                 },
                 SigevNotify::SigevSignal{signal, si_value} => {
                     sev.sigev_notify = libc::SIGEV_SIGNAL;
-                    sev.sigev_signo = signal as libc::c_int;
+                    sev.sigev_signo = unsafe { signal.convert_to_int_unchecked() };
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void
                 },
                 #[cfg(freebsdlike)]
@@ -1345,14 +1804,14 @@ mod sigevent {
                 #[cfg(target_os = "freebsd")]
                 SigevNotify::SigevThreadId{signal, thread_id, si_value} => {
                     sev.sigev_notify = libc::SIGEV_THREAD_ID;
-                    sev.sigev_signo = signal as libc::c_int;
+                    sev.sigev_signo = unsafe { signal.convert_to_int_unchecked() };
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void;
                     sev._sigev_un._threadid = thread_id;
                 }
                 #[cfg(any(target_env = "gnu", target_env = "uclibc"))]
                 SigevNotify::SigevThreadId{signal, thread_id, si_value} => {
                     sev.sigev_notify = libc::SIGEV_THREAD_ID;
-                    sev.sigev_signo = signal as libc::c_int;
+                    sev.sigev_signo = unsafe { signal.convert_to_int_unchecked() };
                     sev.sigev_value.sival_ptr = si_value as *mut libc::c_void;
                     sev.sigev_notify_thread_id = thread_id;
                 }
