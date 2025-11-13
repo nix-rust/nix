@@ -1,7 +1,9 @@
 [build.env]
 passthrough = [
 	"RUSTFLAGS",
-	"RUST_TEST_THREADS"
+	"RUSTDOCFLAGS",
+	"RUST_TEST_THREADS",
+	"RUST_BACKTRACE",
 ]
 
 [target.loongarch64-unknown-linux-gnu]

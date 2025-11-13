@@ -21,6 +21,11 @@ inputs:
     required: false
     default: -D warnings
 
+  TARGETS:
+    description: 'Build all targets or only default?'
+    required: false
+    default: "--all-targets"
+
   TOOL: 
     description: 'Tool used to involve the BUILD command, can be cargo or cross'
     required: false
@@ -29,6 +34,16 @@ inputs:
   ZFLAGS:
     required: false
     default: 
+
+  NOCLIPPY:
+    description: "whether to run cargo clippy"
+    required: false
+    default: false
+
+  NODOC:
+    description: "whether to run cargo doc"
+    required: false
+    default: false
 
   NOHACK:
     description: "whether to run cargo hack"
@@ -52,13 +67,15 @@ runs:
 
     - name: build
       shell: bash
-      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features  
+      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} ${{ inputs.TARGETS }} --all-features
 
     - name: doc
+      if: inputs.NODOC == 'false'
       shell: bash
       run: ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
 
     - name: clippy
+      if: inputs.NOCLIPPY == 'false'
       shell: bash
       run: ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
 

@@ -50,7 +50,7 @@ task:
   setup_script:
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
-    - sh rustup.sh -y --profile=minimal --default-toolchain $MSRV
+    - sh rustup.sh -y --profile=minimal --default-toolchain stable
     - . $HOME/.cargo/env
     - rustup target add i686-unknown-freebsd
     - rustup component add clippy
