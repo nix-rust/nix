@@ -20,7 +20,8 @@ cfg_if! {
         target_os = "android",
         target_os = "aix",
         all(target_os = "linux", not(target_env = "gnu")),
-        target_os = "cygwin"
+        target_os = "cygwin",
+        target_os = "redox",
     ))]{
         use libc::rlimit;
     }
@@ -51,7 +52,8 @@ libc_enum! {
             target_os = "android",
             target_os = "aix",
             all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc"))),
-            target_os = "cygwin"
+            target_os = "cygwin",
+            target_os = "redox",
         ), repr(i32))]
     #[non_exhaustive]
     pub enum Resource {
