@@ -1,0 +1,14 @@
+on:
+  push:
+
+jobs:
+  gitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install gitlint
+        run: sudo apt install gitlint
+        
+      - name: Run gitlint
+        run: gitlint
