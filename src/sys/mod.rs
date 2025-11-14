@@ -96,6 +96,7 @@ feature! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
+    target_os = "solaris",
     target_os = "haiku"
 )))]
 feature! {
