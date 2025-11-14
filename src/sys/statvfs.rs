@@ -55,6 +55,10 @@ libc_bitflags!(
 
 /// Wrapper around the POSIX `statvfs` struct
 ///
+/// Note that the types provided by this struct are based off of libc definitions, and as such do
+/// not always resolve to the same concrete number type on different platforms. Using techniques 
+/// such as `u64::from` may be desirable when implementing "Rust portable" math.
+///
 /// For more information see the [`statvfs(3)` man pages](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_statvfs.h.html).
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
