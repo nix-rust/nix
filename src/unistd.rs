@@ -2218,6 +2218,7 @@ pub mod acct {
     /// Enable process accounting
     ///
     /// See also [acct(2)](https://linux.die.net/man/2/acct)
+    #[cfg(not(target_os = "aix"))]
     pub fn enable<P: ?Sized + NixPath>(filename: &P) -> Result<()> {
         let res = filename
             .with_nix_path(|cstr| unsafe { libc::acct(cstr.as_ptr()) })?;
@@ -2225,9 +2226,25 @@ pub mod acct {
         Errno::result(res).map(drop)
     }
 
+    #[cfg(target_os = "aix")]
+    pub fn enable<P: ?Sized + NixPath>(filename: &P) -> Result<()> {
+        let res = filename
+            .with_nix_path(|cstr| unsafe { libc::acct(cstr.as_ptr() as *mut libc::c_char) })?;
+
+        Errno::result(res).map(drop)
+    }
+
     /// Disable process accounting
+    #[cfg(not(target_os = "aix"))]
     pub fn disable() -> Result<()> {
         let res = unsafe { libc::acct(ptr::null()) };
+
+        Errno::result(res).map(drop)
+    }
+
+    #[cfg(target_os = "aix")]
+    pub fn disable() -> Result<()> {
+        let res = unsafe { libc::acct(ptr::null_mut()) };
 
         Errno::result(res).map(drop)
     }
