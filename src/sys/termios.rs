@@ -504,6 +504,17 @@ libc_bitflags! {
                   apple_targets))]
         OFDEL as tcflag_t;
         #[cfg(any(linux_android,
+                  target_os = "aix",
+                  target_os = "cygwin",
+                  target_os = "fuchsia",
+                  target_os = "haiku",
+                  target_os = "hurd",
+                  target_os = "nto",
+                  target_os = "redox",
+                  solarish,
+                  apple_targets))]
+        OFILL as tcflag_t;
+        #[cfg(any(linux_android,
                   target_os = "haiku",
                   apple_targets))]
         NL0 as tcflag_t;
