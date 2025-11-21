@@ -697,6 +697,11 @@ libc_bitflags! {
         #[cfg(not(any(target_os = "redox", target_os = "cygwin")))]
         PENDIN;
         NOFLSH;
+        #[cfg(any(linux_android,
+                  target_os = "aix",
+                  target_os = "haiku",
+                  target_os = "nto"))]
+        XCASE;
     }
 }
 
