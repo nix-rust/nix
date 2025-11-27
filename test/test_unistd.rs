@@ -1430,3 +1430,40 @@ fn test_group_from() {
     assert_eq!(group.gid, group_id);
     assert_eq!(group.name, "wheel");
 }
+
+// Tests for PR #1305: setresuid/setresgid with Option support
+#[test]
+#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))]
+fn test_setresuid_with_option() {
+    let uid = getuid();
+
+    // Test 1: Set all to current values
+    assert!(setresuid(Some(uid), Some(uid), Some(uid)).is_ok());
+    assert_eq!(geteuid(), uid);
+
+    // Test 2: No-change (None for all)
+    let euid_before = geteuid();
+    assert!(setresuid(None, None, None).is_ok());
+    assert_eq!(geteuid(), euid_before, "UID should not change with None");
+
+    // Test 3: Selective change (only effective)
+    assert!(setresuid(None, Some(uid), None).is_ok());
+}
+
+#[test]
+#[cfg(any(target_os = "linux", target_os = "freebsd", target_os = "openbsd"))]
+fn test_setresgid_with_option() {
+    let gid = getgid();
+
+    // Test 1: Set all to current values
+    assert!(setresgid(Some(gid), Some(gid), Some(gid)).is_ok());
+    assert_eq!(getegid(), gid);
+
+    // Test 2: No-change (None for all)
+    let egid_before = getegid();
+    assert!(setresgid(None, None, None).is_ok());
+    assert_eq!(getegid(), egid_before, "GID should not change with None");
+
+    // Test 3: Selective change (only effective)
+    assert!(setresgid(None, Some(gid), None).is_ok());
+}
