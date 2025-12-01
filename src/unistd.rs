@@ -1667,7 +1667,15 @@ pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
 /// Commit filesystem caches to disk
 ///
 /// See also [sync(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sync.html)
-#[cfg(any(bsd, linux_android, solarish, target_os = "haiku", target_os = "aix", target_os = "hurd"))]
+#[cfg(any(
+    bsd,
+    linux_android,
+    solarish,
+    target_os = "haiku",
+    target_os = "aix",
+    target_os = "hurd",
+    target_os = "cygwin"
+))]
 pub fn sync() {
     unsafe { libc::sync() };
 }
