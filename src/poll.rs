@@ -62,7 +62,7 @@ impl<'fd> PollFd<'fd> {
         PollFlags::from_bits(self.pollfd.revents)
     }
 
-    /// Returns if any of the events of interest occured in the last call to `poll` or `ppoll`. Will
+    /// Returns if any of the events of interest occurred in the last call to `poll` or `ppoll`. Will
     /// only return `None` if the kernel provides status flags that Nix does not know about.
     ///
     /// Equivalent to `x.revents()? != PollFlags::empty()`.
@@ -72,7 +72,7 @@ impl<'fd> PollFd<'fd> {
         Some(self.revents()? != PollFlags::empty())
     }
 
-    /// Returns if all the events of interest occured in the last call to `poll` or `ppoll`. Will
+    /// Returns if all the events of interest occurred in the last call to `poll` or `ppoll`. Will
     /// only return `None` if the kernel provides status flags that Nix does not know about.
     ///
     /// Equivalent to `x.revents()? & x.events() == x.events()`.
