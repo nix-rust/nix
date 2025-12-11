@@ -351,12 +351,11 @@ impl Drop for PosixSpawnFileActions {
 // SAFETY:
 // It is safe to add the mutability in types as implementations won't mutable them.
 unsafe fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*mut libc::c_char> {
-    let mut v: Vec<*mut libc::c_char> = args
-        .iter()
+    use std::iter::once;
+    args.iter()
         .map(|s| s.as_ref().as_ptr().cast_mut())
-        .collect();
-    v.push(std::ptr::null_mut());
-    v
+        .chain(once(std::ptr::null_mut()))
+        .collect()
 }
 
 /// Create a new child process from the specified process image. See
