@@ -343,21 +343,6 @@ impl Drop for PosixSpawnFileActions {
     }
 }
 
-// The POSIX standard requires those `args` and `envp` to be of type `*const *mut [c_char]`,
-// but implementations won't modify them, making the `mut` type redundant. Considering this,
-// Nix does not expose this mutability, but we have to change the interface when calling the
-// underlying libc interfaces , this helper function does the conversion job.
-//
-// SAFETY:
-// It is safe to add the mutability in types as implementations won't mutable them.
-unsafe fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*mut libc::c_char> {
-    use std::iter::once;
-    args.iter()
-        .map(|s| s.as_ref().as_ptr().cast_mut())
-        .chain(once(std::ptr::null_mut()))
-        .collect()
-}
-
 /// Create a new child process from the specified process image. See
 /// [posix_spawn](https://pubs.opengroup.org/onlinepubs/9699919799/functions/posix_spawn.html).
 pub fn posix_spawn<P, SA, SE>(
@@ -374,19 +359,24 @@ where
 {
     let mut pid = 0;
 
-    let ret = unsafe {
-        let args_p = to_exec_array(args);
-        let env_p = to_exec_array(envp);
-
+    let ret = {
         path.with_nix_path(|c_str| {
-            libc::posix_spawn(
-                &mut pid as *mut libc::pid_t,
-                c_str.as_ptr(),
-                &file_actions.fa as *const libc::posix_spawn_file_actions_t,
-                &attr.attr as *const libc::posix_spawnattr_t,
-                args_p.as_ptr(),
-                env_p.as_ptr(),
-            )
+            let args_p = crate::c_slice_to_pointers(args);
+            let env_p = crate::c_slice_to_pointers(envp);
+
+            // SAFETY: The POSIX standard specifies `argv` and `envp` as `*const *mut c_char`,
+            // but also states that these arrays and their strings shall not be modified,
+            // so passing immutable data is sound.
+            unsafe {
+                libc::posix_spawn(
+                    &mut pid as *mut libc::pid_t,
+                    c_str.as_ptr(),
+                    &file_actions.fa as *const libc::posix_spawn_file_actions_t,
+                    &attr.attr as *const libc::posix_spawnattr_t,
+                    args_p.as_ptr() as *const *mut _,
+                    env_p.as_ptr() as *const *mut _,
+                )
+            }
         })?
     };
 
@@ -408,18 +398,23 @@ pub fn posix_spawnp<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ) -> Result<Pid> {
     let mut pid = 0;
 
-    let ret = unsafe {
-        let args_p = to_exec_array(args);
-        let env_p = to_exec_array(envp);
+    let ret = {
+        let args_p = crate::c_slice_to_pointers(args);
+        let env_p = crate::c_slice_to_pointers(envp);
 
-        libc::posix_spawnp(
-            &mut pid as *mut libc::pid_t,
-            path.as_ptr(),
-            &file_actions.fa as *const libc::posix_spawn_file_actions_t,
-            &attr.attr as *const libc::posix_spawnattr_t,
-            args_p.as_ptr(),
-            env_p.as_ptr(),
-        )
+        // SAFETY: The POSIX standard specifies `argv` and `envp` as `*const *mut c_char`,
+        // but also states that these arrays and their strings shall not be modified,
+        // so passing immutable data is sound.
+        unsafe {
+            libc::posix_spawnp(
+                &mut pid as *mut libc::pid_t,
+                path.as_ptr(),
+                &file_actions.fa as *const libc::posix_spawn_file_actions_t,
+                &attr.attr as *const libc::posix_spawnattr_t,
+                args_p.as_ptr() as *const *mut _,
+                env_p.as_ptr() as *const *mut _,
+            )
+        }
     };
 
     if ret != 0 {
