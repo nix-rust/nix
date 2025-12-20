@@ -113,6 +113,12 @@ pub struct Inotify {
 pub struct WatchDescriptor {
     wd: i32,
 }
+impl WatchDescriptor {
+    /// Inner WatchDescriptor, from libc.
+    pub fn inner_id(self) -> i32 {
+        self.wd
+    }
+}
 
 /// A single inotify event.
 ///
