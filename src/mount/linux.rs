@@ -21,6 +21,8 @@ libc_bitflags!(
         MS_MANDLOCK;
         /// Directory modifications are synchronous
         MS_DIRSYNC;
+        /// Do not follow symlinks
+        MS_NOSYMFOLLOW;
         /// Do not update access times
         MS_NOATIME;
         /// Do not update directory access times

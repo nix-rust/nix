@@ -28,7 +28,7 @@ targets = [
 ]
 
 [dependencies]
-libc = { version = "=0.2.175", features = ["extra_traits"] }
+libc = { version = "=0.2.176", features = ["extra_traits"] }
 bitflags = "2.3.3"
 cfg-if = "1.0"
 pin-utils = { version = "0.1.0", optional = true }
