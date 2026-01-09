@@ -91,10 +91,8 @@ impl Kqueue {
     }
 }
 
-#[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
+#[cfg(any(freebsdlike, apple_targets, target_os = "openbsd", target_os = "netbsd"))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(target_os = "netbsd")]
-type type_of_udata = intptr_t;
 
 #[cfg(target_os = "netbsd")]
 type type_of_event_filter = u32;
