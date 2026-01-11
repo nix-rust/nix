@@ -921,11 +921,21 @@ pub fn test_scm_rights() {
 
 // 1. Disable the test on emulated platforms due to not enabled support of
 //    AF_ALG in QEMU from rust cross
-// 2. Disable the test on aarch64/Linux CI because bind() fails with ENOENT
+// 2. Disable the test on aarch64/Linux, s390x/Linux, and powerpc64le/Linux
+//    because bind() fails with ENOENT:
 //    https://github.com/nix-rust/nix/issues/1352
 #[cfg(linux_android)]
 #[cfg_attr(
-    any(qemu, all(target_os = "linux", target_arch = "aarch64")),
+    any(
+        qemu,
+        all(target_os = "linux", target_arch = "aarch64"),
+        all(target_os = "linux", target_arch = "s390x"),
+        all(
+            target_os = "linux",
+            target_arch = "powerpc64",
+            target_endian = "little"
+        ),
+    ),
     ignore
 )]
 #[test]
