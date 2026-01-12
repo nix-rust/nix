@@ -91,11 +91,6 @@ impl Kqueue {
     }
 }
 
-#[cfg(any(freebsdlike, apple_targets, target_os = "openbsd"))]
-type type_of_udata = *mut libc::c_void;
-#[cfg(target_os = "netbsd")]
-type type_of_udata = intptr_t;
-
 #[cfg(target_os = "netbsd")]
 type type_of_event_filter = u32;
 #[cfg(not(target_os = "netbsd"))]
@@ -364,7 +359,7 @@ impl KEvent {
                 fflags: fflags.bits(),
                 // data can be either i64 or intptr_t, depending on platform
                 data: data as _,
-                udata: udata as type_of_udata,
+                udata: udata as *mut libc::c_void,
                 ..unsafe { mem::zeroed() }
             },
         }
@@ -456,5 +451,5 @@ pub fn ev_set(
     ev.kevent.flags = flags.bits();
     ev.kevent.fflags = fflags.bits();
     ev.kevent.data = 0;
-    ev.kevent.udata = udata as type_of_udata;
+    ev.kevent.udata = udata as *mut libc::c_void;
 }
