@@ -624,6 +624,10 @@ impl TimeVal {
         })
     }
 
+    #[cfg_attr(
+        any(target_env = "musl", target_env = "ohos"),
+        allow(deprecated)
+    )] // https://github.com/rust-lang/libc/issues/1848
     fn micros_mod_sec(&self) -> suseconds_t {
         if self.tv_sec() < 0 && self.tv_usec() > 0 {
             self.tv_usec() - MICROS_PER_SEC as suseconds_t
@@ -640,6 +644,10 @@ impl TimeVal {
         self.0.tv_sec
     }
 
+    #[cfg_attr(
+        any(target_env = "musl", target_env = "ohos"),
+        allow(deprecated)
+    )] // https://github.com/rust-lang/libc/issues/1848
     pub const fn tv_usec(&self) -> suseconds_t {
         self.0.tv_usec
     }
