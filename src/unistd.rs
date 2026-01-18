@@ -403,6 +403,14 @@ pub fn getpgrp() -> Pid {
 pub fn gettid() -> Pid {
     Pid(unsafe { libc::syscall(libc::SYS_gettid) as pid_t })
 }
+
+/// Get the caller's thread ID (see
+/// [pthread_getthreadid_np(3)](https://man.freebsd.org/cgi/man.cgi?query=pthread_getthreadid_np&sektion=3&manpath=FreeBSD+15.0-RELEASE+and+Ports).
+#[cfg(target_os = "freebsd")]
+#[inline]
+pub fn pthread_getthreadid_np() -> Pid {
+    Pid(unsafe { libc::pthread_getthreadid_np() as pid_t })
+}
 }
 
 feature! {
