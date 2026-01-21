@@ -1112,7 +1112,10 @@ impl ControlMessageOwned {
                 let (err, addr) = unsafe { Self::recv_err_helper::<sockaddr_in6>(p, len) };
                 ControlMessageOwned::Ipv6RecvErr(err, addr)
             },
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(any(
+                all(linux_android, not(target_env = "uclibc")),
+                target_os = "freebsd"
+            ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_in6) };

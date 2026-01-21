@@ -563,6 +563,7 @@ sockopt_impl!(
 );
 #[cfg(linux_android)]
 #[cfg(feature = "net")]
+#[cfg(not(target_env = "uclibc"))]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// If enabled, the kernel will not reserve an ephemeral port when binding
@@ -1243,7 +1244,10 @@ sockopt_impl!(
     libc::IPV6_RECVHOPLIMIT,
     bool
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(
+    all(linux_android, not(target_env = "uclibc")),
+    target_os = "freebsd"
+))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1264,7 +1268,10 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(linux_android, apple_targets))]
+#[cfg(any(
+    all(linux_android, not(target_env = "uclibc")),
+    apple_targets
+))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,

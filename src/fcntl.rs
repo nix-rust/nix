@@ -1175,16 +1175,20 @@ libc_bitflags! {
         /// Request that pages be moved instead of copied.
         ///
         /// Not applicable to `vmsplice`.
+        #[cfg(not(target_env = "uclibc"))]
         SPLICE_F_MOVE;
         /// Do not block on I/O.
+        #[cfg(not(target_env = "uclibc"))]
         SPLICE_F_NONBLOCK;
         /// Hint that more data will be coming in a subsequent splice.
         ///
         /// Not applicable to `vmsplice`.
+        #[cfg(not(target_env = "uclibc"))]
         SPLICE_F_MORE;
         /// Gift the user pages to the kernel.
         ///
         /// Not applicable to `splice`.
+        #[cfg(not(target_env = "uclibc"))]
         SPLICE_F_GIFT;
     }
 }

@@ -2108,7 +2108,10 @@ pub fn test_recvif_ipv4() {
     }
 }
 
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(
+    all(linux_android, not(target_env = "uclibc")),
+    target_os = "freebsd"
+))]
 #[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_recvif_ipv6() {
