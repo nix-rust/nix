@@ -9,9 +9,7 @@ use std::time::Duration;
 use std::{cmp, fmt, ops};
 
 const fn zero_init_timespec() -> timespec {
-    // `std::mem::MaybeUninit::zeroed()` is not yet a const fn
-    // (https://github.com/rust-lang/rust/issues/91850) so we will instead initialize an array of
-    // the appropriate size to zero and then transmute it to a timespec value.
+    // TODO(MSRV>=1.75, feature(const_maybe_uninit_zeroed): use [`std::mem::MaybeUninit::zeroed()`]
     unsafe { std::mem::transmute([0u8; std::mem::size_of::<timespec>()]) }
 }
 
