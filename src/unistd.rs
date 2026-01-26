@@ -353,7 +353,7 @@ feature! {
 /// Get the terminal foreground process group (see
 /// [tcgetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcgetpgrp.html)).
 ///
-/// Get the group process id (PGID) of the foreground process group on the
+/// Get the process group id (PGID) of the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
 pub fn tcgetpgrp<F: std::os::fd::AsFd>(fd: F) -> Result<Pid> {
