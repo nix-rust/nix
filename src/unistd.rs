@@ -365,7 +365,7 @@ pub fn tcgetpgrp<F: std::os::fd::AsFd>(fd: F) -> Result<Pid> {
 /// Set the terminal foreground process group (see
 /// [tcsetpgrp(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/tcsetpgrp.html)).
 ///
-/// Set the group process id (PGID) to the foreground process group on the
+/// Set the process group id (PGID) to the foreground process group on the
 /// terminal associated to file descriptor (FD).
 #[inline]
 pub fn tcsetpgrp<F: std::os::fd::AsFd>(fd: F, pgrp: Pid) -> Result<()> {
