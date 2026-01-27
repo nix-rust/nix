@@ -114,8 +114,8 @@ pub struct WatchDescriptor {
     wd: i32,
 }
 impl WatchDescriptor {
-    /// Inner WatchDescriptor, from libc.
-    pub fn inner_id(self) -> i32 {
+    /// Raw WatchDescriptor, from libc.
+    pub fn as_raw(self) -> i32 {
         self.wd
     }
 }
