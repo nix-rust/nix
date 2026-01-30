@@ -260,8 +260,61 @@ impl SockProtocol {
     #[allow(non_upper_case_globals)]
     #[cfg(target_endian = "little")]
     pub const EthIp: SockProtocol = unsafe { std::mem::transmute::<i32, SockProtocol>((libc::ETH_P_IP as u16).to_be() as i32) };
-
 }
+
+/// A raw protocol number for use with [`socket_with_protocol`].
+///
+/// This type allows specifying arbitrary protocol numbers that may not be
+/// defined in [`SockProtocol`], such as Ethernet protocol numbers for
+/// `AF_PACKET` sockets.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct Protocol(c_int);
+
+impl Protocol {
+    /// Create a `Protocol` from a raw protocol number.
+    ///
+    /// The value is passed directly to the `socket(2)` syscall without modification.
+    pub const fn new(proto: c_int) -> Self {
+        Protocol(proto)
+    }
+
+    /// Create a `Protocol` from an Ethernet protocol number (e.g., `libc::ETH_P_ARP`).
+    ///
+    /// This method automatically handles the conversion to network byte order, which is
+    /// required when passing Ethernet protocol numbers to the `socket(2)` syscall for
+    /// `AF_PACKET` sockets.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # #[cfg(linux_android)]
+    /// # {
+    /// use nix::sys::socket::{socket_with_protocol, AddressFamily, SockType, SockFlag, Protocol};
+    ///
+    /// // Create a protocol for capturing ARP packets
+    /// let proto = Protocol::ethernet(libc::ETH_P_ARP as u16);
+    /// // let sock = socket_with_protocol(AddressFamily::Packet, SockType::Raw, SockFlag::empty(), proto);
+    /// # }
+    /// ```
+    ///
+    /// See [`packet(7)`](https://man7.org/linux/man-pages/man7/packet.7.html) for more details.
+    #[cfg(linux_android)]
+    pub const fn ethernet(proto: u16) -> Self {
+        Protocol(proto.to_be() as c_int)
+    }
+
+    /// Returns the raw protocol number.
+    pub const fn as_raw(self) -> c_int {
+        self.0
+    }
+}
+
+impl From<SockProtocol> for Protocol {
+    fn from(p: SockProtocol) -> Self {
+        Protocol(p as c_int)
+    }
+}
+
 #[cfg(linux_android)]
 libc_bitflags! {
     /// Configuration flags for `SO_TIMESTAMPING` interface
@@ -2241,6 +2294,55 @@ pub fn socket<T: Into<Option<SockProtocol>>>(
     ty |= flags.bits();
 
     let res = unsafe { libc::socket(domain as c_int, ty, protocol) };
+
+    match res {
+        -1 => Err(Errno::last()),
+        fd => {
+            // Safe because libc::socket returned success
+            unsafe { Ok(OwnedFd::from_raw_fd(fd)) }
+        }
+    }
+}
+
+/// Create an endpoint for communication, with a raw protocol number.
+///
+/// This is similar to [`socket`], but accepts a [`Protocol`] instead of a
+/// [`SockProtocol`], allowing for arbitrary protocol numbers that may not be
+/// defined in the `SockProtocol` enum.
+///
+/// This is particularly useful for `AF_PACKET` sockets where Ethernet protocol
+/// numbers (like `ETH_P_ARP`) need to be specified in network byte order.
+///
+/// # Example
+///
+/// ```no_run
+/// # #[cfg(linux_android)]
+/// # fn main() -> nix::Result<()> {
+/// use nix::sys::socket::{socket_with_protocol, AddressFamily, SockType, SockFlag, Protocol};
+///
+/// // Create a raw socket to capture ARP packets
+/// let proto = Protocol::ethernet(libc::ETH_P_ARP as u16);
+/// let sock = socket_with_protocol(AddressFamily::Packet, SockType::Raw, SockFlag::empty(), proto)?;
+/// # Ok(())
+/// # }
+/// # #[cfg(not(linux_android))]
+/// # fn main() {}
+/// ```
+///
+/// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html)
+pub fn socket_with_protocol(
+    domain: AddressFamily,
+    ty: SockType,
+    flags: SockFlag,
+    protocol: Protocol,
+) -> Result<OwnedFd> {
+    // SockFlags are usually embedded into `ty`, but we don't do that in `nix` because it's a
+    // little easier to understand by separating it out. So we have to merge these bitfields
+    // here.
+    let mut ty = ty as c_int;
+    ty |= flags.bits();
+
+    let res = unsafe { libc::socket(domain as c_int, ty, protocol.as_raw()) };
 
     match res {
         -1 => Err(Errno::last()),

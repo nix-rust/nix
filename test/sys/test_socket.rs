@@ -3183,3 +3183,41 @@ fn can_open_routing_socket() {
         socket(AddressFamily::Route, SockType::Raw, SockFlag::empty(), None)
             .expect("Failed to open routing socket");
 }
+
+/// Test that `Protocol::ethernet` can be used to create packet sockets.
+/// This test requires root privileges, so we just verify the protocol compiles
+/// and can be passed to socket_with_protocol() - we don't require the socket
+/// creation to succeed.
+#[cfg(linux_android)]
+#[test]
+fn test_protocol_ethernet() {
+    use nix::sys::socket::{
+        socket_with_protocol, AddressFamily, Protocol, SockFlag, SockType,
+    };
+
+    // Create a protocol using the ethernet helper
+    let proto = Protocol::ethernet(libc::ETH_P_ARP as u16);
+
+    // Verify the byte order conversion is correct
+    // ETH_P_ARP is 0x0806, after to_be() on little-endian it becomes 0x0608
+    let expected = (libc::ETH_P_ARP as u16).to_be() as libc::c_int;
+    assert_eq!(proto.as_raw(), expected);
+
+    // Try to create a packet socket with the custom protocol.
+    // This will fail with EPERM if not root, but that's fine - we're testing
+    // that Protocol::ethernet() produces a value that can be passed to socket.
+    let result = socket_with_protocol(
+        AddressFamily::Packet,
+        SockType::Raw,
+        SockFlag::empty(),
+        proto,
+    );
+
+    // Either succeeds (if root) or fails with EPERM/EACCES (if not root)
+    // Any other error would indicate a problem with our protocol value
+    match result {
+        Ok(_) => (), // Success - we have privileges
+        Err(nix::errno::Errno::EPERM) | Err(nix::errno::Errno::EACCES) => (), // Expected without root
+        Err(e) => panic!("Unexpected error: {}", e),
+    }
+}

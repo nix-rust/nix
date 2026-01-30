@@ -7,6 +7,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added `Protocol` type and `socket_with_protocol()` function to allow creating
+  sockets with arbitrary protocol numbers. Includes `Protocol::ethernet()` helper
+  for Ethernet protocols (like `ETH_P_ARP`) that handles network byte order
+  conversion automatically. ([#854](https://github.com/nix-rust/nix/issues/854))
 - termios: Add definition for IUCLC to supported platforms
   ([#2702](https://github.com/nix-rust/nix/pull/2702))
 - termios: Add definition for XCASE for supported platforms
