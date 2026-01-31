@@ -24,10 +24,10 @@ use memoffset::offset_of;
 use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV6, ToSocketAddrs};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
-use std::{fmt, mem, net, ptr, slice};
+use std::{fmt, mem, net, option, ptr, slice, vec};
 
 /// Convert a std::net::Ipv4Addr into the libc form.
 #[cfg(feature = "net")]
@@ -952,6 +952,15 @@ impl std::str::FromStr for SockaddrIn {
     }
 }
 
+impl ToSocketAddrs for SockaddrIn {
+    type Iter = vec::IntoIter<SocketAddr>;
+
+    fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
+        let sa = SocketAddr::new(self.ip().into(), self.port());
+        Ok(vec![sa].into_iter())
+    }
+}
+
 /// An IPv6 socket address
 #[cfg(feature = "net")]
 #[repr(transparent)]
@@ -1101,6 +1110,21 @@ impl std::str::FromStr for SockaddrIn6 {
         net::SocketAddrV6::from_str(s).map(SockaddrIn6::from)
     }
 }
+
+impl ToSocketAddrs for SockaddrIn6 {
+    type Iter = vec::IntoIter<SocketAddr>;
+
+    fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
+        let sa6 = SocketAddrV6::new(self.ip().into(),
+                                    self.port(),
+                                    self.flowinfo(),
+                                    self.scope_id())
+            .into();
+        Ok(vec![sa6].into_iter())
+
+    }
+}
+
 
 /// A container for any sockaddr type
 ///
@@ -1514,6 +1538,24 @@ impl PartialEq for SockaddrStorage {
                 _ => false,
             }
         }
+    }
+}
+
+impl ToSocketAddrs for SockaddrStorage {
+    type Iter = option::IntoIter<SocketAddr>;
+
+    fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
+        let opt = if let Some(sai) = self.as_sockaddr_in() {
+            sai.to_socket_addrs()?.next()
+
+        } else if let Some(sai6) = self.as_sockaddr_in6() {
+            sai6.to_socket_addrs()?.next()
+
+        } else {
+            None
+        };
+
+        Ok(opt.into_iter())
     }
 }
 
