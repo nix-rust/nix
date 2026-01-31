@@ -952,6 +952,7 @@ impl std::str::FromStr for SockaddrIn {
     }
 }
 
+#[cfg(feature = "net")]
 impl ToSocketAddrs for SockaddrIn {
     type Iter = vec::IntoIter<SocketAddr>;
 
@@ -1111,6 +1112,7 @@ impl std::str::FromStr for SockaddrIn6 {
     }
 }
 
+#[cfg(feature = "net")]
 impl ToSocketAddrs for SockaddrIn6 {
     type Iter = vec::IntoIter<SocketAddr>;
 
@@ -1540,6 +1542,7 @@ impl PartialEq for SockaddrStorage {
     }
 }
 
+#[cfg(feature = "net")]
 impl ToSocketAddrs for SockaddrStorage {
     type Iter = option::IntoIter<SocketAddr>;
 
