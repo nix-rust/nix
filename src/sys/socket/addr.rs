@@ -1125,7 +1125,6 @@ impl ToSocketAddrs for SockaddrIn6 {
     }
 }
 
-
 /// A container for any sockaddr type
 ///
 /// Just like C's `sockaddr_storage`, this type is large enough to hold any type
@@ -2385,6 +2384,15 @@ mod tests {
             let ip = SockaddrIn::from_str(s).unwrap().ip();
             assert_eq!("127.0.0.1", format!("{ip}"));
         }
+
+        #[test]
+        fn tosockaddr() {
+            let s = "127.0.0.1:8082";
+            let ip = SockaddrIn::from_str(s).unwrap();
+            let sa = ip.to_socket_addrs().unwrap()
+                .next().unwrap();
+            assert_eq!(s, format!("{sa}"));
+        }
     }
 
     mod sockaddr_in6 {
@@ -2424,10 +2432,31 @@ mod tests {
             let std_sin6: std::net::SocketAddrV6 = nix_sin6.into();
             assert_eq!(nix_sin6, std_sin6.into());
         }
+
+        #[test]
+        fn tosockaddr() {
+            let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
+            let mut nix_sin6 = SockaddrIn6::from_str(s).unwrap();
+            nix_sin6.0.sin6_flowinfo = 0x12345678;
+            nix_sin6.0.sin6_scope_id = 0x9abcdef0;
+
+            let sa = nix_sin6.to_socket_addrs().unwrap()
+                .next().unwrap();
+
+            if let SocketAddr::V6(v6) = sa {
+                assert_eq!(nix_sin6.ip(), *v6.ip());
+                assert_eq!(nix_sin6.port(), v6.port());
+                assert_eq!(nix_sin6.flowinfo(), v6.flowinfo());
+                assert_eq!(nix_sin6.scope_id(), v6.scope_id());
+            } else {
+                panic!("Unexpected sockaddr type");
+            };
+        }
     }
 
     mod sockaddr_storage {
         use super::*;
+        use std::str::FromStr;
 
         #[test]
         fn from_sockaddr_un_named() {
@@ -2457,6 +2486,53 @@ mod tests {
             let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
                 .unwrap();
             assert_eq!(ss.len(), ua.len());
+        }
+
+        #[test]
+        fn tosockaddr_v6() {
+            let s = "[1234:5678:90ab:cdef::1111:2222]:8080";
+            let mut sai6 = SockaddrIn6::from_str(s).unwrap();
+            sai6.0.sin6_flowinfo = 0x12345678;
+            sai6.0.sin6_scope_id = 0x9abcdef0;
+
+            let ptr = sai6.as_ptr().cast();
+            let sas = unsafe { SockaddrStorage::from_raw(ptr, None).unwrap() };
+
+            let sa = sas.to_socket_addrs().unwrap()
+                .next().unwrap();
+
+            if let SocketAddr::V6(v6) = sa {
+                assert_eq!(sai6.ip(), *v6.ip());
+                assert_eq!(sai6.port(), v6.port());
+                assert_eq!(sai6.flowinfo(), v6.flowinfo());
+                assert_eq!(sai6.scope_id(), v6.scope_id());
+            } else {
+                panic!("Unexpected sockaddr type");
+            };
+        }
+
+        #[test]
+        fn tosockaddr_v4() {
+            let s = "127.0.0.1:8082";
+            let ip4 = SockaddrIn::from_str(s).unwrap();
+
+            let ptr = ip4.as_ptr().cast();
+            let sas = unsafe { SockaddrStorage::from_raw(ptr, None).unwrap() };
+
+            let sa = sas.to_socket_addrs().unwrap()
+                .next().unwrap();
+            assert_eq!(s, format!("{sa}"));
+        }
+
+        #[test]
+        fn from_sockaddr_unix() {
+            let ua = UnixAddr::new("/var/run/mysock").unwrap();
+            let ptr = ua.as_ptr().cast();
+            let ss = unsafe { SockaddrStorage::from_raw(ptr, Some(ua.len())) }
+                .unwrap();
+
+            let sa = ss.to_socket_addrs().unwrap();
+            assert_eq!(0, sa.len());
         }
     }
 
