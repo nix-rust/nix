@@ -1115,7 +1115,7 @@ impl ToSocketAddrs for SockaddrIn6 {
     type Iter = vec::IntoIter<SocketAddr>;
 
     fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
-        let sa6 = SocketAddrV6::new(self.ip().into(),
+        let sa6 = SocketAddrV6::new(self.ip(),
                                     self.port(),
                                     self.flowinfo(),
                                     self.scope_id())
