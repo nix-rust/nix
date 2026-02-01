@@ -6,11 +6,11 @@
 use cfg_if::cfg_if;
 #[cfg(apple_targets)]
 use std::convert::TryFrom;
-use std::{ffi, option};
 use std::iter::Iterator;
 use std::mem;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::option::Option;
+use std::{ffi, option};
 
 use crate::net::if_::*;
 use crate::sys::socket::{SockaddrLike, SockaddrStorage};
@@ -157,7 +157,6 @@ impl ToSocketAddrs for InterfaceAddress {
     }
 }
 
-
 /// Get interface addresses using libc's `getifaddrs`
 ///
 /// Note that the underlying implementation differs between OSes. Only the
@@ -234,14 +233,11 @@ mod tests {
     #[test]
     fn test_tosockaddrs() -> Result<()> {
         let with_addrs = getifaddrs()?
-            .filter_map(|ifaddr| ifaddr.to_socket_addrs().unwrap()
-                        .next())
+            .filter_map(|ifaddr| ifaddr.to_socket_addrs().unwrap().next())
             .filter(|sa| sa.ip() == Ipv4Addr::LOCALHOST)
             .collect::<Vec<SocketAddr>>();
         // Assumes a modern *nix must have v4 loopback to work.
         assert_eq!(1, with_addrs.len());
         Ok(())
     }
-
-
 }
