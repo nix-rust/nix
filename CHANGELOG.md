@@ -3,6 +3,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [Unreleased]
+
+### Added
+
+- Add `ptrace::listen`
+  ([#2745](https://github.com/nix-rust/nix/pull/2745))
+
 ## [0.31.1] - 2026-01-23
 
 ### Added
