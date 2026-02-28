@@ -3,6 +3,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.31.2] - 2026-02-28
+
+### Added
+
+- Add WatchDescriptor::as_raw, to get libc id of WatchDescriptor.
+  ([#2718](https://github.com/nix-rust/nix/pull/2718))
+- Added process::pthread_getthreadid_np() on FreeBSD.
+  ([#2725](https://github.com/nix-rust/nix/pull/2725))
+- Added timerfd support on FreeBSD
+  ([#2728](https://github.com/nix-rust/nix/pull/2728))
+
+### Fixed
+
+- The libc requirement is now `0.2.181`, rather than pinned to 0.2.180.
+  ([#2744](https://github.com/nix-rust/nix/pull/2744))
+
+
 ## [0.31.1] - 2026-01-23
 
 ### Added
