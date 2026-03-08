@@ -67,6 +67,12 @@ feature! {
 #[cfg(target_os = "linux")]
 feature! {
     #![feature = "process"]
+    pub mod pidfd;
+}
+
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "process"]
     pub mod prctl;
 }
 
