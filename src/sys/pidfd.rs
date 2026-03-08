@@ -3,6 +3,7 @@
 use std::{
     hint::unreachable_unchecked,
     os::fd::{FromRawFd as _, OwnedFd, RawFd},
+    ptr,
 };
 
 use bitflags::bitflags;
@@ -57,4 +58,80 @@ pub fn pidfd_open(pid: Pid, flags: PidfdFlags) -> Result<OwnedFd, Errno> {
             _ => unreachable_unchecked(),
         }
     }
+}
+
+feature! {
+#![feature = "signal"]
+
+use std::os::fd::{AsFd, AsRawFd};
+
+use libc::siginfo_t;
+
+use crate::sys::signal::Signal;
+
+bitflags! {
+    /// Flags for [`pidfd_send_signal`].
+    #[derive(Copy, Clone)]
+    pub struct PidfdSignalFlags: libc::c_uint {
+        /// See [`pidfd_send_signal(2)`] for details.
+        ///
+        /// [`pidfd_send_signal(2)`]: https://man7.org/linux/man-pages/man2/pidfd_send_signal.2.html
+        const PIDFD_SIGNAL_THREAD = libc::PIDFD_SIGNAL_THREAD;
+
+        /// See [`pidfd_send_signal(2)`] for details.
+        ///
+        /// [`pidfd_send_signal(2)`]: https://man7.org/linux/man-pages/man2/pidfd_send_signal.2.html
+        const PIDFD_SIGNAL_THREAD_GROUP = libc::PIDFD_SIGNAL_THREAD_GROUP;
+
+        /// See [`pidfd_send_signal(2)`] for details.
+        ///
+        /// [`pidfd_send_signal(2)`]: https://man7.org/linux/man-pages/man2/pidfd_send_signal.2.html
+        const PIDFD_SIGNAL_PROCESS_GROUP = libc::PIDFD_SIGNAL_PROCESS_GROUP;
+    }
+}
+
+/// Send a signal to a process by its PIDFD.
+///
+/// See [`pidfd_send_signal(2)`] for details.
+///
+/// [`pidfd_send_signal(2)`]: https://man7.org/linux/man-pages/man2/pidfd_send_signal.2.html
+///
+/// # Safety
+///
+/// This function is [async-signal-safe], although it may modify `errno`.
+///
+/// [async-signal-safe]: https://man7.org/linux/man-pages/man7/signal-safety.7.html
+pub fn pidfd_send_signal<T>(
+    pidfd: T,
+    signal: Signal,
+    signal_info: Option<siginfo_t>,
+    flags: PidfdSignalFlags,
+) -> Result<(), Errno>
+where
+    T: AsFd,
+{
+    let signal_info = match signal_info {
+        Some(x) => &x,
+        None => ptr::null(),
+    };
+
+    // SAFETY:
+    //
+    // * Arguments passed to the syscall have the correct types.
+    // * The kernel should not return any value other than `0` and `-1`.
+    unsafe {
+        match libc::syscall(
+            libc::SYS_pidfd_send_signal,
+            pidfd.as_fd().as_raw_fd(),
+            signal as libc::c_int,
+            signal_info,
+            flags.bits(),
+        ) {
+            0 => Ok(()),
+            -1 => Err(Errno::last()),
+            _ => unreachable_unchecked(),
+        }
+    }
+}
+
 }
