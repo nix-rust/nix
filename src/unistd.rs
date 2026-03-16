@@ -812,7 +812,6 @@ pub fn mkdir<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Res
 /// }
 /// ```
 #[inline]
-#[cfg(not(target_os = "redox"))] // RedoxFS does not support fifo yet
 pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| unsafe {
         libc::mkfifo(cstr.as_ptr(), mode.bits() as libc::mode_t)
