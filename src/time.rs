@@ -60,7 +60,8 @@ impl ClockId {
         linux_android,
         target_os = "emscripten",
         target_os = "freebsd",
-        target_os = "fuchsia"
+        target_os = "fuchsia",
+        target_os = "openbsd",
     ))]
     /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the
     /// machine is running.
@@ -97,6 +98,7 @@ impl ClockId {
         linux_android,
         apple_targets,
         freebsdlike,
+        netbsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
         target_os = "redox",
@@ -152,13 +154,14 @@ impl ClockId {
         linux_android,
         apple_targets,
         freebsdlike,
+        netbsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
     ))]
     /// Returns the execution time of the calling thread.
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =
         ClockId(libc::CLOCK_THREAD_CPUTIME_ID);
-    #[cfg(freebsdlike)]
+    #[cfg(any(freebsdlike, target_os = "openbsd"))]
     /// Starts at zero when the kernel boots and increments monotonically in SI seconds while the
     /// machine is running.
     pub const CLOCK_UPTIME: ClockId = ClockId(libc::CLOCK_UPTIME);
