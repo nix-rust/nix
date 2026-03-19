@@ -750,7 +750,37 @@ impl<'a> IntoIterator for &'a SigSet {
     }
 }
 
-/// A signal handler.
+/// A signal handler used with [`sigaction`] or [`signal`].
+///
+/// Signal handlers have very limited functionality.  A signal handler must
+/// only call async-signal-safe functions.  A list of async-signal-safe
+/// functions can be found in
+/// [signal-safety(7)](https://man7.org/linux/man-pages/man7/signal-safety.7.html).
+///
+/// In particular, signal handlers should only set a flag using an atomic type
+/// (such as [`std::sync::atomic::AtomicBool`]) and do nothing else.  Any more
+/// complex logic should be performed outside the signal handler.
+///
+/// # Examples
+///
+/// Catch `SIGINT` and record it with an atomic flag:
+///
+/// ```no_run
+/// # use std::convert::TryFrom;
+/// # use std::sync::atomic::{AtomicBool, Ordering};
+/// # use nix::sys::signal::{self, Signal, SigHandler};
+/// static SIGNALED: AtomicBool = AtomicBool::new(false);
+///
+/// extern "C" fn handle_sigint(signal: libc::c_int) {
+///     let signal = Signal::try_from(signal).unwrap();
+///     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
+/// }
+///
+/// fn main() {
+///     let handler = SigHandler::Handler(handle_sigint);
+///     unsafe { signal::signal(Signal::SIGINT, handler) }.unwrap();
+/// }
+/// ```
 #[derive(Clone, Copy, Debug, Hash)]
 pub enum SigHandler {
     /// Default signal handling.
@@ -765,7 +795,29 @@ pub enum SigHandler {
     SigAction(extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
-/// Action to take on receipt of a signal. Corresponds to `sigaction`.
+/// Action to take on receipt of a signal.
+///
+/// `SigAction` wraps `libc::sigaction`, which defines the full signal
+/// disposition: the handler, flags controlling delivery behavior, and the set
+/// of signals to block while the handler runs.  Construct one with
+/// [`SigAction::new`] and install it with [`sigaction`].
+///
+/// # Examples
+///
+/// Install a handler for `SIGINT`:
+///
+/// ```no_run
+/// # use nix::sys::signal::{self, SaFlags, SigAction, SigHandler, SigSet, Signal};
+/// extern "C" fn handle_sigint(signal: libc::c_int) {
+///     // handle signal
+/// }
+///
+/// fn main() {
+///     let handler = SigHandler::Handler(handle_sigint);
+///     let action = SigAction::new(handler, SaFlags::empty(), SigSet::empty());
+///     unsafe { signal::sigaction(Signal::SIGINT, &action) }.unwrap();
+/// }
+/// ```
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigAction {
