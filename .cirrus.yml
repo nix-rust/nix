@@ -48,6 +48,7 @@ task:
       RUSTFLAGS: --cfg fbsd14 -D warnings
       RUSTDOCFLAGS: --cfg fbsd14
   setup_script:
+    - pkg install -y ca_root_nss # workaround for https://github.com/rust-lang/cargo/issues/16357
     - kldload mqueuefs
     - fetch https://sh.rustup.rs -o rustup.sh
     - sh rustup.sh -y --profile=minimal --default-toolchain stable
