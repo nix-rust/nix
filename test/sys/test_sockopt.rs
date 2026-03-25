@@ -1270,3 +1270,64 @@ pub fn test_so_attach_reuseport_cbpf() {
         assert_eq!(e, nix::errno::Errno::ENOPROTOOPT);
     });
 }
+
+/// Test that TCP_SAVE_SYN can be set and read back on a listening socket, and
+/// that TCP_SAVED_SYN returns the raw SYN bytes on an accepted connection.
+#[test]
+#[cfg(linux_android)]
+#[cfg_attr(qemu, ignore)]
+fn test_tcp_save_syn() {
+    use nix::sys::socket::{
+        accept, bind, connect, getsockopt, listen, setsockopt, socket, sockopt,
+        AddressFamily, Backlog, SockFlag, SockProtocol, SockType, SockaddrIn,
+    };
+    use std::net::SocketAddrV4;
+    use std::os::fd::{FromRawFd, OwnedFd};
+    use std::str::FromStr;
+
+    // Create a listening socket and enable TCP_SAVE_SYN.
+    let listener = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+
+    setsockopt(&listener, sockopt::ReuseAddr, &true).unwrap();
+    setsockopt(&listener, sockopt::TcpSaveSyn, &true).unwrap();
+    assert!(getsockopt(&listener, sockopt::TcpSaveSyn).unwrap());
+
+    let addr = SockaddrIn::from(SocketAddrV4::from_str("127.0.0.1:0").unwrap());
+    bind(listener.as_raw_fd(), &addr).unwrap();
+    listen(&listener, Backlog::new(1).unwrap()).unwrap();
+
+    // Determine the bound port.
+    let bound: SockaddrIn =
+        nix::sys::socket::getsockname(listener.as_raw_fd()).unwrap();
+
+    // Connect a client.
+    let client = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+    connect(client.as_raw_fd(), &bound).unwrap();
+
+    // Accept the connection and verify TCP_SAVED_SYN returns SYN bytes.
+    let conn_fd = accept(listener.as_raw_fd()).unwrap();
+    let conn = unsafe { OwnedFd::from_raw_fd(conn_fd) };
+
+    let syn_bytes = getsockopt(&conn, sockopt::TcpSavedSyn).unwrap();
+    // The saved SYN must contain at least the IP and TCP fixed headers.
+    assert!(
+        !syn_bytes.is_empty(),
+        "TCP_SAVED_SYN should return SYN packet bytes"
+    );
+
+    // Disable TCP_SAVE_SYN and verify it reads back as false.
+    setsockopt(&listener, sockopt::TcpSaveSyn, &false).unwrap();
+    assert!(!getsockopt(&listener, sockopt::TcpSaveSyn).unwrap());
+}
