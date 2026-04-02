@@ -17,9 +17,9 @@ cfg_if! {
         use libc::{__rlimit_resource_t, rlimit};
     } else if #[cfg(any(
         bsd,
+        solarish,
         target_os = "android",
         target_os = "aix",
-        target_os = "illumos",
         all(target_os = "linux", not(target_env = "gnu")),
         target_os = "cygwin"
     ))]{
@@ -49,9 +49,9 @@ libc_enum! {
         ), repr(u32))]
     #[cfg_attr(any(
             bsd,
+            solarish,
             target_os = "android",
             target_os = "aix",
-            target_os = "illumos",
             all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc"))),
             target_os = "cygwin"
         ), repr(i32))]
