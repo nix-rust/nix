@@ -1789,10 +1789,10 @@ pub fn test_syscontrol() {
         SockProtocol::KextControl,
     )
     .expect("socket failed");
-    SysControlAddr::from_name(fd.as_raw_fd(), "com.apple.net.utun_control", 0)
+    SysControlAddr::from_name(&fd, "com.apple.net.utun_control", 0)
         .expect("resolving sys_control name failed");
     assert_eq!(
-        SysControlAddr::from_name(fd.as_raw_fd(), "foo.bar.lol", 0).err(),
+        SysControlAddr::from_name(&fd, "foo.bar.lol", 0).err(),
         Some(Errno::ENOENT)
     );
 

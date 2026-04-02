@@ -967,12 +967,9 @@ fn test_utun_ifname() {
     .unwrap();
 
     let unit = 123;
-    let addr = SysControlAddr::from_name(
-        fd.as_raw_fd(),
-        "com.apple.net.utun_control",
-        unit,
-    )
-    .unwrap();
+    let addr =
+        SysControlAddr::from_name(&fd, "com.apple.net.utun_control", unit)
+            .unwrap();
 
     connect(fd.as_raw_fd(), &addr).unwrap();
 
