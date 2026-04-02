@@ -96,3 +96,6 @@ mod test_resource;
 // only enable this for FreeBSD for now.
 #[cfg(target_os = "freebsd")]
 mod test_memfd;
+
+#[cfg(all(target_os = "linux", feature = "process"))]
+mod test_pidfd;
