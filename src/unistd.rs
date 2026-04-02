@@ -24,7 +24,7 @@ use crate::sys::stat::FileFlag;
 use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
-use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
+use libc::{c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
@@ -1086,13 +1086,6 @@ pub fn fchownat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
 
 feature! {
 #![feature = "process"]
-fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
-    use std::iter::once;
-    args.iter()
-        .map(|s| s.as_ref().as_ptr())
-        .chain(once(ptr::null()))
-        .collect()
-}
 
 /// Replace the current process image with a new one (see
 /// [exec(3)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/exec.html)).
@@ -1102,7 +1095,7 @@ fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
 /// environment for the new process.
 #[inline]
 pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
-    let args_p = to_exec_array(argv);
+    let args_p = crate::c_slice_to_pointers(argv);
 
     unsafe { libc::execv(path.as_ptr(), args_p.as_ptr()) };
 
@@ -1127,8 +1120,8 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     args: &[SA],
     env: &[SE],
 ) -> Result<Infallible> {
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+    let args_p = crate::c_slice_to_pointers(args);
+    let env_p = crate::c_slice_to_pointers(env);
 
     unsafe { libc::execve(path.as_ptr(), args_p.as_ptr(), env_p.as_ptr()) };
 
@@ -1149,7 +1142,7 @@ pub fn execvp<S: AsRef<CStr>>(
     filename: &CStr,
     args: &[S],
 ) -> Result<Infallible> {
-    let args_p = to_exec_array(args);
+    let args_p = crate::c_slice_to_pointers(args);
 
     unsafe { libc::execvp(filename.as_ptr(), args_p.as_ptr()) };
 
@@ -1169,8 +1162,8 @@ pub fn execvpe<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     args: &[SA],
     env: &[SE],
 ) -> Result<Infallible> {
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+    let args_p = crate::c_slice_to_pointers(args);
+    let env_p = crate::c_slice_to_pointers(env);
 
     unsafe {
         libc::execvpe(filename.as_ptr(), args_p.as_ptr(), env_p.as_ptr())
@@ -1198,8 +1191,8 @@ pub fn fexecve<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ) -> Result<Infallible> {
     use std::os::fd::AsRawFd;
 
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+    let args_p = crate::c_slice_to_pointers(args);
+    let env_p = crate::c_slice_to_pointers(env);
 
     unsafe { libc::fexecve(fd.as_fd().as_raw_fd(), args_p.as_ptr(), env_p.as_ptr()) };
 
@@ -1227,8 +1220,8 @@ pub fn execveat<Fd: std::os::fd::AsFd, SA: AsRef<CStr>, SE: AsRef<CStr>>(
 ) -> Result<Infallible> {
     use std::os::fd::AsRawFd;
 
-    let args_p = to_exec_array(args);
-    let env_p = to_exec_array(env);
+    let args_p = crate::c_slice_to_pointers(args);
+    let env_p = crate::c_slice_to_pointers(env);
 
     unsafe {
         libc::syscall(
