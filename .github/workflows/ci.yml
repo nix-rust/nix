@@ -360,9 +360,7 @@ jobs:
           - target: x86_64-unknown-dragonfly
           - target: x86_64-unknown-openbsd
           - target: x86_64-unknown-haiku
-          # Temporarily disable armv7-unknown-linux-uclibceabihf
-          # https://github.com/rust-lang/rust/issues/154679
-          # - target: armv7-unknown-linux-uclibceabihf
+          - target: armv7-unknown-linux-uclibceabihf
           - target: i686-unknown-hurd-gnu
     steps:
       - name: checkout
