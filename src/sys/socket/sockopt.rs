@@ -41,7 +41,7 @@ const TCP_CA_NAME_MAX: usize = 16;
 ///   `libc::IP_ADD_MEMBERSHIP` and others. Will be passed as the third argument (`option_name`)
 ///   to the `setsockopt` call.
 /// * Type of the value that you are going to set.
-/// * Type that implements the `Set` trait for the type from the previous item 
+/// * Type that implements the `Set` trait for the type from the previous item
 ///   (like `SetBool` for `bool`, `SetUsize` for `usize`, etc.).
 #[macro_export]
 macro_rules! setsockopt_impl {
@@ -248,6 +248,13 @@ macro_rules! sockopt_impl {
                       $crate::sys::socket::sockopt::SetOsString);
     };
 
+    ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path,
+     OsString<$array:ty>) =>
+    {
+        sockopt_impl!($(#[$attr])*
+                      $name, GetOnly, $level, $flag, std::ffi::OsString, $crate::sys::socket::sockopt::GetOsString<$array>);
+    };
+
     /*
      * Matchers with generic getter types must be placed at the end, so
      * they'll only match _after_ specialized matchers fail
@@ -364,9 +371,9 @@ sockopt_impl!(
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     /// Used to disable Nagle's algorithm.
-    /// 
+    ///
     /// Nagle's algorithm:
-    /// 
+    ///
     /// Under most circumstances, TCP sends data when it is presented; when
     /// outstanding data has not yet been acknowledged, it gathers small amounts
     /// of output to be sent in a single packet once an acknowledgement is
@@ -761,6 +768,40 @@ sockopt_impl!(
     libc::IPPROTO_TCP,
     libc::TCP_REPAIR,
     u32
+);
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "net", target_os = "linux"))))]
+    /// If enabled, the kernel saves a copy of the SYN packet for each
+    /// accepted connection. The saved packet can be retrieved on the
+    /// accepted socket via [`TcpSavedSyn`]. Must be set on the listening
+    /// socket before `accept()` is called.
+    ///
+    /// See `tcp(7)` and `TCP_SAVE_SYN` in the Linux kernel documentation.
+    TcpSaveSyn,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_SAVE_SYN,
+    bool
+);
+/// Maximum size of a saved SYN packet retrieved via [`TcpSavedSyn`]:
+/// IPv4/IPv6 header (up to 60 bytes) + TCP header (up to 60 bytes).
+#[cfg(linux_android)]
+pub const TCP_SAVED_SYN_MAX: usize = 120;
+
+#[cfg(linux_android)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "net", target_os = "linux"))))]
+    /// Retrieves the SYN packet saved by [`TcpSaveSyn`] on the listening
+    /// socket. Returns the raw IP + TCP headers from the client's initial SYN
+    /// as bytes. Returns an empty value if no SYN was saved.
+    TcpSavedSyn,
+    GetOnly,
+    libc::IPPROTO_TCP,
+    libc::TCP_SAVED_SYN,
+    OsString<[u8; TCP_SAVED_SYN_MAX]>
 );
 #[cfg(not(any(
     target_os = "openbsd",
@@ -1216,7 +1257,7 @@ sockopt_impl!(
 #[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
-    /// Enables a receiving socket to retrieve the Time-to-Live (TTL) field 
+    /// Enables a receiving socket to retrieve the Time-to-Live (TTL) field
     /// from incoming IPv4 packets.
     Ipv4RecvTtl,
     Both,
@@ -1236,7 +1277,7 @@ sockopt_impl!(
 #[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
-    /// Enables a receiving socket to retrieve the Hop Limit field 
+    /// Enables a receiving socket to retrieve the Hop Limit field
     /// (similar to TTL in IPv4) from incoming IPv6 packets.
     Ipv6RecvHopLimit,
     Both,
@@ -1268,10 +1309,7 @@ sockopt_impl!(
     libc::IP_DONTFRAG,
     bool
 );
-#[cfg(any(
-    all(linux_android, not(target_env = "uclibc")),
-    apple_targets
-))]
+#[cfg(any(all(linux_android, not(target_env = "uclibc")), apple_targets))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
     Ipv6DontFrag,
@@ -1850,7 +1888,6 @@ impl<'a> Set<'a, usize> for SetUsize {
     }
 }
 
-
 /// Getter for a `OwnedFd` value.
 // Hide the docs, because it's an implementation detail of `sockopt_impl!`
 #[doc(hidden)]
@@ -1900,7 +1937,9 @@ impl<'a> Set<'a, OwnedFd> for SetOwnedFd {
     fn new(val: &'a OwnedFd) -> SetOwnedFd {
         use std::os::fd::AsRawFd;
 
-        SetOwnedFd { val: val.as_raw_fd() as c_int }
+        SetOwnedFd {
+            val: val.as_raw_fd() as c_int,
+        }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
