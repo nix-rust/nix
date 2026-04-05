@@ -116,6 +116,42 @@ impl Dir {
     pub fn iter(&mut self) -> Iter<'_> {
         Iter(self)
     }
+
+    /// Set the position of the directory stream, see `seekdir(3)`.
+    #[cfg(not(target_os = "android"))]
+    pub fn seek(&mut self, loc: SeekLoc) {
+        unsafe { libc::seekdir(self.0.as_ptr(), loc.0) }
+    }
+
+    /// Reset directory stream, see `rewinddir(3)`.
+    pub fn rewind(&mut self) {
+        unsafe { libc::rewinddir(self.0.as_ptr()) }
+    }
+
+    /// Get the current position in the directory stream.
+    ///
+    /// If this location is given to `Dir::seek`, the entries up to the previously returned
+    /// will be omitted and the iteration will start from the currently pending directory entry.
+    #[cfg(not(target_os = "android"))]
+    pub fn tell(&self) -> SeekLoc {
+        let loc = unsafe { libc::telldir(self.0.as_ptr()) };
+        SeekLoc(loc)
+    }
+}
+
+#[cfg(not(target_os = "android"))]
+#[derive(Clone, Copy, Debug)]
+pub struct SeekLoc(libc::c_long);
+
+#[cfg(not(target_os = "android"))]
+impl SeekLoc {
+    pub unsafe fn from_raw(loc: i64) -> Self {
+        SeekLoc(loc as libc::c_long)
+    }
+
+    pub fn to_raw(&self) -> i64 {
+        self.0 as i64
+    }
 }
 
 // `Dir` is not `Sync` because it's unsafe to call `readdir` simultaneously from multiple threads.
@@ -184,7 +220,7 @@ impl Iterator for Iter<'_> {
 
 impl Drop for Iter<'_> {
     fn drop(&mut self) {
-        unsafe { libc::rewinddir((self.0).0.as_ptr()) }
+        self.0.rewind()
     }
 }
 
