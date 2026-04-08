@@ -148,6 +148,8 @@ libc_enum! {
         PTRACE_SYSEMU_SINGLESTEP,
         #[cfg(all(target_os = "linux", target_env = "gnu"))]
         PTRACE_GET_SYSCALL_INFO,
+        #[cfg(all(target_os = "linux", target_env = "gnu"))]
+        PTRACE_SET_SYSCALL_INFO,
     }
 }
 
@@ -574,6 +576,21 @@ pub fn setsiginfo(pid: Pid, sig: &siginfo_t) -> Result<()> {
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
 pub fn syscall_info(pid: Pid) -> Result<libc::ptrace_syscall_info> {
     ptrace_get_data::<libc::ptrace_syscall_info>(Request::PTRACE_GET_SYSCALL_INFO, pid)
+}
+
+/// Set the information of the syscall that caused the stop, as with
+/// `ptrace(PTRACE_SET_SYSCALL_INFO, ...`.
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+pub fn set_syscall_info(pid: Pid, syscall_info: &libc::ptrace_syscall_info) -> Result<()> {
+    let res = unsafe {
+        libc::ptrace(
+            Request::PTRACE_SET_SYSCALL_INFO as RequestType,
+            libc::pid_t::from(pid),
+            mem::size_of::<libc::ptrace_syscall_info>(),
+            syscall_info as *const _ as *const c_void,
+        )
+    };
+    Errno::result(res).map(drop)
 }
 
 /// Sets the process as traceable, as with `ptrace(PTRACE_TRACEME, ...)`
