@@ -39,10 +39,20 @@ feature! {
     pub use self::pivot_root::*;
 }
 
-#[cfg(any(freebsdlike, linux_android, target_os = "openbsd"))]
+#[cfg(any(
+    freebsdlike,
+    linux_android,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 pub use self::setres::*;
 
-#[cfg(any(freebsdlike, linux_android, target_os = "openbsd"))]
+#[cfg(any(
+    freebsdlike,
+    linux_android,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 pub use self::getres::*;
 
 feature! {
@@ -3225,7 +3235,12 @@ mod pivot_root {
     }
 }
 
-#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
+#[cfg(any(
+    linux_android,
+    freebsdlike,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 mod setres {
     feature! {
     #![feature = "user"]
@@ -3270,7 +3285,12 @@ mod setres {
     }
 }
 
-#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
+#[cfg(any(
+    linux_android,
+    freebsdlike,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 mod getres {
     feature! {
     #![feature = "user"]
