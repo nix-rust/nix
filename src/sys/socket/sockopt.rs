@@ -1315,6 +1315,16 @@ sockopt_impl!(
     libc::SO_ATTACH_REUSEPORT_CBPF,
     libc::sock_fprog
 );
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// Enable/disable TCP corking. If enabled all queued partial frames are
+    /// sent when the option is cleared again.
+    TcpCork,
+    Both,
+    libc::IPPROTO_TCP,
+    libc::TCP_CORK,
+    bool
+);
 
 #[allow(missing_docs)]
 // Not documented by Linux!
