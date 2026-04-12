@@ -1271,3 +1271,21 @@ pub fn test_so_attach_reuseport_cbpf() {
         assert_eq!(e, nix::errno::Errno::ENOPROTOOPT);
     });
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn test_tcp_cork() {
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Stream,
+        SockFlag::empty(),
+        SockProtocol::Tcp,
+    )
+    .unwrap();
+
+    setsockopt(&fd, sockopt::TcpCork, &true).unwrap();
+    assert!(getsockopt(&fd, sockopt::TcpCork).unwrap());
+
+    setsockopt(&fd, sockopt::TcpCork, &false).unwrap();
+    assert!(!getsockopt(&fd, sockopt::TcpCork).unwrap());
+}
