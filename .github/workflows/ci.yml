@@ -12,14 +12,23 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - name: freebsd
+            architecture: x86-64
+            version: '15.0'
+          - name: freebsd
+            architecture: x86-64
+            version: '14.3'
     steps:
       - uses: actions/checkout@v6
 
       - name: ${{ matrix.os.name }}-${{ matrix.os.version}}/${{ matrix.os.architecture }}
         uses: cross-platform-actions/action@v1.0.0
         with:
-          operating_system: freebsd
-          version: '15.0'
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
           run: |
             uname -a
             whoami
@@ -34,5 +43,5 @@ jobs:
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-            cargo test --all-features
+            sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
