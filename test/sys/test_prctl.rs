@@ -1,4 +1,4 @@
-#[cfg(target_os = "linux")]
+#[cfg(linux_android)]
 #[cfg(feature = "process")]
 mod test_prctl {
     use std::ffi::CStr;
