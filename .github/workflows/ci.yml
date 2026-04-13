@@ -19,7 +19,7 @@ jobs:
         uses: cross-platform-actions/action@v1.0.0
         with:
           operating_system: freebsd
-          version: 15.0
+          version: '15.0'
           run: |
             uname -a
             kldload mqueuefs
