@@ -22,7 +22,9 @@ jobs:
           version: '15.0'
           run: |
             uname -a
-            kldload mqueuefs
+            whoami
+            which sudo
+            sudo kldload mqueuefs
             fetch https://sh.rustup.rs -o rustup.sh
             sh rustup.sh -y --profile=minimal --default-toolchain stable
             . $HOME/.cargo/env
