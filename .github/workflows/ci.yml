@@ -34,6 +34,7 @@ jobs:
             whoami
             which sudo
             sudo --version
+            sudo sed -i '' '/Defaults secure_path/d' /usr/local/etc/sudoers
             sudo egrep -v '#' /usr/local/etc/sudoers
             sudo kldload mqueuefs
             fetch https://sh.rustup.rs -o rustup.sh
@@ -47,6 +48,7 @@ jobs:
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             echo PATH is $PATH
             sudo -E sudo -E sh -c 'echo $PATH'
-            su -m root -c 'echo $PATH'
-            su -m root -c "cargo test --all-features"
+            # su -m root -c 'echo $PATH'
+            # su -m root -c "cargo test --all-features"
+            sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
