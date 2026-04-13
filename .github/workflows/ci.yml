@@ -10,7 +10,7 @@ on:
     types: [checks_requested]
 
 jobs:
-  test:
+  freebsd:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,16 +24,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: ${{ matrix.os.name }}-${{ matrix.os.version}}/${{ matrix.os.architecture }}
-        uses: cross-platform-actions/action@v1.0.0
+      - uses: cross-platform-actions/action@v1.0.0
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
           run: |
             uname -a
             whoami
-            which sudo
-            sudo --version
+            # Must remove sudo's secure_path setting, because it interferes
+            # with running the tests using sudo
             sudo sed -i '' '/Defaults secure_path/d' /usr/local/etc/sudoers
             sudo egrep -v '#' /usr/local/etc/sudoers
             sudo kldload mqueuefs
@@ -46,9 +45,5 @@ jobs:
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-            echo PATH is $PATH
-            sudo -E sudo -E sh -c 'echo $PATH'
-            # su -m root -c 'echo $PATH'
-            # su -m root -c "cargo test --all-features"
             sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
