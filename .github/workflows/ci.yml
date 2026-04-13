@@ -34,7 +34,7 @@ jobs:
             whoami
             which sudo
             sudo --version
-            egrep -v '^#' /usr/local/etc/sudo.conf
+            sudo egrep -v '#' /usr/local/etc/sudoers
             sudo kldload mqueuefs
             fetch https://sh.rustup.rs -o rustup.sh
             sh rustup.sh -y --profile=minimal --default-toolchain stable
@@ -47,5 +47,5 @@ jobs:
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             echo PATH is $PATH
             sudo -E sudo -E sh -c 'echo $PATH'
-            sudo -E cargo test --all-features
+            sudo env "PATH=$PATH" cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
