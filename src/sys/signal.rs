@@ -442,25 +442,25 @@ libc_bitflags! {
         /// When catching a [`Signal::SIGCHLD`] signal, the signal will be
         /// generated only when a child process exits, not when a child process
         /// stops.
-        SA_NOCLDSTOP as SaFlags_t;
+        SA_NOCLDSTOP;
         /// When catching a [`Signal::SIGCHLD`] signal, the system will not
         /// create zombie processes when children of the calling process exit.
         #[cfg(not(target_os = "hurd"))]
-        SA_NOCLDWAIT as SaFlags_t;
+        SA_NOCLDWAIT;
         /// Further occurrences of the delivered signal are not masked during
         /// the execution of the handler.
-        SA_NODEFER as SaFlags_t;
+        SA_NODEFER;
         /// The system will deliver the signal to the process on a signal stack,
         /// specified by each thread with sigaltstack(2).
-        SA_ONSTACK as SaFlags_t;
+        SA_ONSTACK;
         /// The handler is reset back to the default at the moment the signal is
         /// delivered.
-        SA_RESETHAND as SaFlags_t;
+        SA_RESETHAND;
         /// Requests that certain system calls restart if interrupted by this
         /// signal.  See the man page for complete details.
-        SA_RESTART as SaFlags_t;
+        SA_RESTART;
         /// This flag is controlled internally by Nix.
-        SA_SIGINFO as SaFlags_t;
+        SA_SIGINFO;
     }
 }
 
