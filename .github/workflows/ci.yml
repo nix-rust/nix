@@ -40,9 +40,6 @@ jobs:
             . $HOME/.cargo/env
             rustc -Vv
             rustup target add i686-unknown-freebsd
-            ls /usr/lib32
-            # Install 32-bit compat libs, if using pkgbase.  Else, we need a dist set
-            sudo pkg install -y FreeBSD-clibs-lib32 || true
             rustup component add clippy
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
@@ -53,7 +50,8 @@ jobs:
             sudo -E cargo test --all-features
             cargo build --target i686-unknown-freebsd --all-features --all-targets
             cargo doc --no-deps --target i686-unknown-freebsd --all-features
-            sudo -E cargo test --target i686-unknown-freebsd
+            # Can't test on i686, because this VM doesn't have 32-bit libs installed
+            # sudo -E cargo test --target i686-unknown-freebsd
             rm -rf $CARGO_HOME/registry/index
 
   freebsd_aarch64:
@@ -157,7 +155,7 @@ jobs:
             uname -a
             pkgman install -h
             sudo pkgman update -y
-            sudo pkgman install -y rust
+            sudo pkgman install -y rust_bin
             rustc -Vv
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
@@ -182,7 +180,7 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
-            pkg install gcc
+            sudo pkg install gcc
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             . $HOME/.cargo/env
             rustc -Vv
@@ -205,7 +203,7 @@ jobs:
             pkg install -y curl
           run: |
             curl https://sh.rustup.rs -sSf --output rustup.sh
-            sh rustup.sh -y --profile minimal --default-toolchain ${{ env.rust_stable }}
+            sh rustup.sh -y --profile minimal
             . $HOME/.cargo/env
             rustc -vV
             rustup target add i686-unknown-freebsd
