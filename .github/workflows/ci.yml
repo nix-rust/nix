@@ -47,5 +47,6 @@ jobs:
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             echo PATH is $PATH
             sudo -E sudo -E sh -c 'echo $PATH'
-            sudo env "PATH=$PATH" cargo test --all-features
+            su -m root -c 'echo $PATH'
+            su -m root -c "cargo test --all-features"
             rm -rf $CARGO_HOME/registry/index
