@@ -200,9 +200,8 @@ jobs:
           release: "14.3"
           usesh: true
           prepare: |
-            whoami
-            ls /usr/lib32
             pkg install -y curl
+            kldload mqueuefs
           run: |
             curl https://sh.rustup.rs -sSf --output rustup.sh
             sh rustup.sh -y --profile minimal
