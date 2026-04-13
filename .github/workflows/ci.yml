@@ -33,6 +33,8 @@ jobs:
             uname -a
             whoami
             which sudo
+            sudo --version
+            egrep -v '^#' /usr/local/etc/sudo.conf
             sudo kldload mqueuefs
             fetch https://sh.rustup.rs -o rustup.sh
             sh rustup.sh -y --profile=minimal --default-toolchain stable
@@ -43,5 +45,7 @@ jobs:
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-            sudo --preserve-env=PATH cargo test --all-features
+            echo PATH is $PATH
+            sudo -E sudo -E sh -c 'echo $PATH'
+            sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
