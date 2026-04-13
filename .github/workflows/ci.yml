@@ -19,6 +19,9 @@ jobs:
             architecture: x86-64
             version: '15.0'
           - name: freebsd
+            architecture: arm64
+            version: '15.0'
+          - name: freebsd
             architecture: x86-64
             version: '14.3'
     steps:
@@ -26,6 +29,7 @@ jobs:
 
       - uses: cross-platform-actions/action@v1.0.0
         with:
+          architecture: ${{ matrix.os.architecture }}
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
           run: |
@@ -57,6 +61,84 @@ jobs:
           - name: netbsd
             architecture: x86-64
             version: '10.1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: cross-platform-actions/action@v1.0.0
+        with:
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          run: |
+            uname -a
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            . $HOME/.cargo/env
+            rustc -Vv
+            cargo build --all-targets --all-features
+            cargo doc --no-deps --all-features
+            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+            cargo test --all-features
+            rm -rf $CARGO_HOME/registry/index
+
+  openbsd:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - name: openbsd
+            architecture: x86-64
+            version: '7.8'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: cross-platform-actions/action@v1.0.0
+        with:
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          run: |
+            uname -a
+            sudo pkg_add rust
+            . $HOME/.cargo/env
+            rustc -Vv
+            cargo build --all-targets --all-features
+            cargo doc --no-deps --all-features
+            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+            cargo test --all-features
+            rm -rf $CARGO_HOME/registry/index
+
+  haiku:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - name: haiku
+            architecture: x86-64
+            version: 'r1beta5'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: cross-platform-actions/action@v1.0.0
+        with:
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          run: |
+            uname -a
+            sudo pkgman install rust
+            . $HOME/.cargo/env
+            rustc -Vv
+            cargo build --all-targets --all-features
+            cargo doc --no-deps --all-features
+            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+            cargo test --all-features
+            rm -rf $CARGO_HOME/registry/index
+
+  omnios:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - name: omnios
+            architecture: x86-64
+            version: 'r15106'
     steps:
       - uses: actions/checkout@v6
 
