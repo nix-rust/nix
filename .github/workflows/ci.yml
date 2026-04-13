@@ -43,5 +43,5 @@ jobs:
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-            sudo -E cargo test --all-features
+            sudo --preserve-env=PATH cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
