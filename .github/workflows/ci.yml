@@ -40,6 +40,7 @@ jobs:
             . $HOME/.cargo/env
             rustc -Vv
             rustup target add i686-unknown-freebsd
+            ls /usr/lib32
             rustup component add clippy
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
@@ -128,8 +129,7 @@ jobs:
           shell: bash
           run: |
             uname -a
-            sudo pkg_add rust
-            . $HOME/.cargo/env
+            sudo pkg_add rust gcc
             rustc -Vv
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
@@ -154,9 +154,9 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
-            sudo pkgman update
-            sudo pkgman install rust
-            . $HOME/.cargo/env
+            pkgman -h
+            sudo pkgman update -y
+            sudo pkgman install -y rust
             rustc -Vv
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
