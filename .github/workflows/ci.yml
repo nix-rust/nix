@@ -10,16 +10,13 @@ on:
     types: [checks_requested]
 
 jobs:
-  freebsd:
+  freebsd_x86_64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         os:
           - name: freebsd
             architecture: x86-64
-            version: '15.0'
-          - name: freebsd
-            architecture: arm64
             version: '15.0'
           - name: freebsd
             architecture: x86-64
@@ -50,6 +47,40 @@ jobs:
             mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
             curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
             cargo hack check --each-feature
+            sudo -E cargo test --all-features
+            cargo build --target i686-unknown-freebsd --all-features --all-targets
+            cargo doc --no-deps --target i686-unknown-freebsd --all-features
+            sudo -E cargo test --target i686-unknown-freebsd
+            rm -rf $CARGO_HOME/registry/index
+
+  freebsd_aarch64:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - name: freebsd
+            architecture: arm64
+            version: '15.0'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: cross-platform-actions/action@v1.0.0
+        with:
+          architecture: ${{ matrix.os.architecture }}
+          operating_system: ${{ matrix.os.name }}
+          version: ${{ matrix.os.version }}
+          run: |
+            uname -a
+            # Must remove sudo's secure_path setting, because it interferes
+            # with running the tests using sudo
+            sudo sed -i '' '/Defaults secure_path/d' /usr/local/etc/sudoers
+            sudo kldload mqueuefs
+            sudo pkg install -y rust
+            rustc -Vv
+            cargo build --all-targets --all-features
+            cargo doc --no-deps --all-features
+            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+            mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
             sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
 
@@ -94,6 +125,7 @@ jobs:
         with:
           operating_system: ${{ matrix.os.name }}
           version: ${{ matrix.os.version }}
+          shell: bash
           run: |
             uname -a
             sudo pkg_add rust
@@ -122,6 +154,7 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
+            sudo pkgman update
             sudo pkgman install rust
             . $HOME/.cargo/env
             rustc -Vv
@@ -138,7 +171,7 @@ jobs:
         os:
           - name: omnios
             architecture: x86-64
-            version: 'r15106'
+            version: 'r151056'
     steps:
       - uses: actions/checkout@v6
 
