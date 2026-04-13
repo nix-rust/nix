@@ -41,6 +41,8 @@ jobs:
             rustc -Vv
             rustup target add i686-unknown-freebsd
             ls /usr/lib32
+            # Install 32-bit compat libs, if using pkgbase.  Else, we need a dist set
+            sudo pkg install -y FreeBSD-clibs-lib32 || true
             rustup component add clippy
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
@@ -129,11 +131,10 @@ jobs:
           shell: bash
           run: |
             uname -a
-            sudo pkg_add rust gcc
+            sudo pkg_add rust
             rustc -Vv
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
-            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
 
@@ -154,7 +155,7 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
-            pkgman -h
+            pkgman install -h
             sudo pkgman update -y
             sudo pkgman install -y rust
             rustc -Vv
@@ -181,6 +182,7 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
+            pkg install gcc
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
             . $HOME/.cargo/env
             rustc -Vv
@@ -188,4 +190,34 @@ jobs:
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             cargo test --all-features
+            rm -rf $CARGO_HOME/registry/index
+
+  freebsd-vmactions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: vmactions-freebsd
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.3"
+          usesh: true
+          prepare: |
+            pkg install -y curl
+          run: |
+            curl https://sh.rustup.rs -sSf --output rustup.sh
+            sh rustup.sh -y --profile minimal --default-toolchain ${{ env.rust_stable }}
+            . $HOME/.cargo/env
+            rustc -vV
+            rustup target add i686-unknown-freebsd
+            rustup component add clippy
+            cargo build --all-targets --all-features
+            cargo doc --no-deps --all-features
+            cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+            mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
+            curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
+            cargo hack check --each-feature
+            sudo -E cargo test --all-features
+            cargo build --target i686-unknown-freebsd --all-features --all-targets
+            cargo doc --no-deps --target i686-unknown-freebsd --all-features
+            sudo -E cargo test --target i686-unknown-freebsd
             rm -rf $CARGO_HOME/registry/index
