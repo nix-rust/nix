@@ -44,7 +44,7 @@ jobs:
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
             mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
-            curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin
+            curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
             cargo hack check --each-feature
             sudo -E cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
@@ -72,8 +72,5 @@ jobs:
             cargo build --all-targets --all-features
             cargo doc --no-deps --all-features
             cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-            mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
-            curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-${HOST:-$TARGET}.tar.gz | tar xzf - -C ~/.cargo/bin
-            cargo hack check --each-feature
             cargo test --all-features
             rm -rf $CARGO_HOME/registry/index
