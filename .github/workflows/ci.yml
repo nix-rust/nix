@@ -30,11 +30,9 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
-            whoami
             # Must remove sudo's secure_path setting, because it interferes
             # with running the tests using sudo
             sudo sed -i '' '/Defaults secure_path/d' /usr/local/etc/sudoers
-            sudo egrep -v '#' /usr/local/etc/sudoers
             sudo kldload mqueuefs
             fetch https://sh.rustup.rs -o rustup.sh
             sh rustup.sh -y --profile=minimal --default-toolchain stable
