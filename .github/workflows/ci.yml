@@ -66,7 +66,7 @@ jobs:
           version: ${{ matrix.os.version }}
           run: |
             uname -a
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | s
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
             . $HOME/.cargo/env
             rustc -Vv
             cargo build --all-targets --all-features
