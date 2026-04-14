@@ -33,7 +33,7 @@ jobs:
           arch: ${{ matrix.arch }}
           usesh: true
       - name: Install dependencies
-        if: ${{ matrix.arch == 'x86_64' }}
+        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           pkg install -y curl
@@ -44,7 +44,7 @@ jobs:
           rustc -vV
           rustup component add clippy
       - name: Install dependencies
-        if: ${{ matrix.arch == 'aarch64' }}
+        if: ${{ matrix.arch }} == 'aarch64'
         shell: freebsd {0}
         run: |
           pkg install -y rust
@@ -75,7 +75,7 @@ jobs:
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
       - name: Hack
-        if: ${{ matrix.arch == 'x86_64' }}
+        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           . $HOME/.cargo/env
@@ -84,7 +84,7 @@ jobs:
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
       - name: i686 Build
-        if: ${{ matrix.arch == 'x86_64' }}
+        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           . $HOME/.cargo/env
@@ -92,14 +92,14 @@ jobs:
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
-        if: ${{ matrix.arch == 'x86_64' }}
+        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
-        if: ${{ matrix.arch == 'x86_64' }}
+        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           . $HOME/.cargo/env
