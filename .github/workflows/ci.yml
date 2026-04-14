@@ -117,25 +117,21 @@ jobs:
       - name: Build
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env || true
           cd $GITHUB_WORKSPACE
           cargo build --all-targets --all-features
       - name: Test
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env || true
           cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features
       - name: Clippy
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env || true
           cd $GITHUB_WORKSPACE
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env || true
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
 
