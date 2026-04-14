@@ -29,7 +29,7 @@ jobs:
           run-in-vm: |
             uname -a
             whoami
-            kldload mqueuefs
+            if [ -d /boot/kernel ]; then ls /boot/kernel/; fi
             pkg install -y curl
             fetch https://sh.rustup.rs -o rustup.sh
             sh rustup.sh -y --profile=minimal --default-toolchain stable
