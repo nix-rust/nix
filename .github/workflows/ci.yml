@@ -91,9 +91,8 @@ jobs:
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
 
-# aarch64 needs a separate job.  It can't be combined with the x86_64 job using
-# a matrix.  See https://github.com/vmactions/freebsd-vm/issues/139
-jobs:
+  # aarch64 needs a separate job.  It can't be combined with the x86_64 job using
+  # a matrix.  See https://github.com/vmactions/freebsd-vm/issues/139
   freebsd_aarch64:
     runs-on: ubuntu-latest
     strategy:
