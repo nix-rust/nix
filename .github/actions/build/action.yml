@@ -21,6 +21,11 @@ inputs:
     required: false
     default: -D warnings
 
+  SHELL:
+    description: 'Command shell to use'
+    required: false
+    default: bash
+
   TARGETS:
     description: 'Build all targets or only default?'
     required: false
@@ -54,29 +59,29 @@ runs:
   using: "composite"
   steps:
     - name: set up Rust env
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: |
         echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
         echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
 
     - name: debug info
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: |
         ${{ inputs.TOOL }} -Vv
         rustc -Vv
 
     - name: build
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} ${{ inputs.TARGETS }} --all-features
 
     - name: doc
       if: inputs.NODOC == 'false'
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
 
     - name: clippy
       if: inputs.NOCLIPPY == 'false'
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
 
     - name: Set up cargo-hack
@@ -84,6 +89,6 @@ runs:
       uses: taiki-e/install-action@cargo-hack
 
     - name: run cargo hack
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       if: inputs.NOHACK == 'false'
       run: ${{ inputs.TOOL }} hack ${{ inputs.ZFLAGS }} check --target ${{ inputs.TARGET }} --each-feature

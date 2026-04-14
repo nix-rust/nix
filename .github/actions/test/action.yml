@@ -5,6 +5,11 @@ inputs:
   TARGET:
     required: true
 
+  SHELL:
+    description: 'Command shell to use'
+    required: false
+    default: bash
+
   SUDO:
     description: 'Set it to an empty string to run the tests as the current user, leave it with the default value to test with "sudo"'
     required: false
@@ -27,7 +32,7 @@ runs:
   using: "composite"
   steps:
     - name: set up Rust env
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: |
         echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
         echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
@@ -35,5 +40,5 @@ runs:
         echo "RUST_BACKTRACE=1" >> $GITHUB_ENV
 
     - name: test
-      shell: bash
+      shell: ${{ inputs.SHELL }}
       run: ${{ inputs.SUDO }} $(which ${{ inputs.TOOL }}) test --target ${{ inputs.TARGET }}
