@@ -67,22 +67,29 @@ runs:
     - name: debug info
       shell: ${{ inputs.SHELL }}
       run: |
+        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
         ${{ inputs.TOOL }} -Vv
         rustc -Vv
 
     - name: build
       shell: ${{ inputs.SHELL }}
-      run: ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} ${{ inputs.TARGETS }} --all-features
+      run: |
+        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+        ${{ inputs.TOOL }} ${{ inputs.BUILD }} ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} ${{ inputs.TARGETS }} --all-features
 
     - name: doc
       if: inputs.NODOC == 'false'
       shell: ${{ inputs.SHELL }}
-      run: ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
+      run: |
+        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+        ${{ inputs.TOOL }} doc ${{ inputs.ZFLAGS }} --no-deps --target ${{ inputs.TARGET }} --all-features
 
     - name: clippy
       if: inputs.NOCLIPPY == 'false'
       shell: ${{ inputs.SHELL }}
-      run: ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
+      run: |
+        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+        ${{ inputs.TOOL}} clippy ${{ inputs.ZFLAGS }} --target ${{ inputs.TARGET }} --all-targets --all-features -- ${{ inputs.CLIPPYFLAGS }}
 
     - name: Set up cargo-hack
       if: inputs.NOHACK == 'false'
