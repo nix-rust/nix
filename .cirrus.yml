@@ -15,7 +15,7 @@ env:
 # Tests that don't require executing the build binaries
 build: &BUILD
   build_script:
-    - . $HOME/.cargo/env || true
+    - if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
     - $TOOL -Vv
     - rustc -Vv
     - $TOOL $BUILD $ZFLAGS --target $TARGET --all-targets --all-features
@@ -29,7 +29,7 @@ build: &BUILD
 test: &TEST
   << : *BUILD
   test_script:
-    - . $HOME/.cargo/env || true
+    - if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
     - $TOOL test --target $TARGET
 
 # Test FreeBSD in a full VM.  Test the i686 target too, in the
