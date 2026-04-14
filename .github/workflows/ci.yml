@@ -21,9 +21,10 @@ jobs:
           - os: freebsd
             version: "15.0"
             arch: x86_64
-          - os: freebsd
-            version: "15.0"
-            arch: aarch64
+          # Disable FreeBSD/aarch64 because it's too slow
+          #- os: freebsd
+            #version: "15.0"
+            #arch: aarch64
     steps:
       - uses: actions/checkout@v6
       - name: Start VM
