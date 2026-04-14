@@ -17,14 +17,20 @@ jobs:
         include:
           - os: freebsd
             version: "14.3"
+            aarch: x86_64
           - os: freebsd
             version: "15.0"
+            aarch: x86_64
+          - os: freebsd
+            version: "15.0"
+            arch: aarch64
     steps:
       - uses: actions/checkout@v6
       - name: Start VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
           usesh: true
       - name: Install dependencies
         shell: freebsd {0}
@@ -128,3 +134,73 @@ jobs:
           . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
+
+  openbsd:
+    runs-on: ubuntu-latest
+    name: OpenBSD
+    steps:
+      - uses: actions/checkout@v6
+      - name: Start VM
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: "7.8"
+          usesh: true
+      - name: Install dependencies
+        shell: openbsd {0}
+        run: |
+          pkg_add rust
+          rustc -Vv
+      - name: Build
+        shell: openbsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo build --all-targets --all-features
+      - name: Test
+        shell: openbsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo test --all-targets --all-features
+      - name: Doc
+        shell: openbsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo doc --no-deps --all-features
+
+  haiku:
+    runs-on: ubuntu-latest
+    name: Haiku
+    steps:
+      - uses: actions/checkout@v6
+      - name: Start VM
+        uses: vmactions/haiku-vm@v1
+        with:
+          release: "r1beta5"
+          usesh: true
+      - name: Install dependencies
+        shell: haiku {0}
+        run: |
+          pkgman update
+          pkgman install -y rust_bin
+          rustc -Vv
+      - name: Build
+        shell: haiku {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo build --all-targets --all-features
+      - name: Test
+        shell: haiku {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo test --all-targets --all-features
+      - name: Doc
+        shell: haiku {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo doc --no-deps --all-features
+
