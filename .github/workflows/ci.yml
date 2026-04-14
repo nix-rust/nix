@@ -12,6 +12,8 @@ on:
 jobs:
   freebsd_x86_64:
     runs-on: ubuntu-latest
+    env:
+      ENV: $HOME/.shrc
     strategy:
       matrix:
         include:
@@ -34,6 +36,7 @@ jobs:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
           usesh: true
+          envs: 'ENV'
       - name: Start VM
         if: matrix.arch == 'aarch64'
         uses: vmactions/freebsd-vm@v1
@@ -41,6 +44,7 @@ jobs:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
           usesh: true
+          envs: 'ENV'
       - name: Install dependencies
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
@@ -49,7 +53,7 @@ jobs:
           kldload mqueuefs
           fetch https://sh.rustup.rs -o rustup.sh
           sh rustup.sh -y --profile=minimal --default-toolchain stable
-          echo '. $HOME/.cargo/env' >> $HOME/.shrc
+          echo '. $HOME/.cargo/env' >> $ENV
           . $HOME/.cargo/env
           rustc -vV
           rustup component add clippy
@@ -64,7 +68,6 @@ jobs:
         shell: freebsd {0}
         run: |
           cd $GITHUB_WORKSPACE
-          cat $HOME/.shrc
           echo $PATH
           cargo build --all-targets --all-features
       - name: Test
