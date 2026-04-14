@@ -10,7 +10,7 @@ on:
     types: [checks_requested]
 
 jobs:
-  freebsd x86_64:
+  freebsd_x86_64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -94,7 +94,7 @@ jobs:
 # aarch64 needs a separate job.  It can't be combined with the x86_64 job using
 # a matrix.  See https://github.com/vmactions/freebsd-vm/issues/139
 jobs:
-  freebsd aarch64:
+  freebsd_aarch64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -140,6 +140,8 @@ jobs:
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
 
+  # Each operating system needs a separate job.  They can't share job
+  # configurations due to https://github.com/vmactions/netbsd-vm/issues/7
   netbsd:
     runs-on: ubuntu-latest
     name: NetBSD
