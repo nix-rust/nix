@@ -34,7 +34,6 @@ runs:
     - name: set up Rust env
       shell: ${{ inputs.SHELL }}
       run: |
-        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
         echo "RUSTFLAGS=${{ inputs.RUSTFLAGS }}" >> $GITHUB_ENV
         echo "RUSTDOCFLAGS=${{ inputs.RUSTDOCFLAGS }}" >> $GITHUB_ENV
         # Enable backtrace to make debugging easier
@@ -43,5 +42,4 @@ runs:
     - name: test
       shell: ${{ inputs.SHELL }}
       run: |
-        if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
         ${{ inputs.SUDO }} $(which ${{ inputs.TOOL }}) test --target ${{ inputs.TARGET }}

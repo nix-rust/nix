@@ -49,6 +49,7 @@ jobs:
           kldload mqueuefs
           fetch https://sh.rustup.rs -o rustup.sh
           sh rustup.sh -y --profile=minimal --default-toolchain stable
+          echo '. $HOME/.cargo/env' >> $HOME/.profile
           . $HOME/.cargo/env
           rustc -vV
           rustup component add clippy
@@ -62,32 +63,27 @@ jobs:
       - name: Build
         shell: freebsd {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cd $GITHUB_WORKSPACE
           cargo build --all-targets --all-features
       - name: Test
         shell: freebsd {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features
       - name: Clippy
         shell: freebsd {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cd $GITHUB_WORKSPACE
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
         shell: freebsd {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
       - name: Hack
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
@@ -96,7 +92,6 @@ jobs:
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
@@ -104,14 +99,12 @@ jobs:
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          . $HOME/.cargo/env
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
 
@@ -132,6 +125,7 @@ jobs:
         run: |
           pkg_add curl
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo '. $HOME/.cargo/env' >> $HOME/.profile
       - name: build
         uses: ./.github/actions/build
         with:
@@ -147,25 +141,21 @@ jobs:
           SUDO: ""
         #shell: netbsd {0}
         #run: |
-          #. $HOME/.cargo/env
           #cd $GITHUB_WORKSPACE
           #cargo build --all-targets --all-features
       #- name: Test
         #shell: netbsd {0}
         #run: |
-          #. $HOME/.cargo/env
           #cd $GITHUB_WORKSPACE
           #cargo test --all-targets --all-features
       #- name: Clippy
         #shell: netbsd {0}
         #run: |
-          #. $HOME/.cargo/env
           #cd $GITHUB_WORKSPACE
           #cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       #- name: Doc
         #shell: netbsd {0}
         #run: |
-          #. $HOME/.cargo/env
           #cd $GITHUB_WORKSPACE
           #cargo doc --no-deps --all-features
 
