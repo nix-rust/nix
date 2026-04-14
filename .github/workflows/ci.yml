@@ -10,7 +10,7 @@ on:
     types: [checks_requested]
 
 jobs:
-  freebsd:
+  freebsd x86_64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,19 +21,15 @@ jobs:
           - os: freebsd
             version: "15.0"
             aarch: x86_64
-          - os: freebsd
-            version: "15.0"
-            arch: aarch64
     steps:
       - uses: actions/checkout@v6
       - name: Start VM
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
+          arch: 'x86_64'
           usesh: true
       - name: Install dependencies
-        if: ${{ matrix.arch }} == 'x86_64'
         shell: freebsd {0}
         run: |
           pkg install -y curl
@@ -43,8 +39,77 @@ jobs:
           . $HOME/.cargo/env
           rustc -vV
           rustup component add clippy
+      - name: Build
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env || true
+          cd $GITHUB_WORKSPACE
+          cargo build --all-targets --all-features
+      - name: Test
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env || true
+          cd $GITHUB_WORKSPACE
+          cargo test --all-targets --all-features
+      - name: Clippy
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env || true
+          cd $GITHUB_WORKSPACE
+          cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+      - name: Doc
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env || true
+          cd $GITHUB_WORKSPACE
+          cargo doc --no-deps --all-features
+      - name: Hack
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
+          curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
+          cargo hack check --each-feature
+      - name: i686 Build
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          rustup target add i686-unknown-freebsd
+          cargo build --target i686-unknown-freebsd --all-features --all-targets
+      - name: i686 Test
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo test --all-targets --all-features --target i686-unknown-freebsd 
+      - name: i686 Doc
+        shell: freebsd {0}
+        run: |
+          . $HOME/.cargo/env
+          cd $GITHUB_WORKSPACE
+          cargo doc --no-deps --all-features --target i686-unknown-freebsd 
+
+# aarch64 needs a separate job.  It can't be combined with the x86_64 job using
+# a matrix.  See https://github.com/vmactions/freebsd-vm/issues/139
+jobs:
+  freebsd aarch64:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: freebsd
+            version: "15.0"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Start VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: 'aarch64'
+          usesh: true
       - name: Install dependencies
-        if: ${{ matrix.arch }} == 'aarch64'
         shell: freebsd {0}
         run: |
           pkg install -y rust
@@ -74,38 +139,6 @@ jobs:
           . $HOME/.cargo/env || true
           cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
-      - name: Hack
-        if: ${{ matrix.arch }} == 'x86_64'
-        shell: freebsd {0}
-        run: |
-          . $HOME/.cargo/env
-          cd $GITHUB_WORKSPACE
-          mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
-          curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
-          cargo hack check --each-feature
-      - name: i686 Build
-        if: ${{ matrix.arch }} == 'x86_64'
-        shell: freebsd {0}
-        run: |
-          . $HOME/.cargo/env
-          cd $GITHUB_WORKSPACE
-          rustup target add i686-unknown-freebsd
-          cargo build --target i686-unknown-freebsd --all-features --all-targets
-      - name: i686 Test
-        if: ${{ matrix.arch }} == 'x86_64'
-        shell: freebsd {0}
-        run: |
-          . $HOME/.cargo/env
-          cd $GITHUB_WORKSPACE
-          cargo test --all-targets --all-features --target i686-unknown-freebsd 
-      - name: i686 Doc
-        if: ${{ matrix.arch }} == 'x86_64'
-        shell: freebsd {0}
-        run: |
-          . $HOME/.cargo/env
-          cd $GITHUB_WORKSPACE
-          cargo doc --no-deps --all-features --target i686-unknown-freebsd 
-
 
   netbsd:
     runs-on: ubuntu-latest
