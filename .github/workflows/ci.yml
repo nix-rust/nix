@@ -49,7 +49,7 @@ jobs:
           kldload mqueuefs
           fetch https://sh.rustup.rs -o rustup.sh
           sh rustup.sh -y --profile=minimal --default-toolchain stable
-          echo '. $HOME/.cargo/env' >> $HOME/.profile
+          echo '. $HOME/.cargo/env' >> $HOME/.shrc
           . $HOME/.cargo/env
           rustc -vV
           rustup component add clippy
@@ -64,6 +64,8 @@ jobs:
         shell: freebsd {0}
         run: |
           cd $GITHUB_WORKSPACE
+          cat $HOME/.shrc
+          echo $PATH
           cargo build --all-targets --all-features
       - name: Test
         shell: freebsd {0}
