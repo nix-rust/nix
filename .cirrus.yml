@@ -64,3 +64,21 @@ task:
     - . $HOME/.cargo/env
     - if [ -z "$NOHACK" ]; then cargo hack check --each-feature --target i686-unknown-freebsd; fi
   before_cache_script: rm -rf $CARGO_HOME/registry/index
+
+task:
+  name: FreeBSD 14 aarch64
+  env:
+    TARGET: aarch64-unknown-freebsd
+    RUSTFLAGS: --cfg fbsd14 -D warnings
+    RUSTDOCFLAGS: --cfg fbsd14
+    NOHACK: 1
+  compute_engine_instance:
+    image_project: freebsd-org-cloud-dev
+    image: freebsd-14-4-release-arm64-aarch64-ufs
+    platform: freebsd
+    architecture: arm64
+  setup_script:
+    - kldload mqueuefs
+    - pkg install -y rust
+  << : *TEST
+  before_cache_script: rm -rf $CARGO_HOME/registry/index
