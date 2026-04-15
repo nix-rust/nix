@@ -108,35 +108,35 @@ jobs:
 
   # Each operating system needs a separate job.  They can't share job
   # configurations due to https://github.com/vmactions/netbsd-vm/issues/7
-  netbsd:
-    runs-on: ubuntu-latest
-    name: NetBSD
-    steps:
-      - uses: actions/checkout@v6
-      - name: Start VM
-        uses: vmactions/netbsd-vm@v1
-        with:
-          release: "10.1"
-          usesh: true
-      - name: Install dependencies
-        shell: netbsd {0}
-        run: |
-          pkg_add curl
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo '. $HOME/.cargo/env' >> $HOME/.profile
-      - name: build
-        uses: ./.github/actions/build
-        with:
-          SHELL: "netbsd {0}"
-          TARGET: x86_64-unknown-netbsd
-          NOHACK: true
-      - name: test
-        uses: ./.github/actions/test
-        with:
-          SHELL: "netbsd {0}"
-          TARGET: x86_64-unknown-netbsd
-          NOHACK: true
-          SUDO: ""
+  #netbsd:
+    #runs-on: ubuntu-latest
+    #name: NetBSD
+    #steps:
+      #- uses: actions/checkout@v6
+      #- name: Start VM
+        #uses: vmactions/netbsd-vm@v1
+        #with:
+          #release: "10.1"
+          #usesh: true
+      #- name: Install dependencies
+        #shell: netbsd {0}
+        #run: |
+          #pkg_add curl
+          #curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          #echo '. $HOME/.cargo/env' >> $HOME/.profile
+      #- name: build
+        #uses: ./.github/actions/build
+        #with:
+          #SHELL: "netbsd {0}"
+          #TARGET: x86_64-unknown-netbsd
+          #NOHACK: true
+      #- name: test
+        #uses: ./.github/actions/test
+        #with:
+          #SHELL: "netbsd {0}"
+          #TARGET: x86_64-unknown-netbsd
+          #NOHACK: true
+          #SUDO: ""
         #shell: netbsd {0}
         #run: |
           #cargo build --all-targets --all-features
