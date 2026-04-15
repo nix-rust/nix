@@ -12,8 +12,6 @@ on:
 jobs:
   freebsd_x86_64:
     runs-on: ubuntu-latest
-    env:
-      ENV: $HOME/.shrc
     strategy:
       matrix:
         include:
@@ -52,7 +50,6 @@ jobs:
           fetch https://sh.rustup.rs -o rustup.sh
           sh rustup.sh -y --profile=minimal --default-toolchain stable
           . $HOME/.cargo/env
-          echo "$CARGO_HOME/bin" >> $GITHUB_PATH
           rustc -vV
           rustup component add clippy
       - name: Install dependencies
@@ -67,25 +64,33 @@ jobs:
         run: |
           echo PWD is $PWD
           echo GITHUB_WORKSPACE is $GITHUB_WORKSPACE
+          echo GITHUB_ENV is $GITHUB_ENV
           echo GITHUB_PATH is $GITHUB_PATH
+          echo GITHUB_PATH contains `cat $GITHUB_PATH`
           echo PATH is $PATH
+          ls
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo build --all-targets --all-features
       - name: Test
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features
       - name: Clippy
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features
       - name: Hack
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
@@ -93,17 +98,20 @@ jobs:
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
 
   # Each operating system needs a separate job.  They can't share job
