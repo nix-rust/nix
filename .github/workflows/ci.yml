@@ -18,15 +18,12 @@ jobs:
           - os: freebsd
             version: "14.3"
             arch: x86_64
-            action: vmactions/freebsd-vm@v1
           - os: freebsd
             version: "15.0"
             arch: x86_64
-            action: vmactions/freebsd-vm@v1
           - os: netbsd
             version: "10.1"
             arch: x86_64
-            action: vmactions/netbsd-vm@v1
           # Disable FreeBSD/aarch64 because it's too slow
           #- os: freebsd
             #version: "15.0"
@@ -34,14 +31,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Start VM
-        uses: matrix.action
+        if: matrix.os == 'freebsd'
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'netbsd'
+        uses: vmactions/netbsd-vm@v1
         with:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
           usesh: true
           custom-shell-name: vmsh
       - name: Install dependencies
-        if: matrix.arch == 'x86_64' && matrix.os = 'freebsd'
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           pkg install -y curl
@@ -52,14 +58,14 @@ jobs:
           rustc -vV
           rustup component add clippy
       - name: Install dependencies
-        if: matrix.arch == 'aarch64' && matrix.os = 'freebsd'
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           pkg install -y rust
           kldload mqueuefs
           rustc -vV
       - name: Install dependencies
-        if: matrix.os = 'netbsd'
+        if: matrix.os == 'netbsd'
         shell: vmsh {0}
         run: |
           pkg_add curl
@@ -101,20 +107,20 @@ jobs:
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
       - name: i686 Build
-        if: matrix.arch == 'aarch64' && matrix.os = 'freebsd'
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
-        if: matrix.arch == 'aarch64' && matrix.os = 'freebsd'
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
-        if: matrix.arch == 'aarch64' && matrix.os = 'freebsd'
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
