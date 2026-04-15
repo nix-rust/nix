@@ -96,20 +96,15 @@ requests to include tests where they make sense. For example, when fixing a bug,
 add a test that would have failed without the fix.
 
 After you've made your change, make sure the tests pass in your development
-environment. We also have continuous integration set up on [Cirrus-CI][cirrus-ci]
-and GitHub Action, which might find some issues on other platforms. The CI will
-run once you open a pull request.
-
-[cirrus-ci]: https://cirrus-ci.com/github/nix-rust/nix
+environment. We also have continuous integration set up on GitHub Workflows,
+which might find some issues on other platforms. The CI will run once you open
+a pull request.
 
 ### Disabling a test in the CI environment
 
-Sometimes there are features that cannot be tested in the CI environment. To
-stop a test from running under CI, add `skip_if_cirrus!()` to it. Please
-describe the reason it shouldn't run under CI, and a link to an issue if
-possible! Other tests cannot be run under QEMU, which is used for some
-architectures. To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to
-the test.
+Some tests cannot be run under QEMU usermode emulation, which is used for some
+architectures. To skip them, add a `#[cfg_attr(qemu, ignore)]` attribute to the
+test.
 
 ## GitHub Merge Queues
 
