@@ -47,7 +47,6 @@ jobs:
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          sysctl vfs.nfsd.enable_locallocks=1
           pkg install -y curl
           kldload mqueuefs
           fetch https://sh.rustup.rs -o rustup.sh
