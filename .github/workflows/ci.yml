@@ -67,29 +67,24 @@ jobs:
       - name: Build
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           echo $PATH
           cargo build --all-targets --all-features
       - name: Test
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features
       - name: Clippy
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features
       - name: Hack
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
@@ -97,20 +92,17 @@ jobs:
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
         if: matrix.arch == 'x86_64'
         shell: freebsd {0}
         run: |
-          cd $GITHUB_WORKSPACE
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
 
   # Each operating system needs a separate job.  They can't share job
@@ -146,22 +138,18 @@ jobs:
           SUDO: ""
         #shell: netbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo build --all-targets --all-features
       #- name: Test
         #shell: netbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo test --all-targets --all-features
       #- name: Clippy
         #shell: netbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       #- name: Doc
         #shell: netbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo doc --no-deps --all-features
 
   #openbsd:
@@ -182,17 +170,14 @@ jobs:
       #- name: Build
         #shell: openbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo build --all-targets --all-features
       #- name: Test
         #shell: openbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo test --all-targets --all-features
       #- name: Doc
         #shell: openbsd {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo doc --no-deps --all-features
 
   #haiku:
@@ -213,17 +198,14 @@ jobs:
       #- name: Build
         #shell: haiku {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo build --all-targets --all-features
       #- name: Test
         #shell: haiku {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo test --all-targets --all-features
       #- name: Doc
         #shell: haiku {0}
         #run: |
-          #cd $GITHUB_WORKSPACE
           #cargo doc --no-deps --all-features
 
   #omnios:
@@ -245,24 +227,20 @@ jobs:
         #shell: omnios {0}
         #run: |
           #. $HOME/.cargo/env
-          #cd $GITHUB_WORKSPACE
           #cargo build --all-targets --all-features
       #- name: Test
         #shell: omnios {0}
         #run: |
           #. $HOME/.cargo/env
-          #cd $GITHUB_WORKSPACE
           #cargo test --all-targets --all-features
       #- name: Clippy
         #shell: omnios {0}
         #run: |
           #. $HOME/.cargo/env
-          #cd $GITHUB_WORKSPACE
           #cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       #- name: Doc
         #shell: omnios {0}
         #run: |
           #. $HOME/.cargo/env
-          #cd $GITHUB_WORKSPACE
           #cargo doc --no-deps --all-features
 
