@@ -19,21 +19,57 @@ jobs:
           - os: freebsd
             version: "14.3"
             arch: x86_64
+
           - os: freebsd
             version: "15.0"
             arch: x86_64
-          - os: netbsd
-            version: "10.1"
-            arch: x86_64
+
           # Disable FreeBSD/aarch64 because it's too slow
           #- os: freebsd
             #version: "15.0"
             #arch: aarch64
+
+          # Disable Haiku because vmactions/haiku-vm doesn't yet support
+          # custom-shell-name.  Also, Nix doesn't have a Haiku maintainer who
+          # can fix the tests for us.
+          #- os: haiku
+            #version: "r1beta5"
+            #arch: x86_64
+
+          # Disable NetBSD because vmactions/netbsd-vm doesn't yet support
+          # custom-shell-name.  Also, Nix doesn't have a NetBSD maintainer who
+          # can fix the tests for us.
+          #- os: netbsd
+            #version: "10.1"
+            #arch: x86_64
+
+          # Disable OmniOS because vmactions/omnios-vm doesn't yet support
+          # custom-shell-name.  Also, Nix doesn't have a OmniOS maintainer who
+          # can fix the tests for us.
+          #- os: omnios
+            #version: "r151056"
+            #arch: x86_64
+
+          # Disable OpenBSD because vmactions/openbsd-vm doesn't yet support
+          # custom-shell-name.  Also, Nix doesn't have a OpenBSD maintainer who
+          # can fix the tests for us.
+          #- os: openbsd
+            #version: "7.8"
+            #arch: x86_64
     steps:
       - uses: actions/checkout@v6
+
       - name: Start VM
         if: matrix.os == 'freebsd'
         uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'haiku'
+        uses: vmactions/haiku-vm@v1
         with:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
@@ -47,6 +83,23 @@ jobs:
           arch: ${{ matrix.arch }}
           usesh: true
           custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'omnios'
+        uses: vmactions/omnios-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'openbsd'
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+
       - name: Install dependencies
         if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
@@ -66,22 +119,33 @@ jobs:
           kldload mqueuefs
           rustc -vV
       - name: Install dependencies
+        if: matrix.os == 'haiku'
+        shell: vmsh {0}
+        run: |
+          pkgman install -y rust_bin
+          rustc -vV
+      - name: Install dependencies
         if: matrix.os == 'netbsd'
         shell: vmsh {0}
         run: |
           pkg_add curl
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo '. $HOME/.cargo/env' >> $HOME/.profile
+      - name: Install dependencies
+        if: matrix.os == 'omnios'
+        shell: vmsh {0}
+        run: |
+          pkg install developer/build-essential
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Install dependencies
+        if: matrix.os == 'openbsd'
+        shell: vmsh {0}
+        run: |
+          pkg_add rust
+          rustc -vV
+
       - name: Build
         shell: vmsh {0}
         run: |
-          echo PWD is $PWD
-          echo GITHUB_WORKSPACE is $GITHUB_WORKSPACE
-          echo GITHUB_ENV is $GITHUB_ENV
-          echo GITHUB_PATH is $GITHUB_PATH
-          echo GITHUB_PATH contains `cat $GITHUB_PATH`
-          echo PATH is $PATH
-          ls
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo build --all-targets --all-features
       - name: Test
@@ -99,14 +163,16 @@ jobs:
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features
+
       - name: Hack
-        if: matrix.arch == 'x86_64'
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
+
       - name: i686 Build
         if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
@@ -126,143 +192,3 @@ jobs:
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
-
-  # Each operating system needs a separate job.  They can't share job
-  # configurations due to https://github.com/vmactions/netbsd-vm/issues/7
-  #netbsd:
-    #runs-on: ubuntu-latest
-    #name: NetBSD
-    #steps:
-      #- uses: actions/checkout@v6
-      #- name: Start VM
-        #uses: vmactions/netbsd-vm@v1
-        #with:
-          #release: "10.1"
-          #usesh: true
-      #- name: Install dependencies
-        #shell: netbsd {0}
-        #run: |
-          #pkg_add curl
-          #curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          #echo '. $HOME/.cargo/env' >> $HOME/.profile
-      #- name: build
-        #uses: ./.github/actions/build
-        #with:
-          #SHELL: "netbsd {0}"
-          #TARGET: x86_64-unknown-netbsd
-          #NOHACK: true
-      #- name: test
-        #uses: ./.github/actions/test
-        #with:
-          #SHELL: "netbsd {0}"
-          #TARGET: x86_64-unknown-netbsd
-          #NOHACK: true
-          #SUDO: ""
-        #shell: netbsd {0}
-        #run: |
-          #cargo build --all-targets --all-features
-      #- name: Test
-        #shell: netbsd {0}
-        #run: |
-          #cargo test --all-targets --all-features
-      #- name: Clippy
-        #shell: netbsd {0}
-        #run: |
-          #cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-      #- name: Doc
-        #shell: netbsd {0}
-        #run: |
-          #cargo doc --no-deps --all-features
-
-  #openbsd:
-    #runs-on: ubuntu-latest
-    #name: OpenBSD
-    #steps:
-      #- uses: actions/checkout@v6
-      #- name: Start VM
-        #uses: vmactions/openbsd-vm@v1
-        #with:
-          #release: "7.8"
-          #usesh: true
-      #- name: Install dependencies
-        #shell: openbsd {0}
-        #run: |
-          #pkg_add rust
-          #rustc -Vv
-      #- name: Build
-        #shell: openbsd {0}
-        #run: |
-          #cargo build --all-targets --all-features
-      #- name: Test
-        #shell: openbsd {0}
-        #run: |
-          #cargo test --all-targets --all-features
-      #- name: Doc
-        #shell: openbsd {0}
-        #run: |
-          #cargo doc --no-deps --all-features
-
-  #haiku:
-    #runs-on: ubuntu-latest
-    #name: Haiku
-    #steps:
-      #- uses: actions/checkout@v6
-      #- name: Start VM
-        #uses: vmactions/haiku-vm@v1
-        #with:
-          #release: "r1beta5"
-          #usesh: true
-      #- name: Install dependencies
-        #shell: haiku {0}
-        #run: |
-          #pkgman install -y rust_bin
-          #rustc -Vv
-      #- name: Build
-        #shell: haiku {0}
-        #run: |
-          #cargo build --all-targets --all-features
-      #- name: Test
-        #shell: haiku {0}
-        #run: |
-          #cargo test --all-targets --all-features
-      #- name: Doc
-        #shell: haiku {0}
-        #run: |
-          #cargo doc --no-deps --all-features
-
-  #omnios:
-    #runs-on: ubuntu-latest
-    #name: OmniOS
-    #steps:
-      #- uses: actions/checkout@v6
-      #- name: Start VM
-        #uses: vmactions/omnios-vm@v1
-        #with:
-          #release: "r151056"
-          #usesh: true
-      #- name: Install dependencies
-        #shell: omnios {0}
-        #run: |
-          #pkg install developer/build-essential
-          #curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      #- name: Build
-        #shell: omnios {0}
-        #run: |
-          #. $HOME/.cargo/env
-          #cargo build --all-targets --all-features
-      #- name: Test
-        #shell: omnios {0}
-        #run: |
-          #. $HOME/.cargo/env
-          #cargo test --all-targets --all-features
-      #- name: Clippy
-        #shell: omnios {0}
-        #run: |
-          #. $HOME/.cargo/env
-          #cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
-      #- name: Doc
-        #shell: omnios {0}
-        #run: |
-          #. $HOME/.cargo/env
-          #cargo doc --no-deps --all-features
-
