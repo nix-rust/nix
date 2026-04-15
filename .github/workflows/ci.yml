@@ -34,6 +34,7 @@ jobs:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
           usesh: true
+          custom-shell-name: vmsh
       - name: Start VM
         if: matrix.arch == 'aarch64'
         uses: vmactions/freebsd-vm@v1
@@ -41,9 +42,10 @@ jobs:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
           usesh: true
+          custom-shell-name: vmsh
       - name: Install dependencies
         if: matrix.arch == 'x86_64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           pkg install -y curl
           kldload mqueuefs
@@ -54,13 +56,13 @@ jobs:
           rustup component add clippy
       - name: Install dependencies
         if: matrix.arch == 'aarch64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           pkg install -y rust
           kldload mqueuefs
           rustc -vV
       - name: Build
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           echo PWD is $PWD
           echo GITHUB_WORKSPACE is $GITHUB_WORKSPACE
@@ -72,23 +74,23 @@ jobs:
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo build --all-targets --all-features
       - name: Test
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features
       - name: Clippy
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features
       - name: Hack
         if: matrix.arch == 'x86_64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
@@ -96,20 +98,20 @@ jobs:
           cargo hack check --each-feature
       - name: i686 Build
         if: matrix.arch == 'x86_64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
         if: matrix.arch == 'x86_64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
         if: matrix.arch == 'x86_64'
-        shell: freebsd {0}
+        shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
