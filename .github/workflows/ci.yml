@@ -208,6 +208,181 @@ jobs:
       - name: before_cache_script
         run: sudo rm -rf $CARGO_HOME/registry/index;
 
+  # Jobs that use nested virtualization
+  vmactions:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: freebsd
+            version: "14.4"
+            arch: x86_64
+
+          # Disable FreeBSD/aarch64 because it's too slow
+          #- os: freebsd
+            #version: "15.0"
+            #arch: aarch64
+
+          # Disable Haiku because Nix doesn't have a Haiku maintainer who can
+          # fix the tests for us.
+          #- os: haiku
+            #version: "r1beta5"
+            #arch: x86_64
+
+          # Disable NetBSD because Nix doesn't have a NetBSD maintainer who can
+          # fix the tests for us.
+          #- os: netbsd
+            #version: "10.1"
+            #arch: x86_64
+
+          # Disable OmniOS because Nix doesn't have a OmniOS maintainer who can
+          # fix the tests for us.
+          #- os: omnios
+            #version: "r151056"
+            #arch: x86_64
+
+          # Disable OpenBSD because Nix doesn't have a OpenBSD maintainer who
+          # can fix the tests for us.
+          #- os: openbsd
+            #version: "7.8"
+            #arch: x86_64
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Start VM
+        if: matrix.os == 'freebsd'
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'haiku'
+        uses: vmactions/haiku-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'netbsd'
+        uses: vmactions/netbsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'omnios'
+        uses: vmactions/omnios-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+      - name: Start VM
+        if: matrix.os == 'openbsd'
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          custom-shell-name: vmsh
+
+      - name: Install dependencies
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          pkg install -y curl
+          kldload mqueuefs
+          fetch https://sh.rustup.rs -o rustup.sh
+          sh rustup.sh -y --profile=minimal --default-toolchain stable
+          . $HOME/.cargo/env
+          rustc -vV
+          rustup component add clippy
+      - name: Install dependencies
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          pkg install -y rust
+          kldload mqueuefs
+          rustc -vV
+      - name: Install dependencies
+        if: matrix.os == 'haiku'
+        shell: vmsh {0}
+        run: |
+          pkgman install -y rust_bin
+          rustc -vV
+      - name: Install dependencies
+        if: matrix.os == 'netbsd'
+        shell: vmsh {0}
+        run: |
+          pkg_add curl
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Install dependencies
+        if: matrix.os == 'omnios'
+        shell: vmsh {0}
+        run: |
+          pkg install developer/build-essential
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - name: Install dependencies
+        if: matrix.os == 'openbsd'
+        shell: vmsh {0}
+        run: |
+          pkg_add rust
+          rustc -vV
+
+      - name: Build
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo build --all-targets --all-features
+      - name: Test
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo test --all-targets --all-features
+      - name: Clippy
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
+      - name: Doc
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo doc --no-deps --all-features
+
+      - name: Hack
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
+          curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
+          cargo hack check --each-feature
+
+      - name: i686 Build
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          rustup target add i686-unknown-freebsd
+          cargo build --target i686-unknown-freebsd --all-features --all-targets
+      - name: i686 Test
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo test --all-targets --all-features --target i686-unknown-freebsd 
+      - name: i686 Doc
+        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        shell: vmsh {0}
+        run: |
+          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cargo doc --no-deps --all-features --target i686-unknown-freebsd 
 
   # Tasks for cross-compiling, but no testing
   cross_compiling:
