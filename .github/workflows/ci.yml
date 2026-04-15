@@ -34,15 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Start VM
-        uses: ${{ matrix.action }}
-        with:
-          release: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-          usesh: true
-          custom-shell-name: vmsh
-      - name: Start VM
-        if: matrix.arch == 'aarch64'
-        uses: ${{ matrix.action }}
+        uses: matrix.action
         with:
           release: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
