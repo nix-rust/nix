@@ -10,9 +10,10 @@ on:
     types: [checks_requested]
 
 jobs:
-  freebsd_x86_64:
+  vmactions:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: freebsd
