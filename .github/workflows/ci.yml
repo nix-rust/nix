@@ -27,27 +27,27 @@ jobs:
 
           # Disable Haiku because Nix doesn't have a Haiku maintainer who can
           # fix the tests for us.
-          - os: haiku
-            version: "r1beta5"
-            arch: x86_64
+          #- os: haiku
+            #version: "r1beta5"
+            #arch: x86_64
 
           # Disable NetBSD because Nix doesn't have a NetBSD maintainer who
           # can fix the tests for us.
-          - os: netbsd
-            version: "10.1"
-            arch: x86_64
+          #- os: netbsd
+            #version: "10.1"
+            #arch: x86_64
 
           # Disable OmniOS because Nix doesn't have a OmniOS maintainer who
           # can fix the tests for us.
-          - os: omnios
-            version: "r151056"
-            arch: x86_64
+          #- os: omnios
+            #version: "r151056"
+            #arch: x86_64
 
           # Disable OpenBSD because Nix doesn't have a OpenBSD maintainer who
           # can fix the tests for us.
-          - os: openbsd
-            version: "7.8"
-            arch: x86_64
+          #- os: openbsd
+            #version: "7.8"
+            #arch: x86_64
     steps:
       - uses: actions/checkout@v6
 
@@ -98,8 +98,12 @@ jobs:
         run: |
           pkg install -y curl
           kldload mqueuefs
+          echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config
+          service sshd reload
           fetch https://sh.rustup.rs -o rustup.sh
           sh rustup.sh -y --profile=minimal --default-toolchain stable
+          mkdir -p $HOME/.ssh
+          echo "PATH=$HOME/.cargo/bin:$PATH" > $HOME/.ssh/environment
           . $HOME/.cargo/env
           rustc -vV
           rustup component add clippy
@@ -138,29 +142,32 @@ jobs:
       - name: Build
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          cat $HOME/.ssh/environment
+          echo PATH is $PATH
+          rustc -vV
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo build --all-targets --all-features
       - name: Test
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features
       - name: Clippy
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo clippy --all-targets --all-features -- -D warnings -A unknown-lints
       - name: Doc
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features
 
       - name: Hack
         if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           mkdir -p $HOME/.cargo/bin; export PATH=$HOME/.cargo/bin:$PATH
           curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-freebsd.tar.gz | tar xzf - -C ~/.cargo/bin
           cargo hack check --each-feature
@@ -169,18 +176,18 @@ jobs:
         if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
         if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
         if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
-          if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
+          #if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo doc --no-deps --all-features --target i686-unknown-freebsd 
