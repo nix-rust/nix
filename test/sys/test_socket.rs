@@ -1046,7 +1046,6 @@ pub fn test_af_alg_aead() {
     use nix::unistd::read;
     use std::io::IoSlice;
 
-    skip_if_cirrus!("Fails for an unknown reason Cirrus CI.  Bug #1352");
     // Travis's seccomp profile blocks AF_ALG
     // https://docs.docker.com/engine/security/seccomp/
     skip_if_seccomp!(test_af_alg_aead);
