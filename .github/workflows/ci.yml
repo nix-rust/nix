@@ -17,11 +17,7 @@ jobs:
       matrix:
         include:
           - os: freebsd
-            version: "14.3"
-            arch: x86_64
-
-          - os: freebsd
-            version: "15.0"
+            version: "14.4"
             arch: x86_64
 
           # Disable FreeBSD/aarch64 because it's too slow
@@ -29,33 +25,29 @@ jobs:
             #version: "15.0"
             #arch: aarch64
 
-          # Disable Haiku because vmactions/haiku-vm doesn't yet support
-          # custom-shell-name.  Also, Nix doesn't have a Haiku maintainer who
-          # can fix the tests for us.
-          #- os: haiku
-            #version: "r1beta5"
-            #arch: x86_64
+          # Disable Haiku because Nix doesn't have a Haiku maintainer who can
+          # fix the tests for us.
+          - os: haiku
+            version: "r1beta5"
+            arch: x86_64
 
-          # Disable NetBSD because vmactions/netbsd-vm doesn't yet support
-          # custom-shell-name.  Also, Nix doesn't have a NetBSD maintainer who
+          # Disable NetBSD because Nix doesn't have a NetBSD maintainer who
           # can fix the tests for us.
-          #- os: netbsd
-            #version: "10.1"
-            #arch: x86_64
+          - os: netbsd
+            version: "10.1"
+            arch: x86_64
 
-          # Disable OmniOS because vmactions/omnios-vm doesn't yet support
-          # custom-shell-name.  Also, Nix doesn't have a OmniOS maintainer who
+          # Disable OmniOS because Nix doesn't have a OmniOS maintainer who
           # can fix the tests for us.
-          #- os: omnios
-            #version: "r151056"
-            #arch: x86_64
+          - os: omnios
+            version: "r151056"
+            arch: x86_64
 
-          # Disable OpenBSD because vmactions/openbsd-vm doesn't yet support
-          # custom-shell-name.  Also, Nix doesn't have a OpenBSD maintainer who
+          # Disable OpenBSD because Nix doesn't have a OpenBSD maintainer who
           # can fix the tests for us.
-          #- os: openbsd
-            #version: "7.8"
-            #arch: x86_64
+          - os: openbsd
+            version: "7.8"
+            arch: x86_64
     steps:
       - uses: actions/checkout@v6
 
