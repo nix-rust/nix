@@ -360,7 +360,8 @@ mod linux_android {
         let buf2 = b"defghi";
         let iovecs = [IoSlice::new(&buf1[0..3]), IoSlice::new(&buf2[0..3])];
 
-        let res = vmsplice(wr, &iovecs[..], SpliceFFlags::empty()).unwrap();
+        let res = unsafe { vmsplice(wr, &iovecs[..], SpliceFFlags::empty()) }
+            .unwrap();
 
         assert_eq!(6, res);
 
