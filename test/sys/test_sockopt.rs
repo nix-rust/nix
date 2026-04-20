@@ -5,7 +5,9 @@ use nix::sys::socket::{
     SockProtocol, SockType,
 };
 use rand::{rng, Rng};
-use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::unix::io::AsRawFd;
+#[cfg(linux_android)]
+use std::os::unix::io::{FromRawFd, OwnedFd};
 
 // NB: FreeBSD supports LOCAL_PEERCRED for SOCK_SEQPACKET, but OSX does not.
 #[cfg(freebsdlike)]
@@ -204,7 +206,6 @@ fn test_so_tcp_maxseg() {
     connect(ssock.as_raw_fd(), &sock_addr).unwrap();
 
     let rsess = accept(rsock.as_raw_fd()).unwrap();
-    let rsess = unsafe { OwnedFd::from_raw_fd(rsess) };
 
     cfg_if! {
         if #[cfg(apple_targets)] {
