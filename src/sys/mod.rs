@@ -70,6 +70,12 @@ feature! {
     pub mod prctl;
 }
 
+#[cfg(target_os = "freebsd")]
+feature! {
+    #![feature = "process"]
+    pub mod procctl;
+}
+
 feature! {
     #![feature = "pthread"]
     pub mod pthread;
