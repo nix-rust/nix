@@ -22,6 +22,14 @@ pub struct KEvent {
     kevent: libc::kevent,
 }
 
+/// An event for use with [`Kqueue::kevent64`].
+#[cfg(apple_targets)]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct KEvent64 {
+    kevent: libc::kevent64_s,
+}
+
 /// A kernel event queue.
 ///
 /// Used by the kernel to notify the process of various types of asynchronous
@@ -80,6 +88,33 @@ impl Kqueue {
                 changelist.len() as type_of_nchanges,
                 eventlist.as_mut_ptr().cast(),
                 eventlist.len() as type_of_nchanges,
+                if let Some(ref timeout) = timeout_opt {
+                    timeout as *const timespec
+                } else {
+                    ptr::null()
+                },
+            )
+        };
+        Errno::result(res).map(|r| r as usize)
+    }
+
+    /// Like [`kevent`](Kqueue::kevent), but uses [`KEvent64`].
+    #[cfg(apple_targets)]
+    pub fn kevent64(
+        &self,
+        changelist: &[KEvent64],
+        eventlist: &mut [KEvent64],
+        flags: Kevent64Flags,
+        timeout_opt: Option<timespec>,
+    ) -> Result<usize> {
+        let res = unsafe {
+            libc::kevent64(
+                self.0.as_raw_fd(),
+                changelist.as_ptr().cast(),
+                changelist.len() as c_int,
+                eventlist.as_mut_ptr().cast(),
+                eventlist.len() as c_int,
+                flags.bits(),
                 if let Some(ref timeout) = timeout_opt {
                     timeout as *const timespec
                 } else {
@@ -328,6 +363,17 @@ libc_bitflags!(
     }
 );
 
+#[cfg(apple_targets)]
+libc_bitflags! {
+    /// Flags for [`Kqueue::kevent64`].
+    pub struct Kevent64Flags: libc::c_uint {
+        /// Return immediately even if there are no events to return.
+        KEVENT_FLAG_IMMEDIATE;
+        /// Only return error events from the changelist.
+        KEVENT_FLAG_ERROR_EVENTS;
+    }
+}
+
 #[allow(missing_docs)]
 #[deprecated(since = "0.27.0", note = "Use KEvent::new instead")]
 pub fn kqueue() -> Result<Kqueue> {
@@ -398,6 +444,75 @@ impl KEvent {
     /// Opaque user-defined value passed through the kernel unchanged.
     pub fn udata(&self) -> intptr_t {
         self.kevent.udata as intptr_t
+    }
+}
+
+#[cfg(apple_targets)]
+const _: () = {
+    fn _assert_send<T: Send>() {}
+    fn _assert() {
+        _assert_send::<KEvent64>();
+    }
+};
+
+#[cfg(apple_targets)]
+impl KEvent64 {
+    /// Construct a new `KEvent64`.
+    pub fn new(
+        ident: u64,
+        filter: EventFilter,
+        flags: EvFlags,
+        fflags: FilterFlag,
+        data: i64,
+        udata: u64,
+        ext: [u64; 2],
+    ) -> KEvent64 {
+        KEvent64 {
+            kevent: libc::kevent64_s {
+                ident,
+                filter: filter as type_of_event_filter,
+                flags: flags.bits(),
+                fflags: fflags.bits(),
+                data,
+                udata,
+                ext,
+            },
+        }
+    }
+
+    /// Value used to identify this event.
+    pub fn ident(&self) -> u64 {
+        self.kevent.ident
+    }
+
+    /// Identifies the kernel filter used to process this event.
+    pub fn filter(&self) -> Result<EventFilter> {
+        self.kevent.filter.try_into()
+    }
+
+    /// Event flags.
+    pub fn flags(&self) -> EvFlags {
+        EvFlags::from_bits_retain(self.kevent.flags)
+    }
+
+    /// Filter-specific flags.
+    pub fn fflags(&self) -> FilterFlag {
+        FilterFlag::from_bits_retain(self.kevent.fflags)
+    }
+
+    /// Filter-specific data value.
+    pub fn data(&self) -> i64 {
+        self.kevent.data
+    }
+
+    /// Opaque user-defined value passed through the kernel unchanged.
+    pub fn udata(&self) -> u64 {
+        self.kevent.udata
+    }
+
+    /// Filter-specific extension data.
+    pub fn ext(&self) -> [u64; 2] {
+        self.kevent.ext
     }
 }
 
