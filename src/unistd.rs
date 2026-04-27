@@ -1411,9 +1411,9 @@ pub enum Whence {
     #[cfg(any(
         apple_targets,
         freebsdlike,
+        linux_android,
         solarish,
         target_os = "hurd",
-        target_os = "linux",
     ))]
     SeekData = libc::SEEK_DATA,
     /// Specify an offset relative to the next hole in the file greater than
@@ -1424,9 +1424,9 @@ pub enum Whence {
     #[cfg(any(
         apple_targets,
         freebsdlike,
+        linux_android,
         solarish,
         target_os = "hurd",
-        target_os = "linux",
     ))]
     SeekHole = libc::SEEK_HOLE,
 }
