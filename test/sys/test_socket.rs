@@ -992,12 +992,8 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for encrypted data
     let mut encrypted = vec![0u8; payload_len];
-    // SAFETY:
-    // should be safe since session_socket won't be closed before the use of this borrowed one
-    let borrowed_session_socket =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(borrowed_session_socket, &mut encrypted).expect("read encrypt");
+        read(&session_socket, &mut encrypted).expect("read encrypt");
     assert_eq!(num_bytes, payload_len);
 
     let iov = IoSlice::new(&encrypted);
@@ -1019,12 +1015,8 @@ pub fn test_af_alg_cipher() {
 
     // allocate buffer for decrypted data
     let mut decrypted = vec![0u8; payload_len];
-    // SAFETY:
-    // should be safe since session_socket won't be closed before the use of this borrowed one
-    let borrowed_session_socket =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(borrowed_session_socket, &mut decrypted).expect("read decrypt");
+        read(&session_socket, &mut decrypted).expect("read decrypt");
 
     assert_eq!(num_bytes, payload_len);
     assert_eq!(decrypted, payload);
@@ -1112,12 +1104,8 @@ pub fn test_af_alg_aead() {
     // allocate buffer for encrypted data
     let mut encrypted =
         vec![0u8; (assoc_size as usize) + payload_len + auth_size];
-    // SAFETY:
-    // should be safe since session_socket won't be closed before the use of this borrowed one
-    let borrowed_session_socket =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
     let num_bytes =
-        read(borrowed_session_socket, &mut encrypted).expect("read encrypt");
+        read(&session_socket, &mut encrypted).expect("read encrypt");
     assert_eq!(num_bytes, payload_len + auth_size + (assoc_size as usize));
 
     for i in 0..assoc_size {
@@ -1152,15 +1140,10 @@ pub fn test_af_alg_aead() {
     // and in the input buffer for decryption.
     // Do not block on read, as we may have fewer bytes than buffer size
 
-    // SAFETY:
-    //
-    // `session_socket` will be valid for the lifetime of this test
-    // TODO: remove this workaround when accept(2) becomes I/O-safe.
-    let borrowed_fd =
-        unsafe { std::os::fd::BorrowedFd::borrow_raw(session_socket) };
-    fcntl(borrowed_fd, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
+    fcntl(&session_socket, FcntlArg::F_SETFL(OFlag::O_NONBLOCK))
         .expect("fcntl non_blocking");
-    let num_bytes = read(borrowed_fd, &mut decrypted).expect("read decrypt");
+    let num_bytes =
+        read(&session_socket, &mut decrypted).expect("read decrypt");
 
     assert!(num_bytes >= payload_len + (assoc_size as usize));
     assert_eq!(
@@ -1699,9 +1682,6 @@ pub fn test_named_unixdomain() {
 
     let s3 = accept(s1.as_raw_fd()).expect("accept failed");
 
-    // SAFETY:
-    // It should be safe considering that s3 will be open within this test
-    let s3 = unsafe { std::os::fd::BorrowedFd::borrow_raw(s3) };
     let mut buf = [0; 5];
     read(s3, &mut buf).unwrap();
     thr.join().unwrap();
