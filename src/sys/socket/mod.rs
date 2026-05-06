@@ -930,6 +930,19 @@ pub enum ControlMessageOwned {
     #[cfg(any(linux_android, target_os = "fuchsia"))]
     RxqOvfl(u32),
 
+    /// The kernel-set `skb->mark` (i.e. the value `SO_MARK` writes on
+    /// outgoing packets, or that nftables / tc set via `meta mark`) of a
+    /// received packet, delivered as a `(SOL_SOCKET, SO_MARK)` ancillary
+    /// message.
+    ///
+    /// To receive this cmsg the socket must have the `SO_RCVMARK`
+    /// socket option enabled (Linux 5.19+; older kernels return
+    /// `ENOPROTOOPT` from `setsockopt`). Unlike the send-side `SO_MARK`,
+    /// `SO_RCVMARK` is unprivileged: any process may read marks set by
+    /// privileged components elsewhere on the system.
+    #[cfg(linux_android)]
+    SoMark(u32),
+
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
     #[cfg(linux_android)]
     #[cfg(feature = "net")]
@@ -1099,6 +1112,11 @@ impl ControlMessageOwned {
             (libc::SOL_SOCKET, libc::SO_RXQ_OVFL) => {
                 let drop_counter = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::RxqOvfl(drop_counter)
+            },
+            #[cfg(linux_android)]
+            (libc::SOL_SOCKET, libc::SO_MARK) => {
+                let mark = unsafe { ptr::read_unaligned(p as *const u32) };
+                ControlMessageOwned::SoMark(mark)
             },
             #[cfg(linux_android)]
             #[cfg(feature = "net")]
