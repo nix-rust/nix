@@ -218,6 +218,8 @@ jobs:
           - os: freebsd
             version: "14.4"
             arch: x86_64
+            rustflags: --cfg fbsd14 -D warnings
+            rustdocflags: --cfg fbsd14
 
           # Disable FreeBSD/aarch64 because it's too slow
           #- os: freebsd
@@ -247,6 +249,9 @@ jobs:
           #- os: openbsd
             #version: "7.8"
             #arch: x86_64
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags || '-Dwarnings' }}
+      RUSTDOCFLAGS: ${{ matrix.rustdocflags || '-D warnings' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -365,20 +370,20 @@ jobs:
           cargo hack check --each-feature
 
       - name: i686 Build
-        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           rustup target add i686-unknown-freebsd
           cargo build --target i686-unknown-freebsd --all-features --all-targets
       - name: i686 Test
-        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
           cargo test --all-targets --all-features --target i686-unknown-freebsd 
       - name: i686 Doc
-        if: matrix.arch == 'aarch64' && matrix.os == 'freebsd'
+        if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
