@@ -382,12 +382,12 @@ impl KEvent {
     /// Flags control what the kernel will do when this event is added with
     /// [`Kqueue::kevent`].
     pub fn flags(&self) -> EvFlags {
-        EvFlags::from_bits(self.kevent.flags).unwrap()
+        EvFlags::from_bits_retain(self.kevent.flags)
     }
 
     /// Filter-specific flags.
     pub fn fflags(&self) -> FilterFlag {
-        FilterFlag::from_bits(self.kevent.fflags).unwrap()
+        FilterFlag::from_bits_retain(self.kevent.fflags)
     }
 
     /// Filter-specific data value.
