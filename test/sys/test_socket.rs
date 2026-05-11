@@ -974,7 +974,7 @@ pub fn test_af_alg_cipher() {
     assert_eq!(sockaddr.alg_type().to_string_lossy(), alg_type);
 
     setsockopt(&sock, AlgSetKey::default(), &key).expect("setsockopt");
-    let session_socket = accept(sock.as_raw_fd()).expect("accept failed");
+    let session_socket = accept(&sock).expect("accept failed");
 
     let msgs = [
         ControlMessage::AlgSetOp(&libc::ALG_OP_ENCRYPT),
@@ -1083,7 +1083,7 @@ pub fn test_af_alg_aead() {
         .expect("setsockopt AlgSetAeadAuthSize");
     setsockopt(&sock, AlgSetKey::default(), &key)
         .expect("setsockopt AlgSetKey");
-    let session_socket = accept(sock.as_raw_fd()).expect("accept failed");
+    let session_socket = accept(&sock).expect("accept failed");
 
     let msgs = [
         ControlMessage::AlgSetOp(&ALG_OP_ENCRYPT),
@@ -1116,7 +1116,7 @@ pub fn test_af_alg_aead() {
 
     let iv = vec![1u8; iv_len];
 
-    let session_socket = accept(sock.as_raw_fd()).expect("accept failed");
+    let session_socket = accept(&sock).expect("accept failed");
 
     let msgs = [
         ControlMessage::AlgSetOp(&ALG_OP_DECRYPT),
@@ -1680,7 +1680,7 @@ pub fn test_named_unixdomain() {
         write(&s2, b"hello").expect("write failed");
     });
 
-    let s3 = accept(s1.as_raw_fd()).expect("accept failed");
+    let s3 = accept(&s1).expect("accept failed");
 
     let mut buf = [0; 5];
     read(s3, &mut buf).unwrap();

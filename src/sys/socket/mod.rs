@@ -2340,8 +2340,8 @@ pub fn bind(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
 /// Accept a connection on a socket
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html)
-pub fn accept(sockfd: RawFd) -> Result<OwnedFd> {
-    let res = unsafe { libc::accept(sockfd, ptr::null_mut(), ptr::null_mut()) };
+pub fn accept<Fd: AsFd>(sockfd: Fd) -> Result<OwnedFd> {
+    let res = unsafe { libc::accept(sockfd.as_fd().as_raw_fd(), ptr::null_mut(), ptr::null_mut()) };
 
     Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })
 }
@@ -2365,9 +2365,9 @@ pub fn accept(sockfd: RawFd) -> Result<OwnedFd> {
     solarish,
     target_os = "linux",
 ))]
-pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<OwnedFd> {
+pub fn accept4<Fd: AsFd>(sockfd: Fd, flags: SockFlag) -> Result<OwnedFd> {
     let res = unsafe {
-        libc::accept4(sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits())
+        libc::accept4(sockfd.as_fd().as_raw_fd(), ptr::null_mut(), ptr::null_mut(), flags.bits())
     };
 
     Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })

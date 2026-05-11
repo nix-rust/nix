@@ -205,7 +205,7 @@ fn test_so_tcp_maxseg() {
 
     connect(ssock.as_raw_fd(), &sock_addr).unwrap();
 
-    let rsess = accept(rsock.as_raw_fd()).unwrap();
+    let rsess = accept(&rsock).unwrap();
 
     cfg_if! {
         if #[cfg(apple_targets)] {
@@ -904,7 +904,7 @@ fn test_ktls() {
     .unwrap();
     connect(ssock.as_raw_fd(), &sock_addr).unwrap();
 
-    let _rsess = accept(rsock.as_raw_fd()).unwrap();
+    let _rsess = accept(&rsock).unwrap();
 
     match setsockopt(&ssock, sockopt::TcpUlp::default(), b"tls") {
         Ok(()) => (),
