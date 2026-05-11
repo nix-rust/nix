@@ -63,7 +63,7 @@ impl EpollEvent {
     }
 
     pub fn events(&self) -> EpollFlags {
-        EpollFlags::from_bits(self.event.events as c_int).unwrap()
+        EpollFlags::from_bits_retain(self.event.events as c_int)
     }
 
     pub const fn data(&self) -> u64 {
