@@ -14,8 +14,7 @@ use std::os::fd::{AsFd, BorrowedFd};
 use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 use std::ptr;
 
-/// A kernel event queue.  Used to notify a process of various asynchronous
-/// events.
+/// An event for use with [`Kqueue::kevent`].
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KEvent {
