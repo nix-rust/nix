@@ -381,13 +381,13 @@ jobs:
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
-          cargo test --all-targets --all-features --target i686-unknown-freebsd 
+          cargo test --all-targets --all-features --target i686-unknown-freebsd
       - name: i686 Doc
         if: matrix.arch == 'x86_64' && matrix.os == 'freebsd'
         shell: vmsh {0}
         run: |
           if [ -f $HOME/.cargo/env ]; then . $HOME/.cargo/env; fi
-          cargo doc --no-deps --all-features --target i686-unknown-freebsd 
+          cargo doc --no-deps --all-features --target i686-unknown-freebsd
 
   # Tasks for cross-compiling, but no testing
   cross_compiling:

@@ -96,7 +96,7 @@ requests to include tests where they make sense. For example, when fixing a bug,
 add a test that would have failed without the fix.
 
 After you've made your change, make sure the tests pass in your development
-environment. We also have continuous integration set up on GitHub Workflows,
+environment. We also have continuous integration set up on GitHub Action Workflows,
 which might find some issues on other platforms. The CI will run once you open
 a pull request.
 
