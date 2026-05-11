@@ -51,16 +51,6 @@ macro_rules! require_mount {
     };
 }
 
-#[cfg(linux_android)]
-#[macro_export]
-macro_rules! skip_if_cirrus {
-    ($reason:expr) => {
-        if std::env::var_os("CIRRUS_CI").is_some() {
-            skip!("{}", $reason);
-        }
-    };
-}
-
 #[cfg(target_os = "freebsd")]
 #[macro_export]
 macro_rules! skip_if_jailed {
