@@ -1145,22 +1145,32 @@ pub fn aio_suspend(
 // Do not run this doc test on:
 //   * aarch64-unknown-linux-musl
 //   * i686-unknown-linux-musl
+//   * x86_64-unknown-linux-musl
 // because it hangs on these targets. After further debugging, we think this is
 // likely a bug of musl. Since we only test our bindings and do not intend to
 // fix the underlying libc bug, we skip this test here.
 // See this thread for the discussion of this issue:
-// https://github.com/nix-rust/nix/pull/2689#issuecomment-3419813159
+// 1. https://github.com/nix-rust/nix/pull/2689#issuecomment-3419813159
+// 2. https://github.com/nix-rust/nix/issues/2788
 #[cfg_attr(
     all(
         target_env = "musl",
-        any(target_arch = "aarch64", target_arch = "x86")
+        any(
+            target_arch = "aarch64",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
     ),
     doc = " ```no_run"
 )]
 #[cfg_attr(
     not(all(
         target_env = "musl",
-        any(target_arch = "aarch64", target_arch = "x86")
+        any(
+            target_arch = "aarch64",
+            target_arch = "x86",
+            target_arch = "x86_64"
+        )
     )),
     doc = " ```"
 )]
