@@ -238,13 +238,13 @@ jobs:
             #version: "10.1"
             #arch: x86_64
 
-          # Disable OmniOS because Nix doesn't have a OmniOS maintainer who can
+          # Disable OmniOS because Nix doesn't have an OmniOS maintainer who can
           # fix the tests for us.
           #- os: omnios
             #version: "r151056"
             #arch: x86_64
 
-          # Disable OpenBSD because Nix doesn't have a OpenBSD maintainer who
+          # Disable OpenBSD because Nix doesn't have an OpenBSD maintainer who
           # can fix the tests for us.
           #- os: openbsd
             #version: "7.8"
