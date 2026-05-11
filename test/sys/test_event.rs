@@ -1,7 +1,7 @@
 use libc::intptr_t;
-#[cfg(apple_targets)]
-use nix::sys::event::KEvent64;
 use nix::sys::event::{EvFlags, EventFilter, FilterFlag, KEvent};
+#[cfg(apple_targets)]
+use nix::sys::event::{KEvent64, Kevent64Flags, Kqueue};
 
 #[test]
 fn test_struct_kevent() {
@@ -67,4 +67,23 @@ fn test_kevent_filter() {
         udata,
     );
     assert_eq!(EventFilter::EVFILT_READ, actual.filter().unwrap());
+}
+
+#[test]
+#[cfg(apple_targets)]
+fn kevent64_empty_lists_zero_timeout() {
+    let kq = Kqueue::new().expect("failed to create kqueue");
+    let changelist: [KEvent64; 0] = [];
+    let mut eventlist: [KEvent64; 0] = [];
+    let timeout = libc::timespec {
+        tv_sec: 0,
+        tv_nsec: 0,
+    };
+    let result = kq.kevent64(
+        &changelist,
+        &mut eventlist,
+        Kevent64Flags::empty(),
+        Some(timeout),
+    );
+    assert_eq!(result.expect("kevent64 should succeed"), 0);
 }
