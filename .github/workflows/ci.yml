@@ -363,12 +363,7 @@ jobs:
           # Temporarily disable armv7-unknown-linux-uclibceabihf
           # https://github.com/rust-lang/rust/issues/154679
           # - target: armv7-unknown-linux-uclibceabihf
-          # Disable Hurd due to 
-          #     1. https://github.com/rust-lang/libc/issues/4421
-          #     2. https://github.com/nix-rust/nix/pull/2635#issuecomment-2842062528
-          # 
-          # We can bring it back when 1 gets fixed and it is applied to the std lib
-          # - target: i686-unknown-hurd-gnu
+          - target: i686-unknown-hurd-gnu
     steps:
       - name: checkout
         uses: actions/checkout@v4
