@@ -3,6 +3,33 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.31.3] - 2026-05-11
+
+### Added
+
+- Enable module `ioctl` for Cygwin
+  ([#2715](https://github.com/nix-rust/nix/pull/2715))
+- Add
+  `CLOCK_BOOTTIME/CLOCK_PROCESS_CPUTIME_ID/CLOCK_THREAD_CPUTIME_ID/CLOCK_UPTIME`
+  to NetBSD-like platforms ([#2716](https://github.com/nix-rust/nix/pull/2716))
+- unistd: add mkfifo for redox
+  ([#2749](https://github.com/nix-rust/nix/pull/2749))
+- Added `kevent64` support on apple targets: `Kqueue::kevent64`, `KEvent64`,
+  and `Kevent64Flags`. ([#2781](https://github.com/nix-rust/nix/pull/2781))
+
+### Fixed
+
+- fix SaFlags_t definition on redox
+  ([#2751](https://github.com/nix-rust/nix/pull/2751))
+- Fixed `EpollEvent::events()` to use `from_bits_retain` instead of
+  `from_bits().unwrap()`, preventing panics when the kernel returns
+  unknown epoll flags. ([#2783](https://github.com/nix-rust/nix/pull/2783))
+- Fixed `KEvent::flags()` and `KEvent::fflags()` to use `from_bits_retain`
+  instead of `from_bits().unwrap()`, preventing panics when the kernel
+  returns unknown kqueue flags.
+  ([#2784](https://github.com/nix-rust/nix/pull/2784))
+
+
 ## [0.31.2] - 2026-02-28
 
 ### Added
