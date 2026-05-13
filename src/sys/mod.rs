@@ -64,7 +64,7 @@ feature! {
     pub mod personality;
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(linux_android)]
 feature! {
     #![feature = "process"]
     pub mod prctl;
