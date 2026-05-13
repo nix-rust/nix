@@ -721,7 +721,12 @@ fn test_sysconf_unsupported() {
     assert!(open_max.expect("sysconf failed").is_none())
 }
 
-#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
+#[cfg(any(
+    linux_android,
+    freebsdlike,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 #[test]
 fn test_getresuid() {
     let resuids = getresuid().unwrap();
@@ -730,7 +735,12 @@ fn test_getresuid() {
     assert_ne!(resuids.saved.as_raw(), libc::uid_t::MAX);
 }
 
-#[cfg(any(linux_android, freebsdlike, target_os = "openbsd"))]
+#[cfg(any(
+    linux_android,
+    freebsdlike,
+    target_os = "openbsd",
+    target_os = "redox"
+))]
 #[test]
 fn test_getresgid() {
     let resgids = getresgid().unwrap();
