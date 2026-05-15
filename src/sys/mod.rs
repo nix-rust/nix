@@ -39,6 +39,7 @@ feature! {
     linux_android,
     solarish,
     target_os = "fuchsia",
+    target_os = "haiku",
     target_os = "redox",
     target_os = "cygwin",
 ))]
