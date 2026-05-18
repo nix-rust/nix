@@ -20,8 +20,13 @@ use crate::Result;
 ///
 /// `in_fd` must support `mmap`-like operations and therefore cannot be a socket.
 ///
-/// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html) for Linux,
-/// see [the sendfile(2) man page.](https://docs.oracle.com/cd/E88353_01/html/E37843/sendfile-3c.html) for Solaris.
+/// On Linux, If `out_fd` refers to a socket or pipe with zero-copy support, callers
+/// must ensure the transferred portions of the file referred to by `in_fd` remain
+/// unmodified until the reader on the other end of `out_fd` has consumed the
+/// transferred data.
+///
+/// For more information, see [the sendfile(2) man page](https://man7.org/linux/man-pages/man2/sendfile.2.html) for Linux.
+/// See [the sendfile(2) man page](https://docs.oracle.com/cd/E88353_01/html/E37843/sendfile-3c.html) for Solaris.
 #[cfg(any(linux_android, solarish))]
 pub fn sendfile<F1: AsFd, F2: AsFd>(
     out_fd: F1,
@@ -53,6 +58,11 @@ pub fn sendfile<F1: AsFd, F2: AsFd>(
 /// the byte after the last byte copied.
 ///
 /// `in_fd` must support `mmap`-like operations and therefore cannot be a socket.
+///
+/// If `out_fd` refers to a socket or pipe with zero-copy support, callers
+/// must ensure the transferred portions of the file referred to by `in_fd` remain
+/// unmodified until the reader on the other end of `out_fd` has consumed the
+/// transferred data.
 ///
 /// For more information, see [the sendfile(2) man page.](https://man7.org/linux/man-pages/man2/sendfile.2.html)
 #[cfg(target_os = "linux")]
