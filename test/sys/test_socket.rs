@@ -919,25 +919,7 @@ pub fn test_scm_rights() {
     close(received_r).unwrap();
 }
 
-// 1. Disable the test on emulated platforms due to not enabled support of
-//    AF_ALG in QEMU from rust cross
-// 2. Disable the test on aarch64/Linux, s390x/Linux, and powerpc64le/Linux
-//    because bind() fails with ENOENT:
-//    https://github.com/nix-rust/nix/issues/1352
 #[cfg(linux_android)]
-#[cfg_attr(
-    any(
-        qemu,
-        all(target_os = "linux", target_arch = "aarch64"),
-        all(target_os = "linux", target_arch = "s390x"),
-        all(
-            target_os = "linux",
-            target_arch = "powerpc64",
-            target_endian = "little"
-        ),
-    ),
-    ignore
-)]
 #[test]
 pub fn test_af_alg_cipher() {
     use nix::sys::socket::sockopt::AlgSetKey;
@@ -946,10 +928,35 @@ pub fn test_af_alg_cipher() {
         ControlMessage, MsgFlags, SockFlag, SockType,
     };
     use nix::unistd::read;
+    use std::fs;
     use std::io::IoSlice;
 
     let alg_type = "skcipher";
     let alg_name = "ctr-aes-aesni";
+
+    /*
+     * Skip the test if requirements are not satisfied.
+     */
+    require_kernel_module!(test_af_alg_cipher, "af_alg");
+
+    let has_algorithm = fs::read_to_string("/proc/crypto")
+        .map(|crypto| {
+            crypto.lines().any(|line| {
+                if let Some((key, value)) = line.split_once(':') {
+                    key.trim() == "name" && value.trim() == alg_name
+                } else {
+                    false
+                }
+            })
+        })
+        .unwrap_or(false);
+    if !has_algorithm {
+        println!("AF_ALG algorithm {alg_name:?} unavailable, skipping test.");
+        return;
+    }
+
+    require_kernel_module!(test_af_alg_cipher, "algif_skcipher");
+
     // 256-bits secret key
     let key = vec![0u8; 32];
     // 16-bytes IV
@@ -1022,10 +1029,7 @@ pub fn test_af_alg_cipher() {
     assert_eq!(decrypted, payload);
 }
 
-// Disable the test on emulated platforms due to not enabled support of AF_ALG
-// in QEMU from rust cross
 #[cfg(linux_android)]
-#[cfg_attr(qemu, ignore)]
 #[test]
 pub fn test_af_alg_aead() {
     use libc::{ALG_OP_DECRYPT, ALG_OP_ENCRYPT};
@@ -1036,17 +1040,37 @@ pub fn test_af_alg_aead() {
         ControlMessage, MsgFlags, SockFlag, SockType,
     };
     use nix::unistd::read;
+    use std::fs;
     use std::io::IoSlice;
 
-    // Travis's seccomp profile blocks AF_ALG
-    // https://docs.docker.com/engine/security/seccomp/
-    skip_if_seccomp!(test_af_alg_aead);
+    let alg_name = "gcm(aes)";
+
+    /*
+     * Skip the test if requirements are not satisfied.
+     */
+    require_kernel_module!(test_af_alg_aead, "af_alg");
+
+    let has_algorithm = fs::read_to_string("/proc/crypto")
+        .map(|crypto| {
+            crypto.lines().any(|line| {
+                if let Some((key, value)) = line.split_once(':') {
+                    key.trim() == "name" && value.trim() == alg_name
+                } else {
+                    false
+                }
+            })
+        })
+        .unwrap_or(false);
+    if !has_algorithm {
+        println!("AF_ALG algorithm {alg_name:?} unavailable, skipping test.");
+        return;
+    }
+    require_kernel_module!(test_af_alg_aead, "algif_aead");
 
     let auth_size = 4usize;
     let assoc_size = 16u32;
 
     let alg_type = "aead";
-    let alg_name = "gcm(aes)";
     // 256-bits secret key
     let key = vec![0u8; 32];
     // 12-bytes IV

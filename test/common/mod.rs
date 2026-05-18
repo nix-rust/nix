@@ -137,3 +137,39 @@ cfg_if! {
         }
     }
 }
+
+cfg_if! {
+    if #[cfg(linux_android)] {
+        #[macro_export] macro_rules! require_kernel_module {
+            ($name:expr, $module_name:expr) => {
+                let loaded_from_proc = std::fs::read_to_string("/proc/modules")
+                    .map(|modules| {
+                        modules.lines().any(|line| {
+                            line.split_whitespace().next()
+                                == Some($module_name)
+                        })
+                    })
+                    .unwrap_or(false);
+
+                let module_path = format!("/sys/module/{}", $module_name);
+                let loaded_from_sys =
+                    match std::path::Path::new(&module_path).try_exists() {
+                        Ok(exists) => exists,
+                        Err(error) => {
+                            panic!("failed to inspect {module_path}: {error}")
+                        }
+                    };
+
+                let loaded = loaded_from_proc || loaded_from_sys;
+
+                if !loaded {
+                    $crate::skip!(
+                        "Skip {} because kernel module `{}` is unavailable",
+                        stringify!($name),
+                        $module_name
+                    );
+                }
+            }
+        }
+    }
+}
