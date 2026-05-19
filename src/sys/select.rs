@@ -3,7 +3,6 @@ use crate::errno::Errno;
 use crate::sys::time::{TimeSpec, TimeVal};
 use crate::Result;
 use libc::{self, c_int};
-use std::convert::TryFrom;
 use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;

@@ -751,15 +751,15 @@ pub enum FcntlArg<'a> {
     /// Get the first lock that blocks the lock description
     F_GETLK(&'a mut libc::flock),
     /// Acquire or release an open file description lock
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, macos))]
     F_OFD_SETLK(&'a libc::flock),
     /// Like [`F_OFD_SETLK`] except that if a conflicting lock is held on
     /// the file, then wait for that lock to be released.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, macos))]
     F_OFD_SETLKW(&'a libc::flock),
     /// Determine whether it would be possible to create the given lock.  If not, return details
     /// about one existing lock that would prevent it.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, macos))]
     F_OFD_GETLK(&'a mut libc::flock),
     /// Add seals to the file
     #[cfg(any(
@@ -879,11 +879,11 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
             #[cfg(not(target_os = "redox"))]
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, macos))]
             F_OFD_SETLK(flock) => libc::fcntl(fd, libc::F_OFD_SETLK, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, macos))]
             F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, macos))]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
             #[cfg(any(
                 linux_android,
