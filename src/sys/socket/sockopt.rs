@@ -419,6 +419,38 @@ sockopt_impl!(
     libc::IP_DROP_MEMBERSHIP,
     super::IpMembershipRequest
 );
+#[cfg(feature = "net")]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Join a multicast group and allow receiving data only from specified source
+    IpAddSourceMembership,
+    SetOnly,
+    libc::IPPROTO_IP,
+    libc::IP_ADD_SOURCE_MEMBERSHIP,
+    super::IpSourceMembershipRequest
+);
+#[cfg(feature = "net")]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Leave a source-specific group
+    IpDropSourceMembership,
+    SetOnly,
+    libc::IPPROTO_IP,
+    libc::IP_DROP_SOURCE_MEMBERSHIP,
+    super::IpSourceMembershipRequest
+);
 cfg_if! {
     if #[cfg(linux_android)] {
         #[cfg(feature = "net")]

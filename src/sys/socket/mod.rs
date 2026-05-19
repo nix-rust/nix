@@ -624,6 +624,41 @@ impl IpMembershipRequest {
     }
 }
 
+/// Request for source-specific multicast socket operations
+///
+/// This is a wrapper type around `ip_mreq_source`.
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct IpSourceMembershipRequest(libc::ip_mreq_source);
+
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "haiku",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+impl IpSourceMembershipRequest {
+    /// Instantiate a new `IpSourceMembershipRequest`
+    ///
+    /// If `interface` is `None`, then `Ipv4Addr::any()` will be used for the interface.
+    pub fn new(group: net::Ipv4Addr, source: net::Ipv4Addr, interface: Option<net::Ipv4Addr>)
+        -> Self
+    {
+        let imr_addr = interface.unwrap_or(net::Ipv4Addr::UNSPECIFIED);
+        IpSourceMembershipRequest(libc::ip_mreq_source {
+            imr_multiaddr: ipv4addr_to_libc(group),
+            imr_sourceaddr: ipv4addr_to_libc(source),
+            imr_interface: ipv4addr_to_libc(imr_addr)
+        })
+    }
+}
+
 /// Request for ipv6 multicast socket operations
 ///
 /// This is a wrapper type around `ipv6_mreq`.
