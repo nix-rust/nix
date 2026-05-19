@@ -1313,8 +1313,17 @@ pub fn tee<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd>(
 ///
 /// # See Also
 /// *[`vmsplice`](https://man7.org/linux/man-pages/man2/vmsplice.2.html)
+///
+/// # Safety
+///
+/// * The content of `iov` must not be changed until kernel has finished reading it "even after the caller process finished".
+/// * If `SpliceFFlags::SPLICE_F_GIFT` is set:
+///   - The contents of `iov` must never be modified after the call.
+///   - All pointers in `iov` must be page-aligned.
+///   - All lengths must be a multiple of the system page size in bytes.
+/// **Note** Linux kernel does not have an API to know when the kernel finished using the content of RAM
 #[cfg(linux_android)]
-pub fn vmsplice<F: std::os::fd::AsFd>(
+pub unsafe fn vmsplice<F: std::os::fd::AsFd>(
     fd: F,
     iov: &[std::io::IoSlice<'_>],
     flags: SpliceFFlags,
