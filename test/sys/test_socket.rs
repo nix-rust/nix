@@ -2601,6 +2601,95 @@ fn test_recvmsg_rxq_ovfl() {
     assert_eq!(drop_counter, 1);
 }
 
+// Verifies the round-trip for `SO_RCVMARK`: the receiver enables it via the new
+// `RcvMark` sockopt, the sender stamps a known mark on its outgoing packet via
+// the existing `Mark` sockopt, and we assert that the cmsg arrives decoded as
+// the typed `ControlMessageOwned::SoMark(u32)` variant carrying that exact
+// value (rather than falling through to `Unknown`).
+//
+// Privilege/kernel requirements:
+//   * `SO_RCVMARK` itself is unprivileged, but stamping a non-zero mark via
+//     send-side `SO_MARK` requires `CAP_NET_ADMIN` — without it the mark is
+//     silently zero and the assertion below would be vacuous. We therefore
+//     skip the whole test rather than weaken the assertion.
+//   * `SO_RCVMARK` landed in Linux 5.19 (commit `6fd1d51cfa25`). On older
+//     kernels `setsockopt` would return `ENOPROTOOPT`.
+// Disable on emulated platforms for the same reason `test_recvmsg_rxq_ovfl`
+// does: lack of QEMU support is suspected.
+#[cfg_attr(qemu, ignore)]
+#[cfg(target_os = "linux")]
+#[test]
+fn test_recvmsg_so_mark() {
+    use nix::sys::socket::{
+        sockopt::{Mark, RcvMark},
+        *,
+    };
+    use std::io::{IoSlice, IoSliceMut};
+
+    require_capability!("test_recvmsg_so_mark", CAP_NET_ADMIN);
+    require_kernel_version!(test_recvmsg_so_mark, ">= 5.19");
+
+    const MARK: u32 = 0xdead_beef;
+    let message = [0u8; 64];
+
+    let in_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let out_socket = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+
+    let localhost = SockaddrIn::from_str("127.0.0.1:0").unwrap();
+    bind(in_socket.as_raw_fd(), &localhost).unwrap();
+    let address: SockaddrIn = getsockname(in_socket.as_raw_fd()).unwrap();
+    connect(out_socket.as_raw_fd(), &address).unwrap();
+
+    // Ask the kernel to deliver `skb->mark` as a cmsg on every recv on
+    // `in_socket`, and stamp our chosen mark on outgoing packets from
+    // `out_socket`.
+    setsockopt(&in_socket, RcvMark, &true).unwrap();
+    setsockopt(&out_socket, Mark, &MARK).unwrap();
+
+    let iov = [IoSlice::new(&message)];
+    let sent = sendmsg::<SockaddrIn>(
+        out_socket.as_raw_fd(),
+        &iov,
+        &[],
+        MsgFlags::empty(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(message.len(), sent);
+
+    let mut buffer = vec![0u8; message.len()];
+    let mut cmsgspace = nix::cmsg_space!(u32);
+    let mut iov = [IoSliceMut::new(&mut buffer)];
+    let r = recvmsg::<()>(
+        in_socket.as_raw_fd(),
+        &mut iov,
+        Some(&mut cmsgspace),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+
+    let mut received_mark = None;
+    for cmsg in r.cmsgs().unwrap() {
+        match cmsg {
+            ControlMessageOwned::SoMark(m) => received_mark = Some(m),
+            other => panic!("unexpected control message: {other:?}"),
+        }
+    }
+    assert_eq!(received_mark, Some(MARK));
+}
+
 #[cfg(any(linux_android, target_os = "freebsd"))]
 #[cfg(feature = "net")]
 // qemu doesn't seem to be emulating this correctly in these architectures

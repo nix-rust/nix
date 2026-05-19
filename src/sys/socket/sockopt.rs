@@ -1166,6 +1166,23 @@ sockopt_impl!(
     libc::SO_RXQ_OVFL,
     libc::c_int
 );
+#[cfg(target_os = "linux")]
+sockopt_impl!(
+    /// Enable delivery of the kernel-set `skb->mark` of received packets as a
+    /// `(SOL_SOCKET, SO_MARK)` ancillary message (decoded by nix as
+    /// [`ControlMessageOwned::SoMark`](super::ControlMessageOwned::SoMark)).
+    ///
+    /// Available since Linux 5.19; older kernels return `ENOPROTOOPT` from
+    /// `setsockopt`. Unlike the send-side [`Mark`] option (which sets
+    /// `skb->mark` on outgoing packets and requires `CAP_NET_ADMIN`),
+    /// `SO_RCVMARK` is unprivileged: any process may observe marks that
+    /// privileged components elsewhere on the system have set.
+    RcvMark,
+    Both,
+    libc::SOL_SOCKET,
+    libc::SO_RCVMARK,
+    bool
+);
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
