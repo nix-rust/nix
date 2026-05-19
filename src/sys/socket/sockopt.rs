@@ -1166,7 +1166,7 @@ sockopt_impl!(
     libc::SO_RXQ_OVFL,
     libc::c_int
 );
-#[cfg(linux_android)]
+#[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Enable delivery of the kernel-set `skb->mark` of received packets as a
     /// `(SOL_SOCKET, SO_MARK)` ancillary message (decoded by nix as

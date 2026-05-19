@@ -940,7 +940,7 @@ pub enum ControlMessageOwned {
     /// `ENOPROTOOPT` from `setsockopt`). Unlike the send-side `SO_MARK`,
     /// `SO_RCVMARK` is unprivileged: any process may read marks set by
     /// privileged components elsewhere on the system.
-    #[cfg(linux_android)]
+    #[cfg(target_os = "linux")]
     SoMark(u32),
 
     /// Socket error queue control messages read with the `MSG_ERRQUEUE` flag.
@@ -1113,7 +1113,7 @@ impl ControlMessageOwned {
                 let drop_counter = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::RxqOvfl(drop_counter)
             },
-            #[cfg(linux_android)]
+            #[cfg(target_os = "linux")]
             (libc::SOL_SOCKET, libc::SO_MARK) => {
                 let mark = unsafe { ptr::read_unaligned(p as *const u32) };
                 ControlMessageOwned::SoMark(mark)

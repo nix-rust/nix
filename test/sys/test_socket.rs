@@ -2617,7 +2617,7 @@ fn test_recvmsg_rxq_ovfl() {
 // Disable on emulated platforms for the same reason `test_recvmsg_rxq_ovfl`
 // does: lack of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
-#[cfg(linux_android)]
+#[cfg(target_os = "linux")]
 #[test]
 fn test_recvmsg_so_mark() {
     use nix::sys::socket::{
