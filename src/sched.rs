@@ -80,6 +80,9 @@ mod sched_linux_like {
             CLONE_NEWNET;
             /// The new process shares an I/O context with the calling process.
             CLONE_IO;
+            /// Allocates a child process file descriptor (O_CLOEXEC)
+            /// for the `child_tid` argument.
+            CLONE_PIDFD;
         }
     }
 
@@ -109,6 +112,9 @@ mod sched_linux_like {
         stack: &mut [u8],
         flags: CloneFlags,
         signal: Option<c_int>,
+        parent_tid: Option<Pid>,
+        tls: Option<&mut [u8]>,
+        child_tid: Option<Pid>,
     ) -> Result<Pid> {
         extern "C" fn callback(data: *mut CloneCb) -> c_int {
             let cb: &mut CloneCb = unsafe { &mut *data };
@@ -116,6 +122,18 @@ mod sched_linux_like {
         }
 
         let combined = flags.bits() | signal.unwrap_or(0);
+        let parent_tid = match parent_tid {
+            Some(mut ptid) => &mut ptid as *mut Pid,
+            _ => std::ptr::null_mut(),
+        };
+        let tls = match tls {
+            Some(s) => s.as_mut_ptr(),
+            _ => std::ptr::null_mut(),
+        };
+        let child_tid = match child_tid {
+            Some(mut ctid) => &mut ctid as *mut Pid,
+            _ => std::ptr::null_mut(),
+        };
         let res = unsafe {
             let ptr = stack.as_mut_ptr().add(stack.len());
             let ptr_aligned = ptr.sub(ptr as usize % 16);
@@ -130,6 +148,9 @@ mod sched_linux_like {
                 ptr_aligned as *mut c_void,
                 combined,
                 &mut cb as *mut _ as *mut c_void,
+                parent_tid,
+                tls,
+                child_tid,
             )
         };
 
