@@ -777,18 +777,26 @@ cfg_if! {
         /// [cfgetispeed(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetispeed.html)).
         ///
         /// `cfgetispeed()` extracts the input baud rate from the given `Termios` structure.
+        ///
+        /// On glibc 2.42+, returns `BaudRate::B0` if the actual baud rate cannot be determined.
         pub fn cfgetispeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetispeed(&*inner_termios) }.try_into().unwrap()
+            unsafe { libc::cfgetispeed(&*inner_termios) }
+                .try_into()
+                .unwrap_or(BaudRate::B0)
         }
 
         /// Get output baud rate (see
         /// [cfgetospeed(3p)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/cfgetospeed.html)).
         ///
         /// `cfgetospeed()` extracts the output baud rate from the given `Termios` structure.
+        ///
+        /// On glibc 2.42+, returns `BaudRate::B0` if the actual baud rate cannot be determined.
         pub fn cfgetospeed(termios: &Termios) -> BaudRate {
             let inner_termios = termios.get_libc_termios();
-            unsafe { libc::cfgetospeed(&*inner_termios) }.try_into().unwrap()
+            unsafe { libc::cfgetospeed(&*inner_termios) }
+                .try_into()
+                .unwrap_or(BaudRate::B0)
         }
 
         /// Set input baud rate (see

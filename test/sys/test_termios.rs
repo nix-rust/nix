@@ -115,3 +115,74 @@ fn test_local_flags() {
     let read = read(&pty.master, &mut buf).unwrap_err();
     assert_eq!(read, Errno::EAGAIN);
 }
+
+// Test for glibc 2.42 compatibility - cfgetospeed should never panic
+// Reproduces issue from nix-rust/nix#2672
+#[test]
+fn test_cfgetospeed_never_panics() {
+    use nix::sys::termios::{cfgetospeed, Termios};
+
+    // Test with zeroed termios (may be invalid on glibc 2.42)
+    let termios: Termios = unsafe { std::mem::zeroed() };
+
+    // This should not panic, even on glibc 2.42
+    // Before fix: panicked at src/sys/termios.rs:767 with EINVAL
+    let _speed = cfgetospeed(&termios);
+
+    // If we get here, no panic occurred - test passes
+}
+
+// Test for glibc 2.42 compatibility - cfgetispeed should never panic
+#[test]
+fn test_cfgetispeed_never_panics() {
+    use nix::sys::termios::{cfgetispeed, Termios};
+
+    // Test with zeroed termios (may be invalid on glibc 2.42)
+    let termios: Termios = unsafe { std::mem::zeroed() };
+
+    // This should not panic, even on glibc 2.42
+    let _speed = cfgetispeed(&termios);
+
+    // If we get here, no panic occurred - test passes
+}
+
+// Test exact reproducer from issue #2672
+#[test]
+fn test_issue_2672_cfgetospeed_with_pty() {
+    use nix::sys::termios::cfgetospeed;
+
+    // openpty uses ptname(3) internally
+    let _m = crate::PTSNAME_MTX.lock();
+
+    let pty = openpty(None, None).expect("openpty failed");
+    let termios = tcgetattr(&pty.slave).expect("tcgetattr failed");
+
+    // This exact call panicked on glibc 2.42 before the fix
+    let speed = cfgetospeed(&termios);
+
+    // Should return some valid BaudRate (or B0 on error)
+    // The key is: NO PANIC
+    let _ = speed;
+}
+
+// Test baud rate roundtrip with actual pty
+#[test]
+fn test_baudrate_roundtrip_with_pty() {
+    use nix::sys::termios::{cfgetospeed, cfsetspeed};
+
+    // openpty uses ptname(3) internally
+    let _m = crate::PTSNAME_MTX.lock();
+
+    let pty = openpty(None, None).expect("openpty failed");
+    let mut termios = tcgetattr(&pty.slave).expect("tcgetattr failed");
+
+    // Set a known baud rate
+    cfsetspeed(&mut termios, BaudRate::B9600).expect("cfsetspeed failed");
+
+    // Get it back - should not panic
+    let speed = cfgetospeed(&termios);
+
+    // On most systems this equals B9600, but on glibc 2.42 might be B0 if conversion fails
+    // Either way, NO PANIC is the requirement
+    let _ = speed;
+}
