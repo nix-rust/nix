@@ -633,10 +633,17 @@ pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
     /// Instantiate a new `Ipv6MembershipRequest`
-    pub const fn new(group: net::Ipv6Addr) -> Self {
+    ///
+    /// If `interface` is `None`, then `0` will be used for the interface.
+    pub fn new(group: net::Ipv6Addr, interface: Option<libc::c_uint>) -> Self {
+        let ipv6mr_interface = interface.unwrap_or(0);
+
+        #[cfg(target_os = "android")]
+        let ipv6mr_interface = ipv6mr_interface as libc::c_int;
+
         Ipv6MembershipRequest(libc::ipv6_mreq {
             ipv6mr_multiaddr: ipv6addr_to_libc(&group),
-            ipv6mr_interface: 0,
+            ipv6mr_interface,
         })
     }
 }
