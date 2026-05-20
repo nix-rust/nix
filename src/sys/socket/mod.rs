@@ -2428,7 +2428,7 @@ pub fn recvfrom<T: SockaddrLike>(
 ) -> Result<(usize, Option<T>)> {
     unsafe {
         let mut addr = mem::MaybeUninit::<T>::uninit();
-        let mut len = mem::size_of_val(&addr) as socklen_t;
+        let mut len = T::size();
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
@@ -2439,7 +2439,7 @@ pub fn recvfrom<T: SockaddrLike>(
             &mut len as *mut socklen_t,
         ))? as usize;
 
-        Ok((ret, T::from_raw(addr.assume_init().as_ptr(), Some(len))))
+        Ok((ret, T::from_raw(addr.as_ptr().cast(), Some(len))))
     }
 }
 
@@ -2542,7 +2542,7 @@ pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
 
         Errno::result(ret)?;
 
-        T::from_raw(addr.assume_init().as_ptr(), Some(len)).ok_or(Errno::EINVAL)
+        T::from_raw(addr.as_ptr().cast(), Some(len)).ok_or(Errno::EINVAL)
     }
 }
 
@@ -2558,7 +2558,7 @@ pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
 
         Errno::result(ret)?;
 
-        T::from_raw(addr.assume_init().as_ptr(), Some(len)).ok_or(Errno::EINVAL)
+        T::from_raw(addr.as_ptr().cast(), Some(len)).ok_or(Errno::EINVAL)
     }
 }
 
