@@ -336,11 +336,16 @@ fn ptrace_peek(
     }
 }
 
-/// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`
+/// Get user registers, as with `ptrace(PTRACE_GETREGS, ...)`. Call `getregset` for safe version
 ///
 /// Note that since `PTRACE_GETREGS` are not available on all platforms (as in [ptrace(2)]),
 /// `ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, ...)` is used instead to achieve the same effect
 /// on aarch64 and riscv64.
+///
+/// # Safety
+///
+/// Currently, in x86_64 platform, if the tracer is 64bit and tracee is 32bit, the return value is
+/// undefined.
 ///
 /// [ptrace(2)]: https://www.man7.org/linux/man-pages/man2/ptrace.2.html
 #[cfg(all(
@@ -353,7 +358,7 @@ fn ptrace_peek(
         all(target_arch = "x86", target_env = "gnu")
     )
 ))]
-pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
+pub unsafe fn getregs(pid: Pid) -> Result<user_regs_struct> {
     ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
 }
 
@@ -379,6 +384,9 @@ pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
 }
 
 /// Get a particular set of user registers, as with `ptrace(PTRACE_GETREGSET, ...)`
+///
+/// Currently, in x86_64 platform, if the tracer is 64bit and tracee is 32bit, this function
+/// will return EIO error.
 #[cfg(all(
     target_os = "linux",
     any(
@@ -409,6 +417,9 @@ pub fn getregset<S: RegisterSet>(pid: Pid) -> Result<S::Regs> {
             (&mut iov as *mut libc::iovec).cast(),
         )?;
     };
+    if iov.iov_len != mem::size_of::<S::Regs>() {
+        return Err(Errno::EIO);
+    }
     Ok(unsafe { data.assume_init() })
 }
 
