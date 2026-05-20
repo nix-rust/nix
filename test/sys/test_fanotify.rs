@@ -2,8 +2,8 @@ use crate::*;
 use nix::errno::Errno;
 use nix::fcntl::AT_FDCWD;
 use nix::sys::fanotify::{
-    EventFFlags, Fanotify, FanotifyResponse, InitFlags, MarkFlags, MaskFlags,
-    Response,
+    EventFFlags, Fanotify, FanotifyInfoRecord, FanotifyResponse, InitFlags,
+    MarkFlags, MaskFlags, Response,
 };
 use std::fs::{read_link, read_to_string, File, OpenOptions};
 use std::io::ErrorKind;
@@ -18,6 +18,7 @@ pub fn test_fanotify() {
 
     test_fanotify_notifications();
     test_fanotify_responses();
+    test_fanotify_notifications_with_info_records();
     test_fanotify_overflow();
 }
 
@@ -82,6 +83,78 @@ fn test_fanotify_notifications() {
     let fd = fd_opt.as_ref().unwrap();
     let path = read_link(format!("/proc/self/fd/{}", fd.as_raw_fd())).unwrap();
     assert_eq!(path, tempfile);
+}
+
+fn test_fanotify_notifications_with_info_records() {
+    let group = Fanotify::init(
+        InitFlags::FAN_CLASS_NOTIF | InitFlags::FAN_REPORT_FID,
+        EventFFlags::O_RDONLY,
+    )
+    .unwrap();
+    let tempdir = tempfile::tempdir().unwrap();
+    let tempfile = tempdir.path().join("test");
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&tempfile)
+        .unwrap();
+
+    group
+        .mark(
+            MarkFlags::FAN_MARK_ADD,
+            MaskFlags::FAN_OPEN | MaskFlags::FAN_MODIFY | MaskFlags::FAN_CLOSE,
+            AT_FDCWD,
+            Some(&tempfile),
+        )
+        .unwrap();
+
+    // modify test file
+    {
+        let mut f = OpenOptions::new().write(true).open(&tempfile).unwrap();
+        f.write_all(b"hello").unwrap();
+    }
+
+    let mut events = group.read_events_with_info_records().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let (event, info_records) = events.pop().unwrap();
+    assert_eq!(
+        info_records.len(),
+        1,
+        "should have read exactly one info record"
+    );
+    assert!(event.check_version());
+    assert_eq!(
+        event.mask(),
+        MaskFlags::FAN_OPEN
+            | MaskFlags::FAN_MODIFY
+            | MaskFlags::FAN_CLOSE_WRITE
+    );
+
+    assert!(
+        matches!(info_records[0], FanotifyInfoRecord::Fid { .. }),
+        "info record should be an fid record"
+    );
+
+    // read test file
+    {
+        let mut f = File::open(&tempfile).unwrap();
+        let mut s = String::new();
+        f.read_to_string(&mut s).unwrap();
+    }
+
+    let mut events = group.read_events_with_info_records().unwrap();
+    assert_eq!(events.len(), 1, "should have read exactly one event");
+    let (event, info_records) = events.pop().unwrap();
+    assert_eq!(
+        info_records.len(),
+        1,
+        "should have read exactly one info record"
+    );
+    assert!(event.check_version());
+    assert_eq!(
+        event.mask(),
+        MaskFlags::FAN_OPEN | MaskFlags::FAN_CLOSE_NOWRITE
+    );
 }
 
 fn test_fanotify_responses() {
