@@ -9,7 +9,7 @@ use crate::sys::time::TimeSpec;
 use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
-use libc::{self, c_int, size_t, socklen_t};
+use libc::{self, c_int, c_uint, size_t, socklen_t};
 #[cfg(all(feature = "uio", not(target_os = "redox")))]
 use libc::{
     c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
@@ -633,10 +633,10 @@ pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
     /// Instantiate a new `Ipv6MembershipRequest`
-    pub const fn new(group: net::Ipv6Addr) -> Self {
+    pub const fn new(group: net::Ipv6Addr, interface: c_uint) -> Self {
         Ipv6MembershipRequest(libc::ipv6_mreq {
             ipv6mr_multiaddr: ipv6addr_to_libc(&group),
-            ipv6mr_interface: 0,
+            ipv6mr_interface: interface,
         })
     }
 }
