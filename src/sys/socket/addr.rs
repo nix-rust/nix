@@ -1732,7 +1732,7 @@ pub mod sys_control {
     use crate::sys::socket::addr::AddressFamily;
     use libc::{self, c_uchar};
     use std::{fmt, mem, ptr};
-    use std::os::unix::io::RawFd;
+
     use crate::{Errno, Result};
     use super::{private, SockaddrLike};
 
@@ -1801,7 +1801,7 @@ pub mod sys_control {
 
         /// Construct a new `SysControlAddr` from its human readable name and
         /// unit number.
-        pub fn from_name(sockfd: RawFd, name: &str, unit: u32) -> Result<SysControlAddr> {
+        pub fn from_name<Fd: ::std::os::fd::AsFd>(sockfd: Fd, name: &str, unit: u32) -> Result<SysControlAddr> {
             if name.len() > MAX_KCTL_NAME {
                 return Err(Errno::ENAMETOOLONG);
             }
