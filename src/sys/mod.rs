@@ -65,6 +65,12 @@ feature! {
     pub mod personality;
 }
 
+#[cfg(target_os = "linux")]
+feature! {
+    #![feature = "process"]
+    pub mod pidfd;
+}
+
 #[cfg(linux_android)]
 feature! {
     #![feature = "process"]
