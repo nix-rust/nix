@@ -46,6 +46,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - The libc requirement is now `0.2.181`, rather than pinned to 0.2.180.
   ([#2744](https://github.com/nix-rust/nix/pull/2744))
 
+## [Unreleased]
+
+### Added
+
+- Add `ptrace::listen`
+  ([#2745](https://github.com/nix-rust/nix/pull/2745))
 
 ## [0.31.1] - 2026-01-23
 
