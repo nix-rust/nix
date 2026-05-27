@@ -583,7 +583,6 @@ impl SigSet {
 
     /// Suspends execution of the calling thread until one of the signals in the
     /// signal mask becomes pending, and returns the accepted signal.
-    #[cfg(not(target_os = "redox"))] // RedoxFS does not yet support sigwait
     pub fn wait(&self) -> Result<Signal> {
         use std::convert::TryFrom;
 
@@ -791,7 +790,6 @@ pub enum SigHandler {
     Handler(extern "C" fn(libc::c_int)),
     /// Use the given signal-catching function, which takes in the signal, information about how
     /// the signal was generated, and a pointer to the threads `ucontext_t`.
-    #[cfg(not(target_os = "redox"))]
     SigAction(extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void))
 }
 
@@ -843,7 +841,6 @@ impl SigAction {
                     SigHandler::SigDfl => libc::SIG_DFL,
                     SigHandler::SigIgn => libc::SIG_IGN,
                     SigHandler::Handler(f) => f as *const extern "C" fn(libc::c_int) as usize,
-                    #[cfg(not(target_os = "redox"))]
                     SigHandler::SigAction(f) => f as *const extern "C" fn(libc::c_int, *mut libc::siginfo_t, *mut libc::c_void) as usize,
                 };
             }
@@ -854,7 +851,6 @@ impl SigAction {
             let p = s.as_mut_ptr();
             install_sig(p, handler);
             (*p).sa_flags = match handler {
-                #[cfg(not(target_os = "redox"))]
                 SigHandler::SigAction(_) => (flags | SaFlags::SA_SIGINFO).bits(),
                 _ => (flags - SaFlags::SA_SIGINFO).bits(),
             };
@@ -880,7 +876,6 @@ impl SigAction {
         match self.sigaction.sa_sigaction {
             libc::SIG_DFL => SigHandler::SigDfl,
             libc::SIG_IGN => SigHandler::SigIgn,
-            #[cfg(not(target_os = "redox"))]
             p if self.flags().contains(SaFlags::SA_SIGINFO) =>
                 SigHandler::SigAction(
                 // Safe for one of two reasons:
@@ -997,6 +992,8 @@ pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> 
         SigHandler::Handler(handler) => unsafe { libc::signal(signal, handler as libc::sighandler_t) },
         #[cfg(not(target_os = "redox"))]
         SigHandler::SigAction(_) => return Err(Errno::ENOTSUP),
+        #[cfg(target_os = "redox")]
+        SigHandler::SigAction(_) => return Err(Errno::EOPNOTSUPP),
     };
     Errno::result(res).map(|oldhandler| {
         match oldhandler {
