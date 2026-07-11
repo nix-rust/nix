@@ -1301,7 +1301,7 @@ feature! {
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
 /// will be returned if the name is not valid or the current process does not
 /// have permissions to update the host name.
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "emscripten")))]
 pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {

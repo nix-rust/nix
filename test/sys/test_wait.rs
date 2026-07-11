@@ -7,6 +7,7 @@ use nix::unistd::*;
 
 #[test]
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -59,6 +60,7 @@ fn test_waitid_signal() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_wait_exit() {
     let _m = crate::FORK_MTX.lock();
 
@@ -119,6 +121,7 @@ fn test_waitstatus_from_raw() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_waitstatus_pid() {
     let _m = crate::FORK_MTX.lock();
 

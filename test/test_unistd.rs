@@ -21,6 +21,7 @@ use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 use std::env;
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+#[cfg_attr(target_os = "emscripten", allow(unused_imports))]
 use std::ffi::CString;
 #[cfg(not(target_os = "redox"))]
 use std::fs::DirBuilder;
@@ -38,6 +39,7 @@ use crate::*;
 
 #[test]
 #[cfg(not(any(target_os = "netbsd")))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -97,6 +99,7 @@ fn test_rfork_and_waitpid() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     let _m = crate::FORK_MTX.lock();
@@ -135,6 +138,7 @@ fn test_mkstemp_directory() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_mkfifo() {
     let tempdir = tempdir().unwrap();
     let mkfifo_fifo = tempdir.path().join("mkfifo_fifo");
@@ -160,6 +164,7 @@ fn test_mkfifo_directory() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_mkfifoat_none() {
     use nix::fcntl::AT_FDCWD;
 
@@ -182,6 +187,7 @@ fn test_mkfifoat_none() {
     target_os = "redox",
     target_os = "haiku"
 )))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_mkfifoat() {
     use nix::fcntl;
 
@@ -281,6 +287,7 @@ mod freebsd {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_setgroups() {
     // Skip this test when not run as root as `setgroups()` requires root.
     skip_if_not_root!("test_setgroups");
@@ -308,6 +315,7 @@ fn test_setgroups() {
     target_os = "redox",
     target_os = "fuchsia",
     target_os = "haiku",
+    target_os = "emscripten",
     solarish
 )))]
 fn test_initgroups() {
@@ -343,6 +351,7 @@ fn test_initgroups() {
 }
 
 #[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+#[cfg_attr(target_os = "emscripten", allow(unused_macros))]
 macro_rules! execve_test_factory (
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
 
@@ -647,6 +656,7 @@ cfg_if! {
     target_os = "haiku",
     target_os = "cygwin"
 )))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_acct() {
     use std::process::Command;
     use std::{thread, time};
@@ -776,6 +786,7 @@ fn test_pipe() {
     target_os = "redox",
 ))]
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_pipe2() {
     use nix::fcntl::{fcntl, FcntlArg, FdFlag};
 
@@ -1067,6 +1078,7 @@ fn test_linkat_newdirfd_none() {
 
 #[test]
 #[cfg(not(any(apple_targets, target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_linkat_no_follow_symlink() {
     use nix::fcntl::AtFlags;
     use nix::fcntl::AT_FDCWD;
@@ -1245,6 +1257,7 @@ fn test_access_file_exists() {
 
 #[cfg(not(target_os = "redox"))]
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_user_into_passwd() {
     let test_username = if cfg!(target_os = "haiku") {
         // "nobody" unavailable on haiku
@@ -1306,6 +1319,7 @@ fn test_setfsuid() {
     target_os = "fuchsia",
     target_os = "haiku"
 )))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_ttyname() {
     use std::os::fd::AsRawFd;
 
