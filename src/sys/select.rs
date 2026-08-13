@@ -22,7 +22,7 @@ pub struct FdSet<'fd> {
 
 fn assert_fd_valid(fd: RawFd) {
     assert!(
-        usize::try_from(fd).map_or(false, |fd| fd < FD_SETSIZE),
+        usize::try_from(fd).is_ok_and(|fd| fd < FD_SETSIZE),
         "fd must be in the range 0..FD_SETSIZE",
     );
 }
