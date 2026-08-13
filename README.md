@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/nix.svg)](https://crates.io/crates/nix)
 [![docs.rs](https://img.shields.io/badge/docs.rs-nix-blue?style=flat-square&logo=docs.rs)](https://docs.rs/nix)
 ![maintenance-status](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)
-[![msrv](https://img.shields.io/badge/msrv-1.69-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![msrv](https://img.shields.io/badge/msrv-1.70-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
 
 Nix seeks to provide friendly bindings to various *nix platform APIs (Linux, Darwin,
 ...). The goal is to not provide a 100% unified interface, but to unify
@@ -109,7 +109,7 @@ The following targets are supported by `nix`:
 
 ## Minimum Supported Rust Version (MSRV)
 
-nix is supported on Rust 1.69 and higher.  Its MSRV will not be
+nix is supported on Rust 1.70 and higher.  Its MSRV will not be
 changed in the future without bumping the major or minor version.
 
 ## Contributing
