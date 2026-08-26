@@ -259,8 +259,11 @@ impl SockProtocol {
     #[cfg(linux_android)]
     #[allow(non_upper_case_globals)]
     #[cfg(target_endian = "little")]
-    pub const EthIp: SockProtocol = unsafe { std::mem::transmute::<i32, SockProtocol>((libc::ETH_P_IP as u16).to_be() as i32) };
-
+    pub const EthIp: SockProtocol = unsafe {
+        std::mem::transmute::<i32, SockProtocol>(
+            (libc::ETH_P_IP as u16).to_be() as i32,
+        )
+    };
 }
 #[cfg(linux_android)]
 libc_bitflags! {
@@ -1789,7 +1792,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
     // shared across all the messages
     cmsgs: C,
     flags: MsgFlags
-) -> crate::Result<MultiResults<'a, S>>
+) -> crate::Result<MultiResults<'a, 'a, S>>
     where
         XS: IntoIterator<Item = &'a I>,
         AS: AsRef<[Option<S>]>,
@@ -1844,6 +1847,7 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
     Ok(MultiResults {
         rmm: data,
         current_index: 0,
+        slices: std::marker::PhantomData,
         received: sent
     })
 
@@ -1932,16 +1936,16 @@ impl<S> MultiHeaders<S> {
 // always produce the desired results - see https://github.com/nix-rust/nix/pull/1744 for more
 // details
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
-pub fn recvmmsg<'a, XS, S, I>(
+pub fn recvmmsg<'hdrs, 'iovs, 'data, XS, S, I>(
     fd: RawFd,
-    data: &'a mut MultiHeaders<S>,
+    data: &'hdrs mut MultiHeaders<S>,
     slices: XS,
     flags: MsgFlags,
     mut timeout: Option<crate::sys::time::TimeSpec>,
-) -> crate::Result<MultiResults<'a, S>>
+) -> crate::Result<MultiResults<'hdrs, 'iovs, S>>
 where
-    XS: IntoIterator<Item = &'a mut I>,
-    I: AsMut<[IoSliceMut<'a>]> + 'a,
+    XS: IntoIterator<Item = &'iovs mut I>,
+    I: AsMut<[IoSliceMut<'data>]> + 'iovs,
 {
     let mut count = 0;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
@@ -1973,6 +1977,7 @@ where
     })? as usize;
 
     Ok(MultiResults {
+        slices: std::marker::PhantomData,
         rmm: data,
         current_index: 0,
         received,
@@ -1982,19 +1987,20 @@ where
 /// Iterator over results of [`recvmmsg`]/[`sendmmsg`]
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 #[derive(Debug)]
-pub struct MultiResults<'a, S> {
+pub struct MultiResults<'hdrs, 'iovs, S> {
     // preallocated structures
-    rmm: &'a MultiHeaders<S>,
+    rmm: &'hdrs MultiHeaders<S>,
+    slices: std::marker::PhantomData<&'iovs ()>,
     current_index: usize,
     received: usize,
 }
 
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
-impl<'a, S> Iterator for MultiResults<'a, S>
+impl<'hdrs, 'data, S> Iterator for MultiResults<'hdrs, 'data, S>
 where
     S: Copy + SockaddrLike,
 {
-    type Item = RecvMsg<'a, 'a, S>;
+    type Item = RecvMsg<'hdrs, 'data, S>;
 
     // The cast is not unnecessary on all platforms.
     #[allow(clippy::unnecessary_cast)]
@@ -2359,7 +2365,13 @@ pub fn bind(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html)
 pub fn accept<Fd: AsFd>(sockfd: Fd) -> Result<OwnedFd> {
-    let res = unsafe { libc::accept(sockfd.as_fd().as_raw_fd(), ptr::null_mut(), ptr::null_mut()) };
+    let res = unsafe {
+        libc::accept(
+            sockfd.as_fd().as_raw_fd(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+        )
+    };
 
     Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })
 }
@@ -2385,7 +2397,12 @@ pub fn accept<Fd: AsFd>(sockfd: Fd) -> Result<OwnedFd> {
 ))]
 pub fn accept4<Fd: AsFd>(sockfd: Fd, flags: SockFlag) -> Result<OwnedFd> {
     let res = unsafe {
-        libc::accept4(sockfd.as_fd().as_raw_fd(), ptr::null_mut(), ptr::null_mut(), flags.bits())
+        libc::accept4(
+            sockfd.as_fd().as_raw_fd(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            flags.bits(),
+        )
     };
 
     Errno::result(res).map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })

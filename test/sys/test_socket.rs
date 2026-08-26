@@ -647,8 +647,9 @@ mod recvfrom {
         )
         .expect("send socket failed");
 
+        const LOOPS: usize = 3;
         let send_thread = thread::spawn(move || {
-            for _ in 0..NUM_MESSAGES_SENT {
+            for _ in 0..NUM_MESSAGES_SENT * LOOPS {
                 sendto(
                     ssock.as_raw_fd(),
                     &DATA[..],
@@ -672,24 +673,29 @@ mod recvfrom {
         let mut data =
             MultiHeaders::<SockaddrIn>::preallocate(msgs.len(), None);
 
-        let res: Vec<RecvMsg<SockaddrIn>> = recvmmsg(
-            rsock.as_raw_fd(),
-            &mut data,
-            msgs.iter_mut(),
-            MsgFlags::empty(),
-            None,
-        )
-        .expect("recvmmsg")
-        .collect();
-        assert_eq!(res.len(), DATA.len());
+        for _ in 0..LOOPS {
+            let res: Vec<RecvMsg<SockaddrIn>> = recvmmsg(
+                rsock.as_raw_fd(),
+                &mut data,
+                msgs.iter_mut(),
+                MsgFlags::empty(),
+                None,
+            )
+            .expect("recvmmsg")
+            .collect();
+            assert_eq!(res.len(), DATA.len());
 
-        for RecvMsg { address, bytes, .. } in res.into_iter() {
-            assert_eq!(AddressFamily::Inet, address.unwrap().family().unwrap());
-            assert_eq!(DATA.len(), bytes);
-        }
+            for RecvMsg { address, bytes, .. } in res.into_iter() {
+                assert_eq!(
+                    AddressFamily::Inet,
+                    address.unwrap().family().unwrap()
+                );
+                assert_eq!(DATA.len(), bytes);
+            }
 
-        for buf in &receive_buffers {
-            assert_eq!(&buf[..DATA.len()], DATA);
+            for buf in msgs.iter().flatten() {
+                assert_eq!(&buf[..DATA.len()], DATA);
+            }
         }
 
         send_thread.join().unwrap();
