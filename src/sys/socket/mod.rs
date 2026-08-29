@@ -1797,9 +1797,9 @@ pub fn sendmmsg<'a, XS, AS, C, I, S>(
         C: AsRef<[ControlMessage<'a>]> + 'a,
         S: SockaddrLike + 'a,
 {
+    data.restore_capacities();
 
     let mut count = 0;
-
 
     for (i, ((slice, addr), mmsghdr)) in slices.into_iter().zip(addrs.as_ref()).zip(data.items.iter_mut() ).enumerate() {
         let p = &mut mmsghdr.msg_hdr;
@@ -1860,7 +1860,10 @@ pub struct MultiHeaders<S> {
     // while we are not using it directly - this is used to store control messages
     // and we retain pointers to them inside items array
     _cmsg_buffers: Option<Box<[u8]>>,
+    // the capacities of the control and address buffers of every header,
+    // see `restore_capacities`
     msg_controllen: usize,
+    msg_namelen: libc::socklen_t,
 }
 
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
@@ -1904,6 +1907,29 @@ impl<S> MultiHeaders<S> {
             addresses,
             _cmsg_buffers: cmsg_buffers,
             msg_controllen,
+            msg_namelen: S::size(),
+        }
+    }
+
+    /// `msg_namelen`, `msg_controllen` and `msg_flags` are in-out parameters of
+    /// `recvmsg(2)`: going in, the first two are the capacities of the address
+    /// and control buffers, coming out they are the number of bytes the kernel
+    /// actually wrote there. Every call has to start from the capacities again,
+    /// or a slot that once received a datagram with a short address or without
+    /// any control message would be stuck with the shrunken value for good and
+    /// silently truncate what a later datagram carries.
+    ///
+    /// `sendmsg(2)` leaves the header alone, but a `MultiHeaders` may go through
+    /// [`recvmmsg`] and [`sendmmsg`] in turn, and `sendmmsg` encodes its control
+    /// messages against `msg_controllen` too.
+    // The cast is not unnecessary on all platforms.
+    #[allow(clippy::unnecessary_cast)]
+    fn restore_capacities(&mut self) {
+        for mmsghdr in self.items.iter_mut() {
+            let p = &mut mmsghdr.msg_hdr;
+            p.msg_namelen = self.msg_namelen;
+            p.msg_controllen = self.msg_controllen as _;
+            p.msg_flags = 0;
         }
     }
 }
@@ -1943,6 +1969,8 @@ where
     XS: IntoIterator<Item = &'a mut I>,
     I: AsMut<[IoSliceMut<'a>]> + 'a,
 {
+    data.restore_capacities();
+
     let mut count = 0;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
         let p = &mut mmsghdr.msg_hdr;
