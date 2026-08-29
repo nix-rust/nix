@@ -305,8 +305,13 @@ libc_enum! {
         B307200,
         #[cfg(any(linux_android,
                   solarish,
+                  target_os = "cygwin",
+                  target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "netbsd"))]
+                  target_os = "fuchsia",
+                  target_os = "hurd",
+                  target_os = "netbsd",
+                  target_os = "redox"))]
         B460800,
         #[cfg(linux_android)]
         B500000,
@@ -314,8 +319,13 @@ libc_enum! {
         B576000,
         #[cfg(any(linux_android,
                   solarish,
+                  target_os = "cygwin",
+                  target_os = "dragonfly",
                   target_os = "freebsd",
-                  target_os = "netbsd"))]
+                  target_os = "fuchsia",
+                  target_os = "hurd",
+                  target_os = "netbsd",
+                  target_os = "redox"))]
         B921600,
         #[cfg(linux_android)]
         B1000000,
