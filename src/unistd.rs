@@ -2,7 +2,7 @@
 
 use crate::errno::Errno;
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 #[cfg(feature = "fs")]
 use crate::fcntl::AtFlags;
 
@@ -22,7 +22,7 @@ use crate::fcntl::OFlag;
 #[cfg(all(feature = "fs", bsd))]
 use crate::sys::stat::FileFlag;
 use crate::{Error, NixPath, Result};
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 use cfg_if::cfg_if;
 use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
 use std::convert::Infallible;
@@ -853,6 +853,7 @@ pub fn mkfifo<P: ?Sized + NixPath>(path: &P, mode: crate::sys::stat::Mode) -> Re
 #[cfg(not(any(
     apple_targets,
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "android",
     target_os = "redox"
 )))]
@@ -968,10 +969,10 @@ pub fn getcwd() -> Result<PathBuf> {
                 }
             }
 
-            #[cfg(not(target_os = "hurd"))]
+            #[cfg(not(any(target_os = "horizon", target_os = "hurd")))]
             const PATH_MAX: usize = libc::PATH_MAX as usize;
-            #[cfg(target_os = "hurd")]
-            const PATH_MAX: usize = 1024; // Hurd does not define a hard limit, so try a guess first
+            #[cfg(any(target_os = "horizon", target_os = "hurd"))]
+            const PATH_MAX: usize = 1024;
 
             // Trigger the internal buffer resizing logic.
             reserve_double_buffer_size(&mut buf, PATH_MAX)?;
@@ -1039,10 +1040,10 @@ pub fn fchown<Fd: std::os::fd::AsFd>(fd: Fd, owner: Option<Uid>, group: Option<G
 
 // Just a wrapper around `AtFlags` so that we can help our users migrate.
 #[allow(missing_docs)]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub type FchownatFlags = AtFlags;
 #[allow(missing_docs)]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 impl FchownatFlags {
     #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
     #[allow(non_upper_case_globals)]
@@ -1069,7 +1070,7 @@ impl FchownatFlags {
 /// # References
 ///
 /// [fchownat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/fchownat.html).
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub fn fchownat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
     dirfd: Fd,
     path: &P,
@@ -1301,7 +1302,7 @@ feature! {
 /// On some systems, the host name is limited to as few as 64 bytes.  An error
 /// will be returned if the name is not valid or the current process does not
 /// have permissions to update the host name.
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub fn sethostname<S: AsRef<OsStr>>(name: S) -> Result<()> {
     // Handle some differences in type of the len arg across platforms.
     cfg_if! {
@@ -1567,10 +1568,10 @@ pub fn isatty<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<bool> {
 }
 
 #[allow(missing_docs)]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub type LinkatFlags = AtFlags;
 #[allow(missing_docs)]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 impl LinkatFlags {
     #[deprecated(since = "0.28.0", note = "The variant is deprecated, please use `AtFlags` instead")]
     #[allow(non_upper_case_globals)]
@@ -1595,7 +1596,7 @@ impl LinkatFlags {
 ///
 /// # References
 /// See also [linkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/linkat.html)
-#[cfg(not(target_os = "redox"))] // Redox does not have this yet
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub fn linkat<Fd1: std::os::fd::AsFd, Fd2: std::os::fd::AsFd, P1: ?Sized + NixPath, P2: ?Sized + NixPath>(
     olddirfd: Fd1,
     oldpath: &P1,
@@ -1649,7 +1650,7 @@ pub enum UnlinkatFlags {
 ///
 /// # References
 /// See also [unlinkat(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlinkat.html)
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 pub fn unlinkat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
     dirfd: Fd,
     path: &P,
@@ -1877,7 +1878,7 @@ feature! {
 /// **Note:** This function is not available for Apple platforms. On those
 /// platforms, checking group membership should be achieved via communication
 /// with the `opendirectoryd` service.
-#[cfg(not(apple_targets))]
+#[cfg(not(any(apple_targets, target_os = "horizon")))]
 pub fn getgroups() -> Result<Vec<Gid>> {
     // First get the maximum number of groups. The value returned
     // shall always be greater than or equal to one and less than or
@@ -1964,7 +1965,8 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 #[cfg(not(any(
     apple_targets,
     target_os = "redox",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "horizon",
 )))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
     cfg_if! {
@@ -2012,6 +2014,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// will only ever return the complete list or else an error.
 #[cfg(not(any(
     target_os = "aix",
+    target_os = "horizon",
     solarish,
     apple_targets,
     target_os = "redox",
@@ -2100,6 +2103,7 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
     apple_targets,
     target_os = "redox",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "emscripten",
 )))]
 pub fn initgroups(user: &CStr, group: Gid) -> Result<()> {
@@ -2234,7 +2238,7 @@ feature! {
 #![feature = "acct"]
 
 /// Process accounting
-#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "cygwin")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "horizon", target_os = "cygwin")))]
 pub mod acct {
     use crate::errno::Errno;
     use crate::{NixPath, Result};
@@ -2357,6 +2361,7 @@ pub fn mkdtemp<P: ?Sized + NixPath>(template: &P) -> Result<PathBuf> {
 /// - [pathconf(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pathconf.html)
 /// - [limits.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html)
 /// - [unistd.h](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html)
+#[cfg(not(target_os = "horizon"))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[repr(i32)]
 #[non_exhaustive]
@@ -2370,10 +2375,13 @@ pub enum PathconfVar {
     /// Minimum number of bits needed to represent, as a signed integer value,
     /// the maximum size of a regular file allowed in the specified directory.
     FILESIZEBITS = libc::_PC_FILESIZEBITS,
+    #[cfg(not(target_os = "horizon"))]
     /// Maximum number of links to a single file.
     LINK_MAX = libc::_PC_LINK_MAX,
+    #[cfg(not(target_os = "horizon"))]
     /// Maximum number of bytes in a terminal canonical input line.
     MAX_CANON = libc::_PC_MAX_CANON,
+    #[cfg(not(target_os = "horizon"))]
     /// Minimum number of bytes for which space is available in a terminal input
     /// queue; therefore, the maximum number of bytes a conforming application
     /// may require to be typed as input before reading them.
@@ -2391,14 +2399,17 @@ pub enum PathconfVar {
     /// file system does not specify the minimum hole size but still reports
     /// holes.
     MIN_HOLE_SIZE = libc::_PC_MIN_HOLE_SIZE,
+    #[cfg(not(target_os = "horizon"))]
     /// Maximum number of bytes in a filename (not including the terminating
     /// null of a filename string).
     NAME_MAX = libc::_PC_NAME_MAX,
+    #[cfg(not(target_os = "horizon"))]
     /// Maximum number of bytes the implementation will store as a pathname in a
     /// user-supplied buffer of unspecified size, including the terminating null
     /// character. Minimum number the implementation will accept as the maximum
     /// number of bytes in a pathname.
     PATH_MAX = libc::_PC_PATH_MAX,
+    #[cfg(not(target_os = "horizon"))]
     /// Maximum number of bytes that is guaranteed to be atomic when writing to
     /// a pipe.
     PIPE_BUF = libc::_PC_PIPE_BUF,
@@ -2461,13 +2472,16 @@ pub enum PathconfVar {
     ))]
     /// Maximum number of bytes in a symbolic link.
     SYMLINK_MAX = libc::_PC_SYMLINK_MAX,
+    #[cfg(not(target_os = "horizon"))]
     /// The use of `chown` and `fchown` is restricted to a process with
     /// appropriate privileges, and to changing the group ID of a file only to
     /// the effective group ID of the process or to one of its supplementary
     /// group IDs.
     _POSIX_CHOWN_RESTRICTED = libc::_PC_CHOWN_RESTRICTED,
+    #[cfg(not(target_os = "horizon"))]
     /// Pathname components longer than {NAME_MAX} generate an error.
     _POSIX_NO_TRUNC = libc::_PC_NO_TRUNC,
+    #[cfg(not(target_os = "horizon"))]
     /// This symbol shall be defined to be the value of a character that shall
     /// disable terminal special character handling.
     _POSIX_VDISABLE = libc::_PC_VDISABLE,
@@ -2522,6 +2536,7 @@ pub enum PathconfVar {
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
+#[cfg(not(target_os = "horizon"))]
 pub fn fpathconf<F: std::os::fd::AsFd>(fd: F, var: PathconfVar) -> Result<Option<c_long>> {
     use std::os::fd::AsRawFd;
 
@@ -2561,6 +2576,7 @@ pub fn fpathconf<F: std::os::fd::AsFd>(fd: F, var: PathconfVar) -> Result<Option
 /// - `Ok(None)`: the variable has no limit (for limit variables) or is
 ///     unsupported (for option variables)
 /// - `Err(x)`: an error occurred
+#[cfg(not(target_os = "horizon"))]
 pub fn pathconf<P: ?Sized + NixPath>(
     path: &P,
     var: PathconfVar,
@@ -3425,7 +3441,10 @@ pub unsafe fn rfork(flags: RforkFlags) -> Result<ForkResult> {
 }
 }
 
-#[cfg(feature = "fs")]
+#[cfg(not(target_os = "horizon"))]
+feature! {
+#![feature = "fs"]
+
 libc_bitflags! {
     /// Options for access()
     #[cfg_attr(docsrs, doc(cfg(feature = "fs")))]
@@ -3440,9 +3459,6 @@ libc_bitflags! {
         X_OK;
     }
 }
-
-feature! {
-#![feature = "fs"]
 
 /// Checks the file named by `path` for accessibility according to the flags given by `amode`
 /// See [access(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/access.html)
@@ -3533,6 +3549,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "emscripten",
         target_os = "cygwin",
@@ -3545,6 +3562,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "emscripten",
         target_os = "cygwin",
@@ -3557,6 +3575,7 @@ pub struct User {
         target_os = "aix",
         target_os = "fuchsia",
         target_os = "haiku",
+        target_os = "horizon",
         target_os = "hurd",
         target_os = "emscripten",
         target_os = "cygwin",
@@ -3612,6 +3631,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "horizon",
                     target_os = "hurd",
                     target_os = "emscripten",
                     target_os = "cygwin",
@@ -3624,6 +3644,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "horizon",
                     target_os = "hurd",
                     target_os = "emscripten",
                     target_os = "cygwin",
@@ -3635,6 +3656,7 @@ impl From<&libc::passwd> for User {
                     target_os = "aix",
                     target_os = "fuchsia",
                     target_os = "haiku",
+                    target_os = "horizon",
                     target_os = "hurd",
                     target_os = "emscripten",
                     target_os = "cygwin",
@@ -3678,6 +3700,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "horizon",
                 target_os = "hurd",
                 target_os = "emscripten",
                 target_os = "cygwin",
@@ -3689,6 +3712,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "horizon",
                 target_os = "hurd",
                 target_os = "emscripten",
                 target_os = "cygwin",
@@ -3700,6 +3724,7 @@ impl From<User> for libc::passwd {
                 target_os = "aix",
                 target_os = "fuchsia",
                 target_os = "haiku",
+                target_os = "horizon",
                 target_os = "hurd",
                 target_os = "emscripten",
                 target_os = "cygwin",
@@ -3991,10 +4016,10 @@ feature! {
 pub fn ttyname<F: std::os::fd::AsFd>(fd: F) -> Result<PathBuf> {
     use std::os::fd::AsRawFd;
 
-    #[cfg(not(target_os = "hurd"))]
+    #[cfg(not(any(target_os = "horizon", target_os = "hurd")))]
     const PATH_MAX: usize = libc::PATH_MAX as usize;
-    #[cfg(target_os = "hurd")]
-    const PATH_MAX: usize = 1024; // Hurd does not define a hard limit, so try a guess first
+    #[cfg(any(target_os = "horizon", target_os = "hurd"))]
+    const PATH_MAX: usize = 1024;
     let mut buf = vec![0_u8; PATH_MAX];
     let c_buf = buf.as_mut_ptr().cast();
 
