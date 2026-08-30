@@ -251,6 +251,13 @@ mod bsd;
 #[cfg(any(bsd, solarish, target_os = "haiku",))]
 pub use self::bsd::*;
 
+#[cfg(target_os = "hurd")]
+#[macro_use]
+mod hurd;
+
+#[cfg(target_os = "hurd")]
+pub use self::hurd::*;
+
 /// Convert raw ioctl return value to a Nix result
 #[macro_export]
 #[doc(hidden)]
