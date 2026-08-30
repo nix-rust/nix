@@ -10,13 +10,16 @@ use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, size_t, socklen_t};
-#[cfg(all(feature = "uio", not(target_os = "redox")))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
+#[cfg(feature = "uio")]
 use libc::{
     c_void, iovec, CMSG_DATA, CMSG_FIRSTHDR, CMSG_LEN, CMSG_NXTHDR, CMSG_SPACE,
     MSG_CTRUNC,
 };
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
+use std::io::IoSliceMut;
 #[cfg(not(target_os = "redox"))]
-use std::io::{IoSlice, IoSliceMut};
+use std::io::IoSlice;
 #[cfg(feature = "net")]
 use std::net;
 use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
@@ -42,6 +45,7 @@ pub use self::addr::{AddressFamily, UnixAddr};
 #[cfg(not(any(
     solarish,
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "hurd",
     target_os = "redox",
     target_os = "cygwin",
@@ -70,7 +74,8 @@ pub use crate::sys::socket::addr::sys_control::SysControlAddr;
 #[cfg(any(linux_android, apple_targets))]
 pub use crate::sys::socket::addr::vsock::VsockAddr;
 
-#[cfg(all(feature = "uio", not(target_os = "redox")))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
+#[cfg(feature = "uio")]
 pub use libc::{cmsghdr, msghdr};
 pub use libc::{sa_family_t, sockaddr, sockaddr_storage, sockaddr_un};
 #[cfg(feature = "net")]
@@ -96,13 +101,14 @@ pub enum SockType {
     /// based data transmission path for datagrams of fixed
     /// maximum length; a consumer is required to read an
     /// entire packet with each input system call.
+    #[cfg(not(target_os = "horizon"))]
     SeqPacket = libc::SOCK_SEQPACKET,
     /// Provides raw network protocol access.
-    #[cfg(not(target_os = "redox"))]
+    #[cfg(not(any(target_os = "horizon", target_os = "redox")))]
     Raw = libc::SOCK_RAW,
     /// Provides a reliable datagram layer that does not
     /// guarantee ordering.
-    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
+    #[cfg(not(any(target_os = "haiku", target_os = "horizon", target_os = "redox")))]
     Rdm = libc::SOCK_RDM,
 }
 // The TryFrom impl could've been derived using libc_enum!.  But for
@@ -115,10 +121,11 @@ impl TryFrom<i32> for SockType {
         match x {
             libc::SOCK_STREAM => Ok(Self::Stream),
             libc::SOCK_DGRAM => Ok(Self::Datagram),
+            #[cfg(not(target_os = "horizon"))]
             libc::SOCK_SEQPACKET => Ok(Self::SeqPacket),
-            #[cfg(not(target_os = "redox"))]
+            #[cfg(not(any(target_os = "horizon", target_os = "redox")))]
             libc::SOCK_RAW => Ok(Self::Raw),
-            #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
+            #[cfg(not(any(target_os = "haiku", target_os = "horizon", target_os = "redox")))]
             libc::SOCK_RDM => Ok(Self::Rdm),
             _ => Err(Errno::EINVAL),
         }
@@ -135,6 +142,7 @@ pub enum SockProtocol {
     /// UDP protocol ([ip(7)](https://man7.org/linux/man-pages/man7/ip.7.html))
     Udp = libc::IPPROTO_UDP,
     /// Raw sockets ([raw(7)](https://man7.org/linux/man-pages/man7/raw.7.html))
+    #[cfg(not(target_os = "horizon"))]
     Raw = libc::IPPROTO_RAW,
     /// Allows applications to configure and control a KEXT
     /// ([ref](https://developer.apple.com/library/content/documentation/Darwin/Conceptual/NKEConceptual/control/control.html))
@@ -342,6 +350,7 @@ libc_bitflags! {
         #[cfg(not(target_os = "aix"))]
         MSG_DONTWAIT;
         /// Receive flags: Control Data was discarded (buffer too small)
+        #[cfg(not(target_os = "horizon"))]
         MSG_CTRUNC;
         /// For raw ([`Packet`](addr/enum.AddressFamily.html)), Internet datagram
         /// (since Linux 2.4.27/2.6.8),
@@ -351,9 +360,11 @@ libc_bitflags! {
         /// domain ([unix(7)](https://linux.die.net/man/7/unix)) sockets.
         ///
         /// For use with Internet stream sockets, see [tcp(7)](https://linux.die.net/man/7/tcp).
+        #[cfg(not(target_os = "horizon"))]
         MSG_TRUNC;
         /// Terminates a record (when this notion is supported, as for
         /// sockets of type [`SeqPacket`](enum.SockType.html)).
+        #[cfg(not(target_os = "horizon"))]
         MSG_EOR;
         /// This flag specifies that queued errors should be received from
         /// the socket error queue. (For more details, see
@@ -679,11 +690,13 @@ macro_rules! cmsg_space {
 
 #[inline]
 #[doc(hidden)]
+#[cfg(not(target_os = "horizon"))]
 pub const fn cmsg_space<T>() -> usize {
     // SAFETY: CMSG_SPACE is always safe
     unsafe { libc::CMSG_SPACE(mem::size_of::<T>() as libc::c_uint) as usize }
 }
 
+#[cfg(not(target_os = "horizon"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 /// Contains outcome of sending or receiving a message
 ///
@@ -698,6 +711,7 @@ pub struct RecvMsg<'a, 's, S> {
     mhdr: msghdr,
 }
 
+#[cfg(not(target_os = "horizon"))]
 impl<S> RecvMsg<'_, '_, S> {
     /// Iterate over the valid control messages pointed to by this msghdr. If
     /// allocated space for CMSGs was too small it is not safe to iterate,
@@ -715,6 +729,7 @@ impl<S> RecvMsg<'_, '_, S> {
     }
 }
 
+#[cfg(not(target_os = "horizon"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CmsgIterator<'a> {
     /// Control message buffer to decode from. Must adhere to cmsg alignment.
@@ -722,6 +737,7 @@ pub struct CmsgIterator<'a> {
     mhdr: &'a msghdr
 }
 
+#[cfg(not(target_os = "horizon"))]
 impl Iterator for CmsgIterator<'_> {
     type Item = ControlMessageOwned;
 
@@ -960,6 +976,7 @@ pub enum ControlMessageOwned {
     TlsGetRecordType(TlsGetRecordType),
 
     /// Catch-all variant for unimplemented cmsg types.
+    #[cfg(not(target_os = "horizon"))]
     Unknown(UnknownCmsg),
 }
 
@@ -1002,6 +1019,7 @@ impl From<u8> for TlsGetRecordType {
     }
 }
 
+#[cfg(not(target_os = "horizon"))]
 impl ControlMessageOwned {
     /// Decodes a `ControlMessageOwned` from raw bytes.
     ///
@@ -1218,6 +1236,7 @@ impl ControlMessageOwned {
 /// pattern-match it.
 ///
 /// [Further reading](https://man7.org/linux/man-pages/man3/cmsg.3.html)
+#[cfg(not(target_os = "horizon"))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ControlMessage<'a> {
@@ -1380,6 +1399,7 @@ pub enum ControlMessage<'a> {
 }
 
 /// Control messages that are currently not supported by Nix.
+#[cfg(not(target_os = "horizon"))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct UnknownCmsg {
     /// Control message header.
@@ -1388,6 +1408,7 @@ pub struct UnknownCmsg {
     pub data_bytes: Vec<u8>
 }
 
+#[cfg(not(target_os = "horizon"))]
 impl ControlMessage<'_> {
     /// The value of CMSG_SPACE on this message.
     /// Safe because CMSG_SPACE is always safe
@@ -1404,7 +1425,7 @@ impl ControlMessage<'_> {
         unsafe{CMSG_LEN(self.len() as libc::c_uint) as usize}
     }
 
-    #[cfg(not(any(target_os = "android",
+    #[cfg(not(any(target_os = "android", target_os = "horizon",
               all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))),
               target_os = "cygwin")))]
     fn cmsg_len(&self) -> libc::c_uint {
@@ -1745,6 +1766,7 @@ impl ControlMessage<'_> {
 /// #[cfg(not(target_os = "solaris"))]
 /// sendmsg(fd.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), Some(&localhost)).unwrap();
 /// ```
+#[cfg(not(any(target_os = "horizon")))]
 pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
                flags: MsgFlags, addr: Option<&S>) -> Result<usize>
     where S: SockaddrLike
@@ -2018,6 +2040,7 @@ where
     }
 }
 
+#[cfg(not(target_os = "horizon"))]
 impl<'a, S> RecvMsg<'_, 'a, S> {
     /// Iterate over the filled io slices pointed by this msghdr
     pub fn iovs(&self) -> IoSliceIterator<'a> {
@@ -2060,6 +2083,7 @@ impl<'a> Iterator for IoSliceIterator<'a> {
     }
 }
 
+#[cfg(not(any(target_os = "horizon")))]
 unsafe fn read_mhdr<'a, 'i, S>(
     mhdr: msghdr,
     r: isize,
@@ -2110,6 +2134,7 @@ unsafe fn read_mhdr<'a, 'i, S>(
 /// headers are not used
 ///
 /// Buffers must remain valid for the whole lifetime of msghdr
+#[cfg(not(target_os = "horizon"))]
 unsafe fn pack_mhdr_to_receive<S>(
     iov_buffer: *mut IoSliceMut,
     iov_buffer_len: usize,
@@ -2139,6 +2164,7 @@ unsafe fn pack_mhdr_to_receive<S>(
     }
 }
 
+#[cfg(not(any(target_os = "horizon")))]
 fn pack_mhdr_to_send<'a, I, C, S>(
     cmsg_buffer: &mut [u8],
     iov: I,
@@ -2206,6 +2232,7 @@ fn pack_mhdr_to_send<'a, I, C, S>(
 ///
 /// # References
 /// [recvmsg(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html)
+#[cfg(not(any(target_os = "horizon")))]
 pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
                    mut cmsg_buffer: Option<&'a mut [u8]>,
                    flags: MsgFlags) -> Result<RecvMsg<'a, 'outer, S>>
@@ -2301,6 +2328,7 @@ pub fn socketpair<T: Into<Option<SockProtocol>>>(
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Backlog(i32);
 
+#[cfg(not(target_os = "horizon"))]
 impl Backlog {
     /// Sets the listen queue size to system `SOMAXCONN` value
     pub const MAXCONN: Self = Self(libc::SOMAXCONN);
