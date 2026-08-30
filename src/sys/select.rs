@@ -1,6 +1,8 @@
 //! Portably monitor a group of file descriptors for readiness.
 use crate::errno::Errno;
-use crate::sys::time::{TimeSpec, TimeVal};
+#[cfg(not(target_os = "horizon"))]
+use crate::sys::time::TimeSpec;
+use crate::sys::time::TimeVal;
 use crate::Result;
 use libc::{self, c_int};
 use std::convert::TryFrom;
@@ -8,7 +10,9 @@ use std::iter::FusedIterator;
 use std::mem;
 use std::ops::Range;
 use std::os::unix::io::{AsRawFd, BorrowedFd, RawFd};
-use std::ptr::{null, null_mut};
+#[cfg(not(target_os = "horizon"))]
+use std::ptr::null;
+use std::ptr::null_mut;
 
 pub use libc::FD_SETSIZE;
 
@@ -240,6 +244,7 @@ where
     Errno::result(res)
 }
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
 #![feature = "signal"]
 

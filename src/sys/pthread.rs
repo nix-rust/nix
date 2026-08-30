@@ -1,8 +1,8 @@
 //! Low level threading primitives
 
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 use crate::errno::Errno;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 use crate::Result;
 use libc::{self, pthread_t};
 
@@ -19,6 +19,7 @@ pub fn pthread_self() -> Pthread {
     unsafe { libc::pthread_self() }
 }
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
 #![feature = "signal"]
 

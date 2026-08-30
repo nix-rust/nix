@@ -1,15 +1,16 @@
 #[macro_use]
 extern crate cfg_if;
-#[cfg_attr(not(any(target_os = "redox")), macro_use)]
+#[cfg_attr(not(any(target_os = "horizon", target_os = "redox")), macro_use)]
 extern crate nix;
 
 #[macro_use]
 mod common;
 mod mount;
 mod sys;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 mod test_dir;
 mod test_errno;
+#[cfg(not(target_os = "horizon"))]
 mod test_fcntl;
 #[cfg(linux_android)]
 mod test_kmod;
@@ -22,11 +23,13 @@ mod test_mq;
 #[cfg(not(target_os = "redox"))]
 mod test_net;
 mod test_nix_path;
+#[cfg(not(target_os = "horizon"))]
 mod test_poll;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "horizon",
 )))]
 mod test_pty;
 #[cfg(any(
