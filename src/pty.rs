@@ -212,7 +212,7 @@ pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
 ///
 /// This value is useful for opening the slave ptty once the master has already been opened with
 /// `posix_openpt()`.
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "hurd"))]
 #[inline]
 pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     let mut name_buf = Vec::<libc::c_char>::with_capacity(64);
