@@ -123,3 +123,5 @@ discuss `nix` development.
 ## License
 
 Nix is licensed under the MIT license.  See [LICENSE](LICENSE) for more details.
+
+
