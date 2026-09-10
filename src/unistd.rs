@@ -1967,25 +1967,14 @@ pub fn getgroups() -> Result<Vec<Gid>> {
     target_os = "haiku"
 )))]
 pub fn setgroups(groups: &[Gid]) -> Result<()> {
-    cfg_if! {
-        if #[cfg(any(bsd,
-                     solarish,
-                     target_os = "aix",
-                     target_os = "cygwin"))] {
-            type setgroups_ngroups_t = c_int;
-        } else {
-            type setgroups_ngroups_t = size_t;
-        }
-    }
+    #[allow(clippy::useless_conversion)]
+    let ngroups = groups.len().try_into().expect("overflow");
+    let ptr = groups.as_ptr().cast();
+
     // FIXME: On the platforms we currently support, the `Gid` struct has the
     // same representation in memory as a bare `gid_t`. This is not necessarily
     // the case on all Rust platforms, though. See RFC 1785.
-    let res = unsafe {
-        libc::setgroups(
-            groups.len() as setgroups_ngroups_t,
-            groups.as_ptr().cast(),
-        )
-    };
+    let res = unsafe { libc::setgroups(ngroups, ptr) };
 
     Errno::result(res).map(drop)
 }
