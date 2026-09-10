@@ -2045,16 +2045,22 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
 
         // BSD systems only return 0 or -1, Linux returns ngroups on success.
         if ret >= 0 {
-            unsafe { groups.set_len(ngroups as usize) };
-            return Ok(groups);
-        } else if ret == -1 {
-            // Returns -1 if ngroups is too small, but does not set errno.
-            // BSD systems will still fill the groups buffer with as many
-            // groups as possible, but Linux manpages do not mention this
-            // behavior.
-            reserve_double_buffer_size(&mut groups, ngroups_max as usize)
-                .map_err(|_| Errno::EINVAL)?;
+            // SAFETY: `ngroups` is non-negative when `getgrouplist` succeeds.
+            let ngroups = unsafe { ngroups.try_into().unwrap_unchecked() };
+
+            if ngroups <= groups.capacity() {
+                // SAFETY: `ngroups` elements were initialized by `getgrouplist`
+                // and fit within the buffer's allocated capacity.
+                unsafe { groups.set_len(ngroups) };
+                return Ok(groups);
+            }
         }
+
+        // BSD systems will still fill the groups buffer with as many
+        // groups as possible, but Linux manpages do not mention this
+        // behavior.
+        reserve_double_buffer_size(&mut groups, ngroups_max as usize)
+            .map_err(|_| Errno::EINVAL)?;
     }
 }
 
