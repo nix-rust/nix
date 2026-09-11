@@ -594,8 +594,6 @@ jobs:
             cargo build --target x86_64-pc-solaris --all-targets --all-features && sudo env PATH=$PATH cargo test
 
   # Test that we can build with the lowest version of all dependencies.
-  # "cargo test" doesn't work because some of our dev-dependencies, like
-  # rand, can't build with their own minimal dependencies.
   minver:
     runs-on: ubuntu-latest
     env: 
@@ -607,11 +605,19 @@ jobs:
       - name: setup Rust
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: setup 
-        run: cargo update -Zdirect-minimal-versions
+      - name: install tools
+        uses: taiki-e/install-action@v2.87.11
+        with:
+          tool: |
+            cargo-hack
+            cargo-minimal-versions
+          fallback: none
 
       - name: check
-        run: cargo check
+        run: cargo minimal-versions check --direct --workspace --all-features --no-private
+
+      - name: test
+        run: cargo minimal-versions test --direct --workspace --all-features --no-private
 
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
