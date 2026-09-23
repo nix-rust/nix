@@ -374,6 +374,7 @@ libc_bitflags! {
                   freebsdlike,
                   solarish,
                   netbsdlike,
+                  apple_targets,
                   target_os = "fuchsia",
                   target_os = "haiku"))]
         MSG_NOSIGNAL;
