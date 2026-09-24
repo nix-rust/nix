@@ -974,7 +974,8 @@ pub fn test_af_alg_cipher() {
     )
     .expect("socket failed");
 
-    let sockaddr = AlgAddr::new(alg_type, alg_name);
+    let sockaddr =
+        AlgAddr::new(alg_type, alg_name).expect("AlgAddr::new failed");
     bind(sock.as_raw_fd(), &sockaddr).expect("bind failed");
 
     assert_eq!(sockaddr.alg_name().to_string_lossy(), alg_name);
@@ -1099,7 +1100,8 @@ pub fn test_af_alg_aead() {
     )
     .expect("socket failed");
 
-    let sockaddr = AlgAddr::new(alg_type, alg_name);
+    let sockaddr =
+        AlgAddr::new(alg_type, alg_name).expect("AlgAddr::new failed");
     bind(sock.as_raw_fd(), &sockaddr).expect("bind failed");
 
     setsockopt(&sock, AlgSetAeadAuthSize, &auth_size)
