@@ -126,11 +126,14 @@ feature! {
     pub mod signalfd;
 }
 
-feature! {
-    #![feature = "socket"]
-    #[allow(missing_docs)]
-    pub mod socket;
-}
+// cannot use feature! macro here because the compiler will
+// treat sockopt_impl! as a macro expanded from a macro, which will trigger
+// error macro_expanded_macro_exports_accessed_by_absolute_paths
+// when using `$crate::` in sockopt_impl!
+#[cfg(feature = "socket")]
+#[cfg_attr(docsrs, doc(cfg(feature = "socket")))]
+#[allow(missing_docs)]
+pub mod socket;
 
 feature! {
     #![feature = "fs"]
