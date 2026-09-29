@@ -123,8 +123,7 @@ impl TryFrom<i32> for SockType {
     }
 }
 
-/// Constants used in [`socket`](fn.socket.html) and [`socketpair`](fn.socketpair.html)
-/// to specify the protocol to use.
+/// Constants used in [`socket`] and [`socketpair`] to specify the protocol to use.
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
@@ -1744,7 +1743,7 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
 }
 
 
-/// An extension of `sendmsg` that allows the caller to transmit multiple
+/// An extension of [`sendmsg`] that allows the caller to transmit multiple
 /// messages on a socket using a single system call. This has performance
 /// benefits for some applications.
 ///
@@ -1758,9 +1757,6 @@ pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
 ///
 /// # Returns
 /// `Vec` with numbers of sent bytes on each sent message.
-///
-/// # References
-/// [`sendmsg`](fn.sendmsg.html)
 #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
 pub fn sendmmsg<'a, XS, AS, C, I, S>(
     fd: RawFd,
