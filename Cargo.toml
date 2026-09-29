@@ -73,7 +73,7 @@ zerocopy = ["fs", "uio"]
 
 [dev-dependencies]
 assert-impl = "0.1"
-parking_lot = "0.12"
+parking_lot = "0.12.4"
 rand = "0.9"
 tempfile = "3.7.1"
 semver = "1.0.7"
