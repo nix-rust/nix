@@ -942,12 +942,12 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// Installs `handler` for the given `signal`, returning the previous signal
 /// handler. `signal` should only be used following another call to `signal` or
 /// if the current handler is the default. The return value of `signal` is
-/// undefined after setting the handler with [`sigaction`][SigActionFn].
+/// undefined after setting the handler with [`sigaction`].
 ///
 /// # Safety
 ///
 /// If the pointer to the previous signal handler is invalid, undefined
-/// behavior could be invoked when casting it back to a [`SigAction`][SigActionStruct].
+/// behavior could be invoked when casting it back to a [`SigAction`].
 ///
 /// # Examples
 ///
@@ -980,15 +980,13 @@ pub unsafe fn sigaction(signal: Signal, sigaction: &SigAction) -> Result<SigActi
 /// # Errors
 ///
 /// Returns [`Error(Errno::EOPNOTSUPP)`](Errno::EOPNOTSUPP) if `handler` is
-/// [`SigAction`][SigActionStruct]. Use [`sigaction`][SigActionFn] instead.
+/// [`SigAction`]. Use [`sigaction`] instead.
 ///
 /// `signal` also returns any error from `libc::signal`, such as when an attempt
 /// is made to catch a signal that cannot be caught or to ignore a signal that
 /// cannot be ignored.
 ///
 /// [`Error::UnsupportedOperation`]: ../../enum.Error.html#variant.UnsupportedOperation
-/// [SigActionStruct]: struct.SigAction.html
-/// [sigactionFn]: fn.sigaction.html
 pub unsafe fn signal(signal: Signal, handler: SigHandler) -> Result<SigHandler> {
     let signal = signal as libc::c_int;
     let res = match handler {

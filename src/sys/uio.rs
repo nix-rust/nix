@@ -52,7 +52,7 @@ pub fn readv<Fd: AsFd>(fd: Fd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 /// Buffers in `iov` will be written in order until all buffers have been written
 /// or an error occurs. The file offset is not changed.
 ///
-/// See also: [`writev`](fn.writev.html) and [`pwrite`](fn.pwrite.html)
+/// See also: [`writev`] and [`pwrite`]
 #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris", target_os = "cygwin")))]
 pub fn pwritev<Fd: AsFd>(
     fd: Fd,
@@ -81,7 +81,7 @@ pub fn pwritev<Fd: AsFd>(
 /// no more bytes are available, or an error occurs. The file offset is not
 /// changed.
 ///
-/// See also: [`readv`](fn.readv.html) and [`pread`](fn.pread.html)
+/// See also: [`readv`] and [`pread`]
 #[cfg(not(any(target_os = "redox", target_os = "haiku", target_os = "solaris", target_os = "cygwin")))]
 // Clippy doesn't know that we need to pass iov mutably only because the
 // mutation happens after converting iov to a pointer

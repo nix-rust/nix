@@ -10,19 +10,18 @@
 //! platform support.  Completion
 //! notifications can optionally be delivered via
 //! [signals](../signal/enum.SigevNotify.html#variant.SigevSignal), via the
-//! [`aio_suspend`](fn.aio_suspend.html) function, or via polling.  Some
-//! platforms support other completion
-//! notifications, such as
+//! [`aio_suspend`] function, or via polling.  Some platforms support other
+//! completion notifications, such as
 //! [kevent](../signal/enum.SigevNotify.html#variant.SigevKevent).
 //!
 //! Multiple operations may be submitted in a batch with
-//! [`lio_listio`](fn.lio_listio.html), though the standard does not guarantee
-//! that they will be executed atomically.
+//! [`lio_listio`], though the standard does not guarantee that they will be
+//! executed atomically.
 //!
 //! Outstanding operations may be cancelled with
 //! [`cancel`](trait.Aio.html#method.cancel) or
-//! [`aio_cancel_all`](fn.aio_cancel_all.html), though the operating system may
-//! not support this for all filesystems and devices.
+//! [`aio_cancel_all`], though the operating system may not support this for
+//! all filesystems and devices.
 #![allow(clippy::doc_overindented_list_items)] // It looks better this way
 #[cfg(target_os = "freebsd")]
 use std::io::{IoSlice, IoSliceMut};
@@ -64,19 +63,19 @@ libc_enum! {
 }
 
 libc_enum! {
-    /// Mode for [`lio_listio`](fn.lio_listio.html)
+    /// Mode for [`lio_listio`]
     #[repr(i32)]
     pub enum LioMode {
-        /// Requests that [`lio_listio`](fn.lio_listio.html) block until all
+        /// Requests that [`lio_listio`] block until all
         /// requested operations have been completed
         LIO_WAIT,
-        /// Requests that [`lio_listio`](fn.lio_listio.html) return immediately
+        /// Requests that [`lio_listio`] return immediately
         LIO_NOWAIT,
     }
 }
 
 /// Return values for [`AioCb::cancel`](struct.AioCb.html#method.cancel) and
-/// [`aio_cancel_all`](fn.aio_cancel_all.html)
+/// [`aio_cancel_all`]
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AioCancelStat {
