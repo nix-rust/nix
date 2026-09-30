@@ -79,6 +79,8 @@ libc_bitflags! {
         IN_ONLYDIR;
         /// Don't follow symlinks.
         IN_DONT_FOLLOW;
+        /// Don't send events for unlinked (deleted) subfiles.
+        IN_EXCL_UNLINK;
 
         /// Event occurred against directory.
         IN_ISDIR;
@@ -252,9 +254,7 @@ impl Inotify {
     ///
     /// `OwnedFd` is a valid `Inotify`.
     pub unsafe fn from_owned_fd(fd: OwnedFd) -> Self {
-        Self {
-            fd
-        }
+        Self { fd }
     }
 }
 
