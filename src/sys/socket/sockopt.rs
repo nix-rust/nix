@@ -6,7 +6,7 @@ use crate::sys::time::TimeVal;
 use crate::{errno::Errno, Result};
 use cfg_if::cfg_if;
 use libc::{self, c_int, c_void, socklen_t};
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 use std::ffi::CString;
 use std::ffi::{CStr, OsStr, OsString};
 use std::mem::{self, MaybeUninit};
@@ -1297,7 +1297,7 @@ sockopt_impl!(
     libc::IPV6_DONTFRAG,
     bool
 );
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 #[cfg(feature = "net")]
 sockopt_impl!(
     /// Get the utun interface name.
@@ -2005,14 +2005,14 @@ impl<'a> Set<'a, OsString> for SetOsString<'a> {
 }
 
 /// Getter for a `CString` value.
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 #[cfg(feature = "net")]
 struct GetCString<T: AsMut<[u8]>> {
     len: socklen_t,
     val: MaybeUninit<T>,
 }
 
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 #[cfg(feature = "net")]
 impl<T: AsMut<[u8]>> Get<CString> for GetCString<T> {
     fn uninit() -> Self {
