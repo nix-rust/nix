@@ -23,6 +23,38 @@ pub fn test_resource_limits_nofile() {
     assert_eq!(new_soft_limit, soft_limit);
 }
 
+/// Tests that the kernel accepts RLIMIT_NPROC, the maximum number of simultaneous processes for
+/// the user id.
+///
+/// The limits are written back unchanged: the test harness runs other tests in this process, and
+/// some of them fork, so lowering the limit here could make them fail.
+#[test]
+#[cfg(any(
+    linux_android,
+    target_os = "freebsd",
+    netbsdlike,
+    target_os = "aix",
+    apple_targets,
+))]
+pub fn test_resource_limits_nproc() {
+    let (soft_limit, hard_limit) = getrlimit(Resource::RLIMIT_NPROC).unwrap();
+    assert!(soft_limit <= hard_limit);
+
+    setrlimit(Resource::RLIMIT_NPROC, soft_limit, hard_limit).unwrap();
+
+    let (new_soft_limit, new_hard_limit) =
+        getrlimit(Resource::RLIMIT_NPROC).unwrap();
+    assert_eq!(new_soft_limit, soft_limit);
+    // XNU clamps the hard limit of an unprivileged process to
+    // `kern.maxprocperuid` on every `setrlimit`, so writing back the value
+    // `getrlimit` reported (`kern.maxproc` by default) can lower it.
+    if cfg!(apple_targets) {
+        assert!(new_hard_limit <= hard_limit);
+    } else {
+        assert_eq!(new_hard_limit, hard_limit);
+    }
+}
+
 #[test]
 pub fn test_self_cpu_time() {
     // Make sure some CPU time is used.
