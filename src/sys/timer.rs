@@ -12,7 +12,7 @@
 //! Create an interval timer that signals SIGALARM every 250 milliseconds.
 //!
 //! ```no_run
-//! use nix::sys::signal::{self, SigEvent, SigHandler, SigevNotify, Signal};
+//! use nix::sys::signal::{self, SigEvent, SigHandler, SigevNotify, Signal, SignalValue};
 //! use nix::sys::timer::{Expiration, Timer, TimerSetTimeFlags};
 //! use nix::time::ClockId;
 //! use std::convert::TryFrom;
@@ -33,7 +33,7 @@
 //! fn main() {
 //!     let clockid = ClockId::CLOCK_MONOTONIC;
 //!     let sigevent = SigEvent::new(SigevNotify::SigevSignal {
-//!         signal: SIG,
+//!         signal: SignalValue::Standard(SIG),
 //!         si_value: 0,
 //!     });
 //!
