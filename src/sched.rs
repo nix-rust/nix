@@ -316,6 +316,152 @@ mod sched_affinity {
     }
 }
 
+// musl & ohos have additional sched_param fields that we don't support yet
+#[cfg(all(
+    linux_android,
+    not(target_env = "musl"),
+    not(target_env = "ohos")
+))]
+pub use self::sched_priority::*;
+
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
+mod sched_priority {
+    use std::mem::MaybeUninit;
+
+    use crate::errno::Errno;
+    use crate::unistd::Pid;
+    use crate::Result;
+    use libc;
+
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    /// Schedule parameters for a thread. Priority is the only supported parameter by the kernel
+    /// at the moment. This is a wrapper around `libc::sched_param`
+    pub struct SchedParam {
+        /// Priority of the current schedule.
+        pub sched_priority: libc::c_int,
+    }
+
+    impl SchedParam {
+        /// Create schedule parameters with a given priority. Priority must be between
+        /// min and max for the chosen schedule type.
+        pub fn from_priority(priority: libc::c_int) -> Self {
+            SchedParam {
+                sched_priority: priority,
+            }
+        }
+    }
+
+    impl From<SchedParam> for libc::sched_param {
+        fn from(param: SchedParam) -> Self {
+            libc::sched_param {
+                sched_priority: param.sched_priority,
+            }
+        }
+    }
+
+    impl From<libc::sched_param> for SchedParam {
+        fn from(param: libc::sched_param) -> Self {
+            SchedParam {
+                sched_priority: param.sched_priority,
+            }
+        }
+    }
+
+    libc_enum! {
+        #[repr(i32)]
+        /// The type of scheduler for use with [`sched_getscheduler`] and [`sched_setscheduler`].
+        /// See [man_sched(7)](https://man7.org/linux/man-pages/man7/sched.7.html) for more details
+        /// on the differences in behavior.
+        pub enum Scheduler {
+            /// The default scheduler on non-realtime linux - also known as SCHED_OTHER.
+            SCHED_NORMAL,
+            /// The realtime FIFO scheduler. All FIFO threads have priority higher than 0 and
+            /// preempt SCHED_NORMAL threads. Threads are executed in priority order, using
+            /// first-in-first-out lists to handle two threads with the same priority.
+            SCHED_FIFO,
+            /// Round-robin scheduler, similar to SCHED_FIFO but with a time quantum.
+            SCHED_RR,
+            /// Batch scheduler, similar to SCHED_OTHER but assumes the thread is CPU intensive.
+            /// The kernel applies a mild penalty to switching to this thread.
+            /// As of Linux 2.6.16, the only valid priority is 0.
+            SCHED_BATCH,
+            /// The idle scheduler only executes the thread when there are idle CPUs. SCHED_IDLE
+            /// threads have no progress guarantees.
+            SCHED_IDLE,
+            /// Deadline scheduler, attempting to provide guaranteed latency for requests.
+            /// See the [linux kernel docs](https://docs.kernel.org/scheduler/sched-deadline.html)
+            /// for details.
+            SCHED_DEADLINE,
+        }
+        impl TryFrom<libc::c_int>
+    }
+
+    /// Get the highest priority value for a given scheduler.
+    pub fn sched_get_priority_max(sched: Scheduler) -> Result<libc::c_int> {
+        let res = unsafe { libc::sched_get_priority_max(sched as libc::c_int) };
+        Errno::result(res).map(|int| int as libc::c_int)
+    }
+
+    /// Get the lowest priority value for a given scheduler.
+    pub fn sched_get_priority_min(sched: Scheduler) -> Result<libc::c_int> {
+        let res = unsafe { libc::sched_get_priority_min(sched as libc::c_int) };
+        Errno::result(res).map(|int| int as libc::c_int)
+    }
+
+    /// Get the current scheduler in use for a given process or thread.
+    /// Using `Pid::from_raw(0)` will fetch the scheduler for the calling thread.
+    pub fn sched_getscheduler(pid: Pid) -> Result<Scheduler> {
+        let res = unsafe { libc::sched_getscheduler(pid.into()) };
+
+        Errno::result(res).and_then(Scheduler::try_from)
+    }
+
+    /// Set the scheduler and parameters for a given process or thread.
+    /// Using `Pid::from_raw(0)` will set the scheduler for the calling thread.
+    ///
+    /// SCHED_OTHER, SCHED_IDLE and SCHED_BATCH only support a priority of `0`, and can be used
+    /// outside a Linux PREEMPT_RT context.
+    ///
+    /// SCHED_FIFO and SCHED_RR allow priorities between the min and max inclusive.
+    ///
+    /// SCHED_DEADLINE cannot be set with this function, `libc::sched_setattr` must be used instead.
+    pub fn sched_setscheduler(
+        pid: Pid,
+        sched: Scheduler,
+        param: SchedParam,
+    ) -> Result<()> {
+        let param: libc::sched_param = param.into();
+        let res = unsafe {
+            libc::sched_setscheduler(pid.into(), sched as libc::c_int, &param)
+        };
+
+        Errno::result(res).map(drop)
+    }
+
+    /// Get the schedule parameters (currently only priority) for a given thread.
+    /// Using `Pid::from_raw(0)` will return the parameters for the calling thread.
+    pub fn sched_getparam(pid: Pid) -> Result<SchedParam> {
+        let mut param: MaybeUninit<libc::sched_param> = MaybeUninit::uninit();
+        let res =
+            unsafe { libc::sched_getparam(pid.into(), param.as_mut_ptr()) };
+
+        Errno::result(res).map(|_| unsafe { param.assume_init() }.into())
+    }
+
+    /// Set the schedule parameters (currently only priority) for a given thread.
+    /// Using `Pid::from_raw(0)` will return the parameters for the calling thread.
+    ///
+    /// Changing the priority to something other than `0` requires using a SCHED_FIFO or SCHED_RR
+    /// and using a Linux kernel with PREEMPT_RT enabled.
+    pub fn sched_setparam(pid: Pid, param: SchedParam) -> Result<()> {
+        let param: libc::sched_param = param.into();
+        let res = unsafe { libc::sched_setparam(pid.into(), &param) };
+
+        Errno::result(res).map(drop)
+    }
+}
+
 /// Explicitly yield the processor to other threads.
 ///
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/sched_yield.html)
