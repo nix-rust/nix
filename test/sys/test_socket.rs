@@ -1777,7 +1777,7 @@ pub fn test_unnamed_unixdomain_autobind() {
 }
 
 // Test creating and using named system control sockets
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 #[test]
 pub fn test_syscontrol() {
     use nix::errno::Errno;

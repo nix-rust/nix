@@ -15,10 +15,10 @@ libc_bitflags!(
     #[derive(Default)]
     pub struct FsFlags: c_ulong {
         /// Read Only
-        #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(any(target_os = "haiku", target_os = "horizon")))]
         ST_RDONLY;
         /// Do not allow the set-uid bits to have an effect
-        #[cfg(not(target_os = "haiku"))]
+        #[cfg(not(any(target_os = "haiku", target_os = "horizon")))]
         ST_NOSUID;
         /// Do not interpret character or block-special devices
         #[cfg(linux_android)]

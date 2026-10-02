@@ -252,7 +252,7 @@ pub fn unlockpt(fd: &PtyMaster) -> Result<()> {
 /// the values in `winsize`. If `termios` is not `None`, the pseudoterminal's
 /// terminal settings of the slave will be set to the values in `termios`.
 #[inline]
-#[cfg(not(target_os = "aix"))]
+#[cfg(not(any(target_os = "aix", target_os = "horizon")))]
 pub fn openpty<
     'a,
     'b,

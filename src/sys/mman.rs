@@ -38,16 +38,19 @@ libc_bitflags! {
     /// Additional parameters for [`mmap`].
     pub struct MapFlags: c_int {
         /// Compatibility flag. Ignored.
-        #[cfg(not(any(target_os = "solaris", target_os = "redox")))]
+        #[cfg(not(any(target_os = "horizon", target_os = "solaris", target_os = "redox")))]
         MAP_FILE;
         /// Share this mapping. Mutually exclusive with `MAP_PRIVATE`.
+        #[cfg(not(target_os = "horizon"))]
         MAP_SHARED;
         /// Force mmap to check and fail on unknown flags. This also enables `MAP_SYNC`.
         #[cfg(target_os = "linux")]
         MAP_SHARED_VALIDATE;
         /// Create a private copy-on-write mapping. Mutually exclusive with `MAP_SHARED`.
+        #[cfg(not(target_os = "horizon"))]
         MAP_PRIVATE;
         /// Place the mapping at exactly the address specified in `addr`.
+        #[cfg(not(target_os = "horizon"))]
         MAP_FIXED;
         /// Place the mapping at exactly the address specified in `addr`, but never clobber an existing range.
         #[cfg(target_os = "linux")]
@@ -57,8 +60,10 @@ libc_bitflags! {
         #[cfg(target_os = "freebsd")]
         MAP_EXCL;
         /// Synonym for `MAP_ANONYMOUS`.
+        #[cfg(not(target_os = "horizon"))]
         MAP_ANON;
         /// The mapping is not backed by any file.
+        #[cfg(not(target_os = "horizon"))]
         MAP_ANONYMOUS;
         /// Put the mapping into the first 2GB of the process address space.
         #[cfg(any(all(linux_android,
@@ -82,7 +87,7 @@ libc_bitflags! {
         /// Do not reserve swap space for this mapping.
         ///
         /// This was removed in FreeBSD 11 and is unused in DragonFlyBSD.
-        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "hurd", target_os = "redox")))]
+        #[cfg(not(any(freebsdlike, target_os = "aix", target_os = "horizon", target_os = "hurd", target_os = "redox")))]
         MAP_NORESERVE;
         /// Populate page tables for a mapping.
         #[cfg(linux_android)]

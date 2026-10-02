@@ -40,6 +40,7 @@ feature! {
     solarish,
     target_os = "fuchsia",
     target_os = "haiku",
+    target_os = "horizon",
     target_os = "redox",
     target_os = "cygwin",
 ))]
@@ -54,6 +55,7 @@ feature! {
     pub mod memfd;
 }
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
     #![feature = "mman"]
     pub mod mman;
@@ -98,6 +100,7 @@ feature! {
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
+    target_os = "horizon",
     target_os = "solaris",
     target_os = "haiku"
 )))]
@@ -117,6 +120,7 @@ feature! {
     pub mod sendfile;
 }
 
+#[cfg(not(target_os = "horizon"))]
 pub mod signal;
 
 #[cfg(linux_android)]
@@ -159,6 +163,7 @@ feature! {
 #[allow(missing_docs)]
 pub mod sysinfo;
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
     #![feature = "term"]
     #[allow(missing_docs)]
@@ -168,6 +173,7 @@ feature! {
 #[allow(missing_docs)]
 pub mod time;
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
     #![feature = "uio"]
     pub mod uio;
@@ -178,6 +184,7 @@ feature! {
     pub mod utsname;
 }
 
+#[cfg(not(target_os = "horizon"))]
 feature! {
     #![feature = "process"]
     pub mod wait;

@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "horizon"))]
 mod test_signal;
 
 // NOTE: DragonFly lacks a kernel-level implementation of Posix AIO as of
@@ -18,30 +19,39 @@ mod test_aio;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
+    target_os = "horizon",
     target_os = "hurd",
     target_os = "cygwin"
 )))]
 mod test_ioctl;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 mod test_mman;
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 mod test_select;
 #[cfg(target_os = "linux")]
 mod test_signalfd;
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(
+    target_os = "haiku",
+    target_os = "horizon",
+    target_os = "redox",
+)))]
 mod test_socket;
-#[cfg(not(any(target_os = "redox")))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 mod test_sockopt;
+#[cfg(not(target_os = "horizon"))]
 mod test_stat;
 #[cfg(linux_android)]
 mod test_sysinfo;
 #[cfg(not(any(
     target_os = "redox",
     target_os = "fuchsia",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "horizon",
 )))]
 mod test_termios;
+#[cfg(not(target_os = "horizon"))]
 mod test_uio;
+#[cfg(not(target_os = "horizon"))]
 mod test_wait;
 
 #[cfg(linux_android)]
@@ -52,7 +62,7 @@ mod test_fanotify;
 mod test_inotify;
 mod test_pthread;
 
-#[cfg(any(linux_android, freebsdlike, netbsdlike, apple_targets))]
+#[cfg(any(linux_android, freebsdlike, netbsdlike, target_os = "macos"))]
 mod test_ptrace;
 #[cfg(linux_android)]
 mod test_timerfd;
@@ -82,7 +92,8 @@ mod test_statfs;
     target_os = "redox",
     target_os = "fuchsia",
     solarish,
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "horizon",
 )))]
 mod test_resource;
 

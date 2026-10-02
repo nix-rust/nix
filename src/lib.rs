@@ -111,7 +111,7 @@ pub use libc;
 mod macros;
 
 // Public crates
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "horizon", target_os = "redox")))]
 feature! {
     #![feature = "dir"]
     pub mod dir;
@@ -128,6 +128,7 @@ feature! {
     #[deny(missing_docs)]
     pub mod features;
 }
+#[cfg(not(target_os = "horizon"))]
 pub mod fcntl;
 feature! {
     #![feature = "net"]
@@ -160,11 +161,16 @@ feature! {
     #![feature = "mqueue"]
     pub mod mqueue;
 }
+#[cfg(not(target_os = "horizon"))]
 feature! {
     #![feature = "poll"]
     pub mod poll;
 }
-#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "horizon",
+    target_os = "redox",
+)))]
 feature! {
     #![feature = "term"]
     #[deny(missing_docs)]
