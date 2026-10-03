@@ -199,7 +199,7 @@ pub fn mq_receive(
     message: &mut [u8],
     msg_prio: &mut u32,
 ) -> Result<usize> {
-    let len = message.len() as size_t;
+    let len = message.len();
     let res = unsafe {
         libc::mq_receive(
             mqdes.0,
