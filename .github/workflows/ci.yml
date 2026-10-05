@@ -634,3 +634,55 @@ jobs:
       - name: before_cache_script
         run: rm -rf $CARGO_HOME/registry/index
 
+  # Runs the test suite against wasm32-unknown-emscripten under Node.
+  emscripten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # TEMPORARY: builds against the guybedford/emscripten `cf` fork, which
+    # carries the NODEFS/socket/blocking patches this target depends on. Once
+    # those land upstream the fork checkout can be dropped for a released emsdk.
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      # JSPI is the return-to-host bridge for blocking reads/writes; it needs a
+      # Node with JSPI on by default (V8 13.x+), not the one bundled with emsdk.
+      - name: setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: record JSPI-capable node
+        run: echo "JSPI_NODE=$(which node)" >> "$GITHUB_ENV"
+
+      - name: install emsdk
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git
+          ./emsdk/emsdk install latest
+          ./emsdk/emsdk activate latest
+
+      - name: overlay guybedford/emscripten (cf) fork
+        run: |
+          git clone --branch cf https://github.com/guybedford/emscripten.git em-fork
+          python3 em-fork/bootstrap.py
+          rm -rf ./emsdk/upstream/emscripten
+          ln -s "$(pwd)/em-fork" ./emsdk/upstream/emscripten
+
+      - name: test
+        run: |
+          source ./emsdk/emsdk_env.sh
+          export EM_CONFIG="$EMSDK/.emscripten"
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUNNER="$JSPI_NODE" \
+          RUSTFLAGS="-A linker_messages -C target-feature=+atomics,+bulk-memory,+mutable-globals -C link-arg=-pthread -C link-arg=-sPROXY_TO_PTHREAD -C link-arg=-sNODERAWSOCKETS -C link-arg=-sNODERAWFS -C link-arg=-sALLOW_MEMORY_GROWTH=1 -C link-arg=-sEXIT_RUNTIME=1 -C link-arg=-sJSPI" \
+          cargo +nightly test --target wasm32-unknown-emscripten -Zbuild-std=std,panic_abort --test test \
+            --config 'patch.crates-io.libc.git="https://github.com/guybedford/libc"' \
+            --config 'patch.crates-io.libc.branch="libc-0.2-emscripten"'
+
+      - name: before_cache_script
+        run: rm -rf $CARGO_HOME/registry/index
+

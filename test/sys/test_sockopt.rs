@@ -806,6 +806,7 @@ fn can_get_peerpidfd_on_unix_socket() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn is_socket_type_unix() {
     use nix::sys::socket::{socketpair, sockopt, SockFlag, SockType};
 
