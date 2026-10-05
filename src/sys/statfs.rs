@@ -111,6 +111,10 @@ pub const AUTOFS_SUPER_MAGIC: FsType =
     FsType(libc::AUTOFS_SUPER_MAGIC as fs_type_t);
 #[cfg(linux_android)]
 #[allow(missing_docs)]
+pub const BCACHEFS_SUPER_MAGIC: FsType =
+    FsType(libc::BCACHEFS_SUPER_MAGIC as fs_type_t);
+#[cfg(linux_android)]
+#[allow(missing_docs)]
 pub const BPF_FS_MAGIC: FsType = FsType(libc::BPF_FS_MAGIC as fs_type_t);
 #[cfg(linux_android)]
 #[allow(missing_docs)]
