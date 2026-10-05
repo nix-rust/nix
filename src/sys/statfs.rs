@@ -290,7 +290,7 @@ pub const XENFS_SUPER_MAGIC: FsType =
 #[cfg(linux_android)]
 #[allow(missing_docs)]
 pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
-#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
+#[cfg(linux_android)]
 #[allow(missing_docs)]
 pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
 
