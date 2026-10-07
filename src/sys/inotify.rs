@@ -28,9 +28,9 @@ use crate::unistd::read;
 use crate::NixPath;
 use crate::Result;
 use cfg_if::cfg_if;
-use libc::{c_char, c_int};
-use std::ffi::{CStr, OsStr, OsString};
-use std::mem::{size_of, MaybeUninit};
+use libc::c_int;
+use std::ffi::{OsStr, OsString};
+use std::mem::size_of;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
@@ -204,33 +204,32 @@ impl Inotify {
         let header_size = size_of::<libc::inotify_event>();
         const BUFSIZ: usize = 4096;
         let mut buffer = [0u8; BUFSIZ];
-        let mut events = Vec::new();
-        let mut offset = 0;
 
         let nread = read(&self.fd, &mut buffer)?;
 
+        let mut events = Vec::with_capacity(nread / header_size);
+        let mut offset = 0;
+
         while (nread - offset) >= header_size {
             let event = unsafe {
-                let mut event = MaybeUninit::<libc::inotify_event>::uninit();
-                ptr::copy_nonoverlapping(
-                    buffer.as_ptr().add(offset),
-                    event.as_mut_ptr().cast(),
-                    (BUFSIZ - offset).min(header_size),
-                );
-                event.assume_init()
+                ptr::read_unaligned(
+                    buffer.as_ptr().add(offset)
+                        as *const libc::inotify_event,
+                )
             };
 
-            let name = match event.len {
-                0 => None,
-                _ => {
-                    let ptr = unsafe {
-                        buffer.as_ptr().add(offset + header_size)
-                            as *const c_char
-                    };
-                    let cstr = unsafe { CStr::from_ptr(ptr) };
+            let name = if event.len == 0 {
+                None
+            } else {
+                let name_start = offset + header_size;
+                let name_bytes =
+                    &buffer[name_start..name_start + event.len as usize];
 
-                    Some(OsStr::from_bytes(cstr.to_bytes()).to_owned())
-                }
+                let len = name_bytes
+                    .iter()
+                    .position(|&b| b == 0)
+                    .unwrap_or(name_bytes.len());
+                Some(OsStr::from_bytes(&name_bytes[..len]).to_owned())
             };
 
             events.push(InotifyEvent {
