@@ -1685,15 +1685,31 @@ pub mod alg {
 
     impl AlgAddr {
         /// Construct an `AF_ALG` socket from its cipher name and type.
-        pub fn new(alg_type: &str, alg_name: &str) -> AlgAddr {
+        ///
+        /// # Errors
+        ///
+        /// Returns `Errno::ENAMETOOLONG` if `alg_type` or `alg_name` is too
+        /// long to fit, together with a trailing NUL terminator, in the
+        /// fixed-size `salg_type`/`salg_name` buffers of
+        /// `libc::sockaddr_alg`. Without that check, [`AlgAddr::alg_type`]
+        /// and [`AlgAddr::alg_name`] could read past the end of those
+        /// buffers while scanning for the terminator.
+        pub fn new(alg_type: &str, alg_name: &str) -> Result<AlgAddr> {
             let mut addr: sockaddr_alg = unsafe { mem::zeroed() };
             addr.salg_family = AF_ALG as u16;
-            addr.salg_type[..alg_type.len()]
-                .copy_from_slice(alg_type.to_string().as_bytes());
-            addr.salg_name[..alg_name.len()]
-                .copy_from_slice(alg_name.to_string().as_bytes());
 
-            AlgAddr(addr)
+            if alg_type.len() >= addr.salg_type.len()
+                || alg_name.len() >= addr.salg_name.len()
+            {
+                return Err(Errno::ENAMETOOLONG);
+            }
+
+            addr.salg_type[..alg_type.len()]
+                .copy_from_slice(alg_type.as_bytes());
+            addr.salg_name[..alg_name.len()]
+                .copy_from_slice(alg_name.as_bytes());
+
+            Ok(AlgAddr(addr))
         }
 
         /// Return the socket's cipher type, for example `hash` or `aead`.
@@ -2442,6 +2458,45 @@ mod tests {
                 mem::size_of::<libc::sockaddr_un>(),
                 UnixAddr::size() as usize
             );
+        }
+    }
+
+    // Regression tests for
+    // https://github.com/nix-rust/nix/issues/2775: `AlgAddr::new` must
+    // leave room for a NUL terminator in the fixed-size
+    // `salg_type`/`salg_name` buffers of `libc::sockaddr_alg`, otherwise
+    // `AlgAddr::alg_type`/`AlgAddr::alg_name` read past the end of those
+    // buffers while scanning for one.
+    #[cfg(linux_android)]
+    mod alg {
+        use super::super::alg::AlgAddr;
+        use super::*;
+
+        #[test]
+        fn new_rejects_type_that_fills_the_buffer() {
+            // `salg_type` is `[u8; 14]`; a 14-byte value leaves no room
+            // for a trailing NUL.
+            let alg_type = "x".repeat(14);
+            let err = AlgAddr::new(&alg_type, "sha1").unwrap_err();
+            assert_eq!(err, Errno::ENAMETOOLONG);
+        }
+
+        #[test]
+        fn new_rejects_name_that_fills_the_buffer() {
+            // `salg_name` is `[u8; 64]`; a 64-byte value leaves no room
+            // for a trailing NUL.
+            let alg_name = "x".repeat(64);
+            let err = AlgAddr::new("hash", &alg_name).unwrap_err();
+            assert_eq!(err, Errno::ENAMETOOLONG);
+        }
+
+        #[test]
+        fn new_accepts_values_that_leave_room_for_nul() {
+            let alg_type = "x".repeat(13);
+            let alg_name = "y".repeat(63);
+            let addr = AlgAddr::new(&alg_type, &alg_name).unwrap();
+            assert_eq!(addr.alg_type().to_str().unwrap(), alg_type);
+            assert_eq!(addr.alg_name().to_str().unwrap(), alg_name);
         }
     }
 }
