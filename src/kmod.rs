@@ -62,6 +62,8 @@ libc_bitflags!(
         MODULE_INIT_IGNORE_MODVERSIONS;
         /// Ignore kernel version magic.
         MODULE_INIT_IGNORE_VERMAGIC;
+        /// Use in-kernel module decompression.
+        MODULE_INIT_COMPRESSED_FILE;
     }
 );
 
