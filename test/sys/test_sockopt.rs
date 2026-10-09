@@ -765,6 +765,50 @@ fn can_get_peercred_on_unix_socket() {
     assert_ne!(a_cred.pid(), 0);
 }
 
+#[test]
+#[cfg(target_os = "linux")]
+// QEMU user mode passes unknown SOL_SOCKET options through as an int: with
+// more than one group the kernel reports ERANGE and QEMU drops the size
+#[cfg_attr(qemu, ignore)]
+fn test_so_peer_groups() {
+    use nix::sys::socket::{socketpair, AddressFamily, SockFlag, SockType};
+    use nix::unistd::getgroups;
+
+    let (a, b) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    // both ends were made by this process: its supplementary groups
+    let mut expected = getgroups().unwrap();
+    expected.sort_by_key(|g| g.as_raw());
+    for end in [&a, &b] {
+        let mut groups = getsockopt(end, sockopt::PeerGroups).unwrap();
+        groups.sort_by_key(|g| g.as_raw());
+        assert_eq!(groups, expected);
+    }
+}
+
+#[test]
+#[cfg(target_os = "linux")]
+fn test_so_peer_groups_without_peer() {
+    use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};
+
+    let sock = socket(
+        AddressFamily::Unix,
+        SockType::Stream,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        getsockopt(&sock, sockopt::PeerGroups),
+        Err(nix::errno::Errno::ENODATA)
+    );
+}
+
 #[cfg(target_os = "linux")]
 fn pid_from_pidfd(pidfd: OwnedFd) -> u32 {
     use std::fs::read_to_string;
