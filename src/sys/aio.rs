@@ -36,6 +36,7 @@ use std::{
 };
 
 use libc::off_t;
+#[allow(deprecated)]
 use pin_utils::unsafe_pinned;
 
 use crate::{
@@ -116,6 +117,7 @@ struct AioCb<'a> {
     _fd: PhantomData<BorrowedFd<'a>>,
 }
 
+#[allow(deprecated)]
 impl<'a> AioCb<'a> {
     pin_utils::unsafe_unpinned!(aiocb: LibcAiocb);
 
@@ -440,6 +442,7 @@ pub struct AioFsync<'a> {
     _pin: PhantomPinned,
 }
 
+#[allow(deprecated)]
 impl<'a> AioFsync<'a> {
     unsafe_pinned!(aiocb: AioCb<'a>);
 
@@ -553,6 +556,7 @@ pub struct AioRead<'a> {
     _pin: PhantomPinned,
 }
 
+#[allow(deprecated)]
 impl<'a> AioRead<'a> {
     unsafe_pinned!(aiocb: AioCb<'a>);
 
@@ -673,6 +677,7 @@ pub struct AioReadv<'a> {
     _pin: PhantomPinned,
 }
 
+#[allow(deprecated)]
 #[cfg(target_os = "freebsd")]
 impl<'a> AioReadv<'a> {
     unsafe_pinned!(aiocb: AioCb<'a>);
@@ -784,6 +789,7 @@ pub struct AioWrite<'a> {
     _pin: PhantomPinned,
 }
 
+#[allow(deprecated)]
 impl<'a> AioWrite<'a> {
     unsafe_pinned!(aiocb: AioCb<'a>);
 
@@ -901,6 +907,7 @@ pub struct AioWritev<'a> {
     _pin: PhantomPinned,
 }
 
+#[allow(deprecated)]
 #[cfg(target_os = "freebsd")]
 impl<'a> AioWritev<'a> {
     unsafe_pinned!(aiocb: AioCb<'a>);
