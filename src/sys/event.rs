@@ -314,6 +314,7 @@ libc_bitflags!(
         #[cfg(target_os = "dragonfly")]
         #[allow(missing_docs)]
         NOTE_OOB;
+        #[cfg(any(apple_targets, dragonfly, netbsdlike))]
         #[allow(missing_docs)]
         NOTE_PCTRLMASK;
         #[allow(missing_docs)]
