@@ -952,7 +952,7 @@ fn test_ktls() {
 }
 
 #[test]
-#[cfg(apple_targets)]
+#[cfg(target_os = "macos")]
 fn test_utun_ifname() {
     skip_if_not_root!("test_utun_ifname");
 
