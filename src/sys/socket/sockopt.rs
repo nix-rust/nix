@@ -479,6 +479,17 @@ sockopt_impl!(
     libc::IP_MULTICAST_LOOP,
     bool
 );
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Set or read a boolean integer argument that determines whether sent
+    /// multicast packets should be looped back to the local sockets.
+    Ipv6MulticastLoop,
+    Both,
+    libc::IPPROTO_IPV6,
+    libc::IPV6_MULTICAST_LOOP,
+    bool
+);
 #[cfg(target_os = "linux")]
 #[cfg(feature = "net")]
 sockopt_impl!(
