@@ -593,7 +593,13 @@ impl SockaddrLike for UnixAddr {
                          solarish,
                          target_os = "redox",
                 ))] {
-                self.sun_len = new_length as u8;
+                // A sender with no address is reported with a length of zero.
+                if new_length < offset_of!(libc::sockaddr_un, sun_path) {
+                    self.sun.sun_family = libc::AF_UNIX as libc::sa_family_t;
+                    self.sun_len = offset_of!(libc::sockaddr_un, sun_path) as u8;
+                } else {
+                    self.sun_len = new_length as u8;
+                }
             }
         };
         Ok(())

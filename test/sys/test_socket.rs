@@ -368,6 +368,32 @@ pub fn test_recvmsg_sockaddr_un() {
 }
 
 #[test]
+#[cfg(linux_android)]
+pub fn test_recvmsg_from_unbound_unix_sender() {
+    use nix::sys::socket::{self, MsgFlags};
+    use std::os::unix::net::UnixDatagram;
+
+    let tempdir = tempfile::tempdir().unwrap();
+    let sockname = tempdir.path().join("sock");
+    let receiver = UnixDatagram::bind(&sockname).unwrap();
+    let sender = UnixDatagram::unbound().unwrap();
+    sender.send_to(b"hello", &sockname).unwrap();
+
+    let mut recv_buffer = [0u8; 32];
+    let mut iov = [std::io::IoSliceMut::new(&mut recv_buffer)];
+    let received = socket::recvmsg::<UnixAddr>(
+        receiver.as_raw_fd(),
+        &mut iov,
+        None,
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    let address = received.address.unwrap();
+    assert!(address.is_unnamed());
+    assert_eq!(address.path(), None);
+}
+
+#[test]
 pub fn test_std_conversions() {
     use nix::sys::socket::*;
 
