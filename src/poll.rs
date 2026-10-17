@@ -5,6 +5,11 @@ use crate::errno::Errno;
 pub use crate::poll_timeout::{PollTimeout, PollTimeoutTryFromError};
 use crate::Result;
 
+#[cfg(not(target_os = "horizon"))]
+pub(crate) type RawPollFlags = std::ffi::c_short;
+#[cfg(target_os = "horizon")]
+pub(crate) type RawPollFlags = std::ffi::c_int;
+
 /// This is a wrapper around `libc::pollfd`.
 ///
 /// It's meant to be used as an argument to the [`poll`] and `ppoll` functions
@@ -120,7 +125,7 @@ impl AsFd for PollFd<'_> {
 
 libc_bitflags! {
     /// These flags define the different events that can be monitored by `poll` and `ppoll`
-    pub struct PollFlags: libc::c_short {
+    pub struct PollFlags: RawPollFlags {
         /// There is data to read.
         POLLIN;
         /// There is some exceptional condition on the file descriptor.
