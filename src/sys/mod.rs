@@ -40,6 +40,7 @@ feature! {
     solarish,
     target_os = "fuchsia",
     target_os = "haiku",
+    target_os = "hurd",
     target_os = "redox",
     target_os = "cygwin",
 ))]
