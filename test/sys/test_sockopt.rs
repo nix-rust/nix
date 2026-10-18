@@ -353,6 +353,32 @@ fn test_bindtodevice() {
 }
 
 #[test]
+#[cfg(apple_targets)]
+fn test_ipv4_bound_if() {
+    use nix::net::if_::if_nametoindex;
+
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    let index = if_nametoindex("lo0").unwrap();
+    assert_ne!(index, 0);
+
+    assert_eq!(getsockopt(&fd, sockopt::Ipv4BoundIf).unwrap(), 0);
+    setsockopt(&fd, sockopt::Ipv4BoundIf, &index).unwrap();
+    assert_eq!(getsockopt(&fd, sockopt::Ipv4BoundIf).unwrap(), index);
+
+    assert!(setsockopt(&fd, sockopt::Ipv4BoundIf, &u32::MAX).is_err());
+    assert_eq!(getsockopt(&fd, sockopt::Ipv4BoundIf).unwrap(), index);
+
+    setsockopt(&fd, sockopt::Ipv4BoundIf, &0).unwrap();
+    assert_eq!(getsockopt(&fd, sockopt::Ipv4BoundIf).unwrap(), 0);
+}
+
+#[test]
 fn test_so_tcp_keepalive() {
     let fd = socket(
         AddressFamily::Inet,
