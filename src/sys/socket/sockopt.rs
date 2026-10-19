@@ -1927,7 +1927,7 @@ impl<'a> Set<'a, OwnedFd> for SetOwnedFd {
     fn new(val: &'a OwnedFd) -> SetOwnedFd {
         use std::os::fd::AsRawFd;
 
-        SetOwnedFd { val: val.as_raw_fd() as c_int }
+        SetOwnedFd { val: val.as_raw_fd() }
     }
 
     fn ffi_ptr(&self) -> *const c_void {
