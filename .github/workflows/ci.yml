@@ -71,6 +71,34 @@ jobs:
       - name: before_cache_script
         run: sudo rm -rf $CARGO_HOME/registry/index
 
+  ios:
+    strategy:
+      fail-fast: false
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install cargo lipo and rust compiler for ios target
+        if: ${{ !cancelled() }}
+        run: |
+          cargo install --locked cargo-lipo
+          rustup target add x86_64-apple-ios aarch64-apple-ios
+
+      - name: Clippy
+        if: ${{ !cancelled() }}
+        run: cargo clippy --target x86_64-apple-ios --all-features -- -D warnings
+
+      - name: Build for iOS
+        if: ${{ !cancelled() }}
+        run: |
+          cargo lipo --verbose --all-features
+
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:
