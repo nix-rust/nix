@@ -286,6 +286,7 @@ pub fn test_unnamed_uds_addr() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_getsockname() {
     use nix::sys::socket::bind;
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};
@@ -308,6 +309,7 @@ pub fn test_getsockname() {
 }
 
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_socketpair() {
     use nix::sys::socket::{socketpair, AddressFamily, SockFlag, SockType};
     use nix::unistd::{read, write};
@@ -328,6 +330,7 @@ pub fn test_socketpair() {
 
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_recvmsg_sockaddr_un() {
     use nix::sys::socket::{
         self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
@@ -421,6 +424,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     pub fn stream() {
         let (fd2, fd1) = socketpair(
             AddressFamily::Unix,
@@ -434,6 +438,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     pub fn udp() {
         let std_sa = SocketAddrV4::from_str("127.0.0.1:6795").unwrap();
         let sock_addr = SockaddrIn::from(std_sa);
@@ -777,6 +782,7 @@ mod recvfrom {
     }
 
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     pub fn udp_inet6() {
         let addr = std::net::Ipv6Addr::from_str("::1").unwrap();
         let rport = 6796;
@@ -843,6 +849,7 @@ pub fn test_recvmsg_ebadf() {
 #[cfg_attr(qemu, ignore)]
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_scm_rights() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
@@ -1346,6 +1353,7 @@ pub fn test_sendmsg_ipv4sendsrcaddr() {
 #[cfg_attr(qemu, ignore)]
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_scm_rights_single_cmsg_multiple_fds() {
     use nix::sys::socket::{
         recvmsg, sendmsg, ControlMessage, ControlMessageOwned, MsgFlags,
@@ -1404,6 +1412,7 @@ fn test_scm_rights_single_cmsg_multiple_fds() {
 // msg_control field and a msg_controllen of 0 when calling into the
 // raw `sendmsg`.
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_sendmsg_empty_cmsgs() {
     use nix::sys::socket::{
         recvmsg, sendmsg, socketpair, AddressFamily, MsgFlags, SockFlag,
@@ -1670,6 +1679,7 @@ fn test_impl_scm_credentials_and_rights(
 
 // Test creating and using named unix domain sockets
 #[test]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_named_unixdomain() {
     use nix::sys::socket::{
         accept, bind, connect, listen, socket, Backlog, UnixAddr,
@@ -3265,7 +3275,8 @@ fn can_use_cmsg_space() {
     linux_android,
     target_os = "redox",
     target_os = "haiku",
-    target_os = "cygwin"
+    target_os = "cygwin",
+    target_os = "emscripten"
 )))]
 #[test]
 fn can_open_routing_socket() {

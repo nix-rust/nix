@@ -660,6 +660,7 @@ mod test_flock {
 
     /// Verify that `Flock::lock()` correctly obtains a lock, and subsequently unlocks upon drop.
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     fn lock_and_drop() {
         // Get 2 `File` handles to same underlying file.
         let file1 = NamedTempFile::new().unwrap();
@@ -686,6 +687,7 @@ mod test_flock {
 
     /// An exclusive lock can be downgraded
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     fn downgrade() {
         let file1 = NamedTempFile::new().unwrap();
         let file2 = file1.reopen().unwrap();
@@ -729,6 +731,7 @@ mod test_flock {
 
     /// A shared lock can be upgraded
     #[test]
+    #[cfg_attr(target_os = "emscripten", ignore)]
     fn upgrade() {
         let file1 = NamedTempFile::new().unwrap();
         let file2 = file1.reopen().unwrap();

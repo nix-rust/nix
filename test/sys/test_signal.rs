@@ -2,6 +2,7 @@ use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::unistd::*;
 use std::hash::{Hash, Hasher};
+#[cfg_attr(target_os = "emscripten", allow(unused_imports))]
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(not(target_os = "redox"))]
 use std::thread;
@@ -12,7 +13,7 @@ fn test_kill_none() {
 }
 
 #[test]
-#[cfg(not(target_os = "fuchsia"))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "emscripten")))]
 fn test_killpg_none() {
     killpg(getpgrp(), None)
         .expect("Should be able to send signal to my process group.");
@@ -79,8 +80,10 @@ fn test_sigprocmask() {
         .expect("expect to be able to block signals");
 }
 
+#[cfg(not(target_os = "emscripten"))]
 static SIGNALED: AtomicBool = AtomicBool::new(false);
 
+#[cfg(not(target_os = "emscripten"))]
 extern "C" fn test_sigaction_handler(signal: libc::c_int) {
     let signal = Signal::try_from(signal).unwrap();
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
@@ -107,6 +110,7 @@ fn test_signal_sigaction() {
 }
 
 #[test]
+#[cfg(not(target_os = "emscripten"))]
 fn test_signal() {
     let _m = crate::SIGNAL_MTX.lock();
 
@@ -186,7 +190,7 @@ fn test_extend() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "emscripten")))]
 fn test_thread_signal_set_mask() {
     thread::spawn(|| {
         let prev_mask = SigSet::thread_get_mask()
@@ -211,7 +215,7 @@ fn test_thread_signal_set_mask() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
+#[cfg(not(any(target_os = "redox", target_os = "emscripten")))]
 fn test_thread_signal_block() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -242,6 +246,7 @@ fn test_thread_signal_unblock() {
 
 #[test]
 #[cfg(not(target_os = "redox"))]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_thread_signal_swap() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
