@@ -4,6 +4,7 @@
     solarish,
     target_os = "haiku",
     target_os = "fuchsia",
+    target_os = "emscripten",
     target_os = "aix",
 ))]
 #[cfg(feature = "net")]
@@ -448,6 +449,7 @@ impl UnixAddr {
                      target_os = "fuchsia",
                      solarish,
                      target_os = "redox",
+                     target_os = "emscripten",
                      target_os = "cygwin",
                 ))]
             {
@@ -513,6 +515,7 @@ impl UnixAddr {
                      target_os = "fuchsia",
                      solarish,
                      target_os = "redox",
+                     target_os = "emscripten",
                      target_os = "cygwin",
                 ))]
             {
@@ -531,6 +534,7 @@ impl SockaddrLike for UnixAddr {
         target_os = "fuchsia",
         solarish,
         target_os = "redox",
+        target_os = "emscripten",
         target_os = "cygwin",
     ))]
     fn len(&self) -> libc::socklen_t {
@@ -561,6 +565,7 @@ impl SockaddrLike for UnixAddr {
                          target_os = "fuchsia",
                          solarish,
                          target_os = "redox",
+                         target_os = "emscripten",
                          target_os = "cygwin",
                 ))] {
                 let su_len = len.unwrap_or(
@@ -1172,6 +1177,7 @@ impl SockaddrLike for SockaddrStorage {
                     linux_android,
                     target_os = "fuchsia",
                     solarish,
+                    target_os = "emscripten",
                     target_os = "cygwin",
                 ))]
                 if i32::from(ss.ss_family) == libc::AF_UNIX {
@@ -1229,7 +1235,7 @@ impl SockaddrLike for SockaddrStorage {
         }
     }
 
-    #[cfg(any(linux_android, target_os = "fuchsia", solarish, target_os = "cygwin"))]
+    #[cfg(any(linux_android, target_os = "fuchsia", solarish, target_os = "emscripten", target_os = "cygwin"))]
     fn len(&self) -> libc::socklen_t {
         match self.as_unix_addr() {
             // The UnixAddr type knows its own length
@@ -1291,6 +1297,7 @@ impl SockaddrStorage {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
                      solarish,
+                     target_os = "emscripten",
                      target_os = "cygwin",
                 ))]
             {
@@ -1321,6 +1328,7 @@ impl SockaddrStorage {
             if #[cfg(any(linux_android,
                      target_os = "fuchsia",
                      solarish,
+                     target_os = "emscripten",
                      target_os = "cygwin",
                 ))]
             {
@@ -1834,7 +1842,7 @@ pub mod sys_control {
 }
 }
 
-#[cfg(any(linux_android, target_os = "fuchsia"))]
+#[cfg(any(linux_android, target_os = "fuchsia", target_os = "emscripten"))]
 mod datalink {
     feature! {
     #![feature = "net"]
@@ -2312,7 +2320,7 @@ mod tests {
         fn size() {
             #[cfg(any(bsd, target_os = "aix", solarish, target_os = "haiku"))]
             let l = mem::size_of::<libc::sockaddr_dl>();
-            #[cfg(any(linux_android, target_os = "fuchsia"))]
+            #[cfg(any(linux_android, target_os = "fuchsia", target_os = "emscripten"))]
             let l = mem::size_of::<libc::sockaddr_ll>();
             assert_eq!(LinkAddr::size() as usize, l);
         }
