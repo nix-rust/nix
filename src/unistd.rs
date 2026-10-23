@@ -3749,19 +3749,21 @@ impl User {
                 &mut res,
             );
             if error == 0 {
-                if res.is_null() {
-                    return Ok(None);
+                return Ok(if res.is_null() {
+                    None
                 } else {
                     // SAFETY: `f` guarantees that `pwd` is initialized if `res`
                     // is not null.
                     let pwd = unsafe { pwd.assume_init() };
-                    return Ok(Some(User::from(&pwd)));
-                }
-            } else if Errno::last() == Errno::ERANGE {
+                    Some(User::from(&pwd))
+                });
+            }
+            let error = Errno::from_raw(error);
+            if error == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Errno::last());
+                return Err(error);
             }
         }
     }
@@ -3909,19 +3911,21 @@ impl Group {
                 &mut res,
             );
             if error == 0 {
-                if res.is_null() {
-                    return Ok(None);
+                return Ok(if res.is_null() {
+                    None
                 } else {
                     // SAFETY: `f` guarantees that `grp` is initialized if `res`
                     // is not null.
                     let grp = unsafe { grp.assume_init() };
-                    return Ok(Some(Group::from(&grp)));
-                }
-            } else if Errno::last() == Errno::ERANGE {
+                    Some(Group::from(&grp))
+                });
+            }
+            let error = Errno::from_raw(error);
+            if error == Errno::ERANGE {
                 // Trigger the internal buffer resizing logic.
                 reserve_double_buffer_size(&mut cbuf, buflimit)?;
             } else {
-                return Err(Errno::last());
+                return Err(error);
             }
         }
     }
