@@ -1,12 +1,14 @@
+#[cfg(not(any(tvos, watchos)))]
 use libc::_exit;
 use nix::errno::Errno;
 use nix::sys::signal::*;
 use nix::sys::wait::*;
+#[cfg(not(any(tvos, watchos)))]
 use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(any(target_os = "redox", target_os = "haiku", tvos, watchos)))]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
@@ -59,6 +61,7 @@ fn test_waitid_signal() {
 }
 
 #[test]
+#[cfg(not(any(tvos, watchos)))]
 fn test_wait_exit() {
     let _m = crate::FORK_MTX.lock();
 
@@ -119,6 +122,7 @@ fn test_waitstatus_from_raw() {
 }
 
 #[test]
+#[cfg(not(any(tvos, watchos)))]
 fn test_waitstatus_pid() {
     let _m = crate::FORK_MTX.lock();
 
