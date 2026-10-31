@@ -2542,18 +2542,20 @@ fn test_recvmsg_rxq_ovfl() {
     // Set SO_RXQ_OVFL flag.
     setsockopt(&in_socket, RxqOvfl, &1).unwrap();
 
-    // Set the receiver buffer size to hold only 2 messages.
+    // Bound the queue; packet accounting includes kernel-dependent overhead.
     setsockopt(&in_socket, RcvBuf, &bufsize).unwrap();
+    let capacity = getsockopt(&in_socket, RcvBuf).unwrap();
+    let sent = capacity / message.len() + 2;
 
     let mut drop_counter = 0;
+    let mut expected_drops = 0;
 
-    for _ in 0..2 {
+    for round in 0..2 {
         let iov = [IoSlice::new(&message)];
         let flags = MsgFlags::empty();
 
-        // Send the 3 messages (the receiver buffer can only hold 2 messages)
-        // to create an overflow.
-        for _ in 0..3 {
+        // Payload exceeds the reported capacity, even with one extra packet.
+        for _ in 0..sent {
             let l = sendmsg(
                 out_socket.as_raw_fd(),
                 &iov,
@@ -2565,7 +2567,8 @@ fn test_recvmsg_rxq_ovfl() {
             assert_eq!(message.len(), l);
         }
 
-        // Receive the message and check the drop counter if any.
+        let mut received = 0;
+        // The next burst reports drops that preceded its enqueue.
         loop {
             let mut buffer = vec![0u8; message.len()];
             let mut cmsgspace = nix::cmsg_space!(u32);
@@ -2579,6 +2582,8 @@ fn test_recvmsg_rxq_ovfl() {
                 MsgFlags::MSG_DONTWAIT,
             ) {
                 Ok(r) => {
+                    received += 1;
+                    assert_eq!(r.bytes, message.len());
                     drop_counter = match r.cmsgs().unwrap().next() {
                         Some(ControlMessageOwned::RxqOvfl(drop_counter)) => {
                             drop_counter
@@ -2595,10 +2600,15 @@ fn test_recvmsg_rxq_ovfl() {
                 }
             }
         }
+        assert!(received > 0);
+        if round == 0 {
+            expected_drops = sent - received;
+            assert!(expected_drops > 0, "the fixture must overflow the queue");
+        }
     }
 
-    // One packet lost.
-    assert_eq!(drop_counter, 1);
+    eprintln!("RXQ_OVFL capacity={capacity} burst={sent} expected={expected_drops} reported={drop_counter}");
+    assert_eq!(drop_counter as usize, expected_drops);
 }
 
 // Verifies the round-trip for `SO_RCVMARK`: the receiver enables it via the new
