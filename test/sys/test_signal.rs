@@ -445,3 +445,83 @@ fn test_hash_all() {
 
     assert_eq!(h0.finish(), h1.finish());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn test_signal_wait_and_mask_syscall_errors() {
+    const CHILD: &str = "NIX_SIGNAL_ERROR_CHILD";
+    if std::env::var_os(CHILD).is_none() {
+        let name = std::thread::current().name().unwrap().to_owned();
+        let output =
+            std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", &name, "--nocapture"])
+                .env(CHILD, "1")
+                .output()
+                .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        return;
+    }
+
+    let mut filter = vec![libc::sock_filter {
+        code: 0x20,
+        jt: 0,
+        jf: 0,
+        k: 0,
+    }];
+    for syscall in [libc::SYS_rt_sigprocmask, libc::SYS_rt_sigtimedwait] {
+        filter.push(libc::sock_filter {
+            code: 0x15,
+            jt: 0,
+            jf: 1,
+            k: syscall.try_into().unwrap(),
+        });
+        filter.push(libc::sock_filter {
+            code: 0x06,
+            jt: 0,
+            jf: 0,
+            k: 0x00050000 | libc::EIO as u32,
+        });
+    }
+    filter.push(libc::sock_filter {
+        code: 0x06,
+        jt: 0,
+        jf: 0,
+        k: 0x7fff0000,
+    });
+    let program = libc::sock_fprog {
+        len: filter.len().try_into().unwrap(),
+        filter: filter.as_mut_ptr(),
+    };
+    // Only this subprocess's test thread is filtered; no privileges are needed.
+    unsafe {
+        assert_eq!(
+            libc::prctl(
+                libc::PR_SET_NO_NEW_PRIVS,
+                1 as libc::c_ulong,
+                0 as libc::c_ulong,
+                0 as libc::c_ulong,
+                0 as libc::c_ulong
+            ),
+            0
+        );
+        assert_eq!(
+            libc::syscall(
+                libc::SYS_seccomp,
+                libc::SECCOMP_SET_MODE_FILTER,
+                0,
+                &program
+            ),
+            0
+        );
+    }
+    let set = SigSet::empty();
+    assert_eq!(set.thread_set_mask(), Err(Errno::EIO));
+    // The first assertion fails safely on the old implementation, before any
+    // wrapper could read an output left uninitialized by a refused syscall.
+    assert_eq!(SigSet::thread_get_mask().unwrap_err(), Errno::EIO);
+    assert_eq!(
+        set.thread_swap_mask(SigmaskHow::SIG_BLOCK).unwrap_err(),
+        Errno::EIO
+    );
+    assert_eq!(set.wait(), Err(Errno::EIO));
+}
