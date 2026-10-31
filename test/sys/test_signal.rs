@@ -446,7 +446,8 @@ fn test_hash_all() {
     assert_eq!(h0.finish(), h1.finish());
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", target_pointer_width = "64"))]
+#[cfg_attr(qemu, ignore = "seccomp requires the native syscall ABI")]
 #[test]
 fn test_signal_wait_and_mask_syscall_errors() {
     const CHILD: &str = "NIX_SIGNAL_ERROR_CHILD";
