@@ -1701,7 +1701,7 @@ pub fn sync() {
 /// descriptor `fd` to disk
 ///
 /// See also [syncfs(2)](https://man7.org/linux/man-pages/man2/sync.2.html)
-#[cfg(any(linux_android, target_os = "hurd"))]
+#[cfg(any(linux_android, target_os = "hurd", target_os = "illumos"))]
 pub fn syncfs<Fd: std::os::fd::AsFd>(fd: Fd) -> Result<()> {
     use std::os::fd::AsRawFd;
 
@@ -2012,7 +2012,7 @@ pub fn setgroups(groups: &[Gid]) -> Result<()> {
 /// will only ever return the complete list or else an error.
 #[cfg(not(any(
     target_os = "aix",
-    solarish,
+    target_os = "solaris",
     apple_targets,
     target_os = "redox",
     target_os = "emscripten",
@@ -2022,8 +2022,13 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
         Ok(Some(n)) => n as c_int,
         Ok(None) | Err(_) => c_int::MAX,
     };
-    use std::cmp::min;
-    let mut groups = Vec::<Gid>::with_capacity(min(ngroups_max, 8) as usize);
+    // illumos' getgrouplist() can write past the end of a buffer smaller
+    // than NGROUPS_MAX, so start with one of that size (at most 1024) there.
+    #[cfg(target_os = "illumos")]
+    let capacity = ngroups_max;
+    #[cfg(not(target_os = "illumos"))]
+    let capacity = std::cmp::min(ngroups_max, 8);
+    let mut groups = Vec::<Gid>::with_capacity(capacity as usize);
     cfg_if! {
         if #[cfg(apple_targets)] {
             type getgrouplist_group_t = c_int;
@@ -2048,6 +2053,11 @@ pub fn getgrouplist(user: &CStr, group: Gid) -> Result<Vec<Gid>> {
             unsafe { groups.set_len(ngroups as usize) };
             return Ok(groups);
         } else if ret == -1 {
+            // With a buffer of NGROUPS_MAX entries, illumos only fails for
+            // real errors, and sets errno.
+            if cfg!(target_os = "illumos") {
+                return Err(Errno::last());
+            }
             // Returns -1 if ngroups is too small, but does not set errno.
             // BSD systems will still fill the groups buffer with as many
             // groups as possible, but Linux manpages do not mention this

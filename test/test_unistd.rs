@@ -302,6 +302,27 @@ fn test_setgroups() {
 }
 
 #[test]
+#[cfg(any(linux_android, target_os = "illumos"))]
+fn test_getgrouplist() {
+    let Some(user) = User::from_uid(getuid()).unwrap() else {
+        skip!("test_getgrouplist: current user has no passwd entry");
+    };
+    let name = CString::new(user.name).unwrap();
+    // The given group is always part of the result, even if the user is not
+    // a member of it.
+    let group = Gid::from_raw(54321);
+    let groups = getgrouplist(&name, group).unwrap();
+    assert!(groups.contains(&group));
+}
+
+#[test]
+#[cfg(any(linux_android, target_os = "illumos"))]
+fn test_syncfs() {
+    let tmp = tempfile().unwrap();
+    syncfs(&tmp).unwrap();
+}
+
+#[test]
 // `getgroups()` and `setgroups()` do not behave as expected on Apple platforms
 #[cfg(not(any(
     apple_targets,
