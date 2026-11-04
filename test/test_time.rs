@@ -20,6 +20,13 @@ pub fn test_clock_getcpuclockid() {
     clock_gettime(clock_id).unwrap();
 }
 
+#[cfg(any(linux_android, target_os = "illumos"))]
+#[test]
+pub fn test_clock_cputime_ids() {
+    ClockId::CLOCK_PROCESS_CPUTIME_ID.now().unwrap();
+    ClockId::CLOCK_THREAD_CPUTIME_ID.now().unwrap();
+}
+
 #[cfg(not(target_os = "redox"))]
 #[test]
 pub fn test_clock_id_res() {
