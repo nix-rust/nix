@@ -12,6 +12,7 @@ mod test_signal;
         target_os = "linux",
         not(any(target_env = "uclibc", target_env = "ohos"))
     ),
+    target_os = "illumos",
     target_os = "netbsd"
 ))]
 mod test_aio;

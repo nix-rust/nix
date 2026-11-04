@@ -6,6 +6,7 @@
         not(any(target_env = "uclibc", target_env = "ohos"))
     ),
     apple_targets,
+    target_os = "illumos",
     target_os = "netbsd"
 ))]
 feature! {
