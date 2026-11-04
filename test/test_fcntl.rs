@@ -486,10 +486,55 @@ mod linux_android {
     }
 }
 
+/// OFD locks belong to the open file description: a lock taken through one
+/// description conflicts with another description of the same file.
+#[cfg(any(
+    all(target_os = "linux", not(target_env = "musl")),
+    target_os = "illumos"
+))]
+#[cfg_attr(target_env = "uclibc", ignore)]
+#[test]
+fn test_ofd_lock_conflict() {
+    use nix::errno::Errno;
+    use nix::fcntl::{fcntl, open, FcntlArg, OFlag};
+    use nix::sys::stat::Mode;
+    use tempfile::NamedTempFile;
+
+    // illumos only supports OFD locks that cover the whole file.
+    let whole_file = |l_type: libc::c_short| {
+        // SAFETY: all-zero is a valid flock
+        let mut flock: libc::flock = unsafe { std::mem::zeroed() };
+        flock.l_type = l_type;
+        flock.l_whence = libc::SEEK_SET as libc::c_short;
+        flock
+    };
+    let wrlck = libc::F_WRLCK as libc::c_short;
+    let unlck = libc::F_UNLCK as libc::c_short;
+
+    let tmp = NamedTempFile::new().unwrap();
+    let fd1 = open(tmp.path(), OFlag::O_RDWR, Mode::empty()).unwrap();
+    let fd2 = open(tmp.path(), OFlag::O_RDWR, Mode::empty()).unwrap();
+
+    fcntl(&fd1, FcntlArg::F_OFD_SETLK(&whole_file(wrlck))).unwrap();
+    let mut probe = whole_file(wrlck);
+    fcntl(&fd2, FcntlArg::F_OFD_GETLK(&mut probe)).unwrap();
+    assert_eq!(probe.l_type, wrlck);
+    // OFD locks are not owned by a process.
+    assert_eq!(probe.l_pid, -1);
+    let err = fcntl(&fd2, FcntlArg::F_OFD_SETLK(&whole_file(wrlck)));
+    assert!(matches!(err, Err(Errno::EAGAIN | Errno::EACCES)), "{err:?}");
+
+    fcntl(&fd1, FcntlArg::F_OFD_SETLK(&whole_file(unlck))).unwrap();
+    let mut probe = whole_file(wrlck);
+    fcntl(&fd2, FcntlArg::F_OFD_GETLK(&mut probe)).unwrap();
+    assert_eq!(probe.l_type, unlck);
+}
+
 #[cfg(any(
     linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
+    target_os = "illumos",
     target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
@@ -521,6 +566,7 @@ mod test_posix_fadvise {
     freebsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
+    target_os = "illumos",
     target_os = "wasi",
 ))]
 mod test_posix_fallocate {
