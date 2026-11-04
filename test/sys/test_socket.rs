@@ -3282,3 +3282,33 @@ fn can_open_routing_socket() {
         socket(AddressFamily::Route, SockType::Raw, SockFlag::empty(), None)
             .expect("Failed to open routing socket");
 }
+
+/// A `SockaddrStorage` holding an IP address reports the exact size of its
+/// sockaddr type, which illumos requires for bind, connect and sendto.
+#[cfg(feature = "net")]
+#[test]
+pub fn test_sockaddr_storage_inet_len() {
+    use nix::sys::socket::{
+        bind, getsockname, socket, AddressFamily, SockFlag, SockType,
+        SockaddrIn, SockaddrLike, SockaddrStorage,
+    };
+    use std::mem::size_of;
+    use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
+
+    let v4 = SockaddrStorage::from(SocketAddrV4::new(Ipv4Addr::LOCALHOST, 0));
+    assert_eq!(v4.len() as usize, size_of::<libc::sockaddr_in>());
+    let v6 =
+        SockaddrStorage::from(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 0, 0, 0));
+    assert_eq!(v6.len() as usize, size_of::<libc::sockaddr_in6>());
+
+    let fd = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    bind(fd.as_raw_fd(), &v4).unwrap();
+    let bound: SockaddrIn = getsockname(fd.as_raw_fd()).unwrap();
+    assert_eq!(bound.ip(), Ipv4Addr::LOCALHOST);
+}
