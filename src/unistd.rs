@@ -2364,6 +2364,7 @@ pub enum PathconfVar {
     #[cfg(any(
         freebsdlike,
         netbsdlike,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "redox"
     ))]
@@ -2414,6 +2415,7 @@ pub enum PathconfVar {
     #[cfg(any(
         linux_android,
         freebsdlike,
+        target_os = "illumos",
         target_os = "openbsd",
         target_os = "redox"
     ))]
@@ -2423,6 +2425,7 @@ pub enum PathconfVar {
     #[cfg(any(
         freebsdlike,
         linux_android,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// Recommended increment for file transfer sizes between the
@@ -2431,6 +2434,7 @@ pub enum PathconfVar {
     #[cfg(any(
         linux_android,
         freebsdlike,
+        target_os = "illumos",
         target_os = "openbsd",
         target_os = "redox"
     ))]
@@ -2439,6 +2443,7 @@ pub enum PathconfVar {
     #[cfg(any(
         linux_android,
         freebsdlike,
+        target_os = "illumos",
         target_os = "openbsd",
         target_os = "redox"
     ))]
@@ -2447,6 +2452,7 @@ pub enum PathconfVar {
     #[cfg(any(
         linux_android,
         freebsdlike,
+        target_os = "illumos",
         target_os = "openbsd",
         target_os = "redox"
     ))]
@@ -2501,7 +2507,11 @@ pub enum PathconfVar {
     /// Synchronized input or output operations may be performed for the
     /// associated file.
     _POSIX_SYNC_IO = libc::_PC_SYNC_IO,
-    #[cfg(any(target_os = "dragonfly", target_os = "openbsd"))]
+    #[cfg(any(
+        target_os = "dragonfly",
+        target_os = "illumos",
+        target_os = "openbsd"
+    ))]
     /// The resolution in nanoseconds for all file timestamps.
     _POSIX_TIMESTAMP_RESOLUTION = libc::_PC_TIMESTAMP_RESOLUTION,
 }
@@ -2616,6 +2626,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The maximum amount by which a process can decrease its asynchronous I/O
@@ -2690,6 +2701,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2772,6 +2784,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports realtime signals.
@@ -2792,18 +2805,19 @@ pub enum SysconfVar {
     /// The implementation supports the Shared Memory Objects option.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     _POSIX_SHARED_MEMORY_OBJECTS = libc::_SC_SHARED_MEMORY_OBJECTS,
-    #[cfg(any(bsd, target_os = "linux",))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the POSIX shell.
     _POSIX_SHELL = libc::_SC_SHELL,
-    #[cfg(any(bsd, target_os = "linux",))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Spawn option.
     _POSIX_SPAWN = libc::_SC_SPAWN,
-    #[cfg(any(bsd, target_os = "linux",))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports spin locks.
     _POSIX_SPIN_LOCKS = libc::_SC_SPIN_LOCKS,
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2813,6 +2827,7 @@ pub enum SysconfVar {
     /// sporadic server scheduler.
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2828,6 +2843,7 @@ pub enum SysconfVar {
     _POSIX_THREAD_ATTR_STACKSIZE = libc::_SC_THREAD_ATTR_STACKSIZE,
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         netbsdlike,
     ))]
@@ -2843,7 +2859,7 @@ pub enum SysconfVar {
     /// The implementation supports the Thread Execution Scheduling option.
     #[cfg(not(target_os = "redox"))]
     _POSIX_THREAD_PRIORITY_SCHEDULING = libc::_SC_THREAD_PRIORITY_SCHEDULING,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Thread Process-Shared Synchronization
     /// option.
     _POSIX_THREAD_PROCESS_SHARED = libc::_SC_THREAD_PROCESS_SHARED,
@@ -2867,6 +2883,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2878,6 +2895,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2889,6 +2907,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2897,6 +2916,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2905,6 +2925,7 @@ pub enum SysconfVar {
     /// Maximum size of a trace event name in characters.
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2912,6 +2933,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2920,6 +2942,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2928,6 +2951,7 @@ pub enum SysconfVar {
     /// The length in bytes of a trace generation version string or a trace stream name.
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2936,6 +2960,7 @@ pub enum SysconfVar {
     /// processes.
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2943,6 +2968,7 @@ pub enum SysconfVar {
     /// Maximum number of user trace event type identifiers for a single process.
     #[cfg(any(
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2950,6 +2976,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -2959,20 +2986,20 @@ pub enum SysconfVar {
     /// to which the implementation conforms. For implementations conforming to
     /// POSIX.1-2008, the value shall be 200809L.
     _POSIX_VERSION = libc::_SC_VERSION,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, `pointer`, and `off_t` types.
     _POSIX_V6_ILP32_OFF32 = libc::_SC_V6_ILP32_OFF32,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int`, `long`, and pointer types and an `off_t` type using at
     /// least 64 bits.
     _POSIX_V6_ILP32_OFFBIG = libc::_SC_V6_ILP32_OFFBIG,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with
     /// 32-bit `int` and 64-bit `long`, `pointer`, and `off_t` types.
     _POSIX_V6_LP64_OFF64 = libc::_SC_V6_LP64_OFF64,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation provides a C-language compilation environment with an
     /// `int` type using at least 32 bits and `long`, pointer, and `off_t` types
     /// using at least 64 bits.
@@ -2996,23 +3023,23 @@ pub enum SysconfVar {
     /// utility.
     #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
     _POSIX2_LOCALEDEF = libc::_SC_2_LOCALEDEF,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Batch Environment Services and Utilities
     /// option.
     _POSIX2_PBS = libc::_SC_2_PBS,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Batch Accounting option.
     _POSIX2_PBS_ACCOUNTING = libc::_SC_2_PBS_ACCOUNTING,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Batch Checkpoint/Restart option.
     _POSIX2_PBS_CHECKPOINT = libc::_SC_2_PBS_CHECKPOINT,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Locate Batch Job Request option.
     _POSIX2_PBS_LOCATE = libc::_SC_2_PBS_LOCATE,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Batch Job Message Request option.
     _POSIX2_PBS_MESSAGE = libc::_SC_2_PBS_MESSAGE,
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     /// The implementation supports the Track Batch Job Request option.
     _POSIX2_PBS_TRACK = libc::_SC_2_PBS_TRACK,
     /// The implementation supports the Software Development Utilities option.
@@ -3052,6 +3079,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     RTSIG_MAX = libc::_SC_RTSIG_MAX,
@@ -3063,6 +3091,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     SEM_VALUE_MAX = libc::_SC_SEM_VALUE_MAX,
@@ -3072,6 +3101,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     SIGQUEUE_MAX = libc::_SC_SIGQUEUE_MAX,
@@ -3079,7 +3109,7 @@ pub enum SysconfVar {
     STREAM_MAX = libc::_SC_STREAM_MAX,
     /// Maximum number of symbolic links that can be reliably traversed in the resolution of a
     /// pathname in the absence of a loop.
-    #[cfg(any(bsd, target_os = "linux"))]
+    #[cfg(any(bsd, target_os = "illumos", target_os = "linux"))]
     SYMLOOP_MAX = libc::_SC_SYMLOOP_MAX,
     /// Maximum number of timers per process supported.
     #[cfg(not(target_os = "redox"))]
@@ -3092,6 +3122,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Encryption Option Group.
@@ -3100,6 +3131,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the Issue 4, Version 2 Enhanced
@@ -3109,6 +3141,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the XOpen Legacy Option group.
@@ -3119,6 +3152,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Realtime Option Group.
@@ -3127,6 +3161,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the X/Open Realtime Threads Option Group.
@@ -3138,6 +3173,7 @@ pub enum SysconfVar {
     #[cfg(any(
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "linux",
         target_os = "openbsd"
     ))]
@@ -3147,6 +3183,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// The implementation supports the XSI option
@@ -3155,6 +3192,7 @@ pub enum SysconfVar {
         linux_android,
         freebsdlike,
         apple_targets,
+        target_os = "illumos",
         target_os = "openbsd"
     ))]
     /// Integer value indicating version of the X/Open Portability Guide to
@@ -3162,16 +3200,16 @@ pub enum SysconfVar {
     _XOPEN_VERSION = libc::_SC_XOPEN_VERSION,
     /// The number of pages of physical memory. Note that it is possible for
     /// the product of this value to overflow.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     _PHYS_PAGES = libc::_SC_PHYS_PAGES,
     /// The number of currently available pages of physical memory.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     _AVPHYS_PAGES = libc::_SC_AVPHYS_PAGES,
     /// The number of processors configured.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     _NPROCESSORS_CONF = libc::_SC_NPROCESSORS_CONF,
     /// The number of processors currently online (available).
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     _NPROCESSORS_ONLN = libc::_SC_NPROCESSORS_ONLN,
 }
 
