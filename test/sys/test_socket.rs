@@ -919,6 +919,57 @@ pub fn test_scm_rights() {
     close(received_r).unwrap();
 }
 
+/// Descriptors received with `MSG_CMSG_CLOEXEC` have close-on-exec set.
+#[cfg_attr(qemu, ignore)]
+#[cfg(any(linux_android, target_os = "illumos"))]
+#[test]
+pub fn test_scm_rights_cmsg_cloexec() {
+    use nix::fcntl::{fcntl, FcntlArg, FdFlag};
+    use nix::sys::socket::{
+        recvmsg, sendmsg, socketpair, AddressFamily, ControlMessage,
+        ControlMessageOwned, MsgFlags, SockFlag, SockType,
+    };
+    use nix::unistd::{close, pipe};
+    use std::io::{IoSlice, IoSliceMut};
+
+    let (fd1, fd2) = socketpair(
+        AddressFamily::Unix,
+        SockType::Stream,
+        None,
+        SockFlag::empty(),
+    )
+    .unwrap();
+    let (r, _w) = pipe().unwrap();
+
+    let iov = [IoSlice::new(b"x")];
+    let fds = [r.as_raw_fd()];
+    let cmsg = ControlMessage::ScmRights(&fds);
+    sendmsg::<()>(fd1.as_raw_fd(), &iov, &[cmsg], MsgFlags::empty(), None)
+        .unwrap();
+
+    let mut buf = [0u8; 1];
+    let mut iov = [IoSliceMut::new(&mut buf[..])];
+    let mut cmsgspace = cmsg_space!([RawFd; 1]);
+    let msg = recvmsg::<()>(
+        fd2.as_raw_fd(),
+        &mut iov,
+        Some(&mut cmsgspace),
+        MsgFlags::MSG_CMSG_CLOEXEC,
+    )
+    .unwrap();
+    let Some(ControlMessageOwned::ScmRights(received)) =
+        msg.cmsgs().unwrap().next()
+    else {
+        panic!("no SCM_RIGHTS control message received");
+    };
+    // SAFETY: the kernel just passed us this descriptor.
+    let fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(received[0]) };
+    let flags =
+        FdFlag::from_bits_truncate(fcntl(fd, FcntlArg::F_GETFD).unwrap());
+    assert!(flags.contains(FdFlag::FD_CLOEXEC));
+    close(received[0]).unwrap();
+}
+
 #[cfg(linux_android)]
 #[test]
 pub fn test_af_alg_cipher() {

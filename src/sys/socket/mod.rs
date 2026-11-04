@@ -365,7 +365,12 @@ libc_bitflags! {
         /// [open(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(linux_android, freebsdlike, netbsdlike))]
+        #[cfg(any(
+            linux_android,
+            freebsdlike,
+            netbsdlike,
+            target_os = "illumos"
+        ))]
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
