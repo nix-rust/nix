@@ -374,6 +374,12 @@ fn test_mkdirat_fail() {
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
 
+    // illumos only lets privileged processes create anything but a FIFO.
+    #[cfg(target_os = "illumos")]
+    {
+        skip_if_not_root!("test_mknod");
+    }
+
     let file_name = "test_file";
     let tempdir = tempfile::tempdir().unwrap();
     let target = tempdir.path().join(file_name);
