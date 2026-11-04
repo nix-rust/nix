@@ -72,6 +72,10 @@ impl EpollEvent {
 }
 
 /// A safe wrapper around [`epoll`](https://man7.org/linux/man-pages/man7/epoll.7.html).
+///
+/// On illumos, epoll exists for compatibility with Linux software; event ports
+/// are the native interface. Closing a registered file descriptor there always
+/// stops its events, even if the open file description stays open elsewhere.
 /// ```
 /// # use nix::sys::{epoll::{EpollTimeout, Epoll, EpollEvent, EpollFlags, EpollCreateFlags}, eventfd::{EventFd, EfdFlags}};
 /// # use nix::unistd::write;

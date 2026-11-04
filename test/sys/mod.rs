@@ -44,8 +44,10 @@ mod test_termios;
 mod test_uio;
 mod test_wait;
 
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 mod test_epoll;
+#[cfg(any(linux_android, target_os = "illumos"))]
+mod test_eventfd;
 #[cfg(target_os = "linux")]
 mod test_fanotify;
 #[cfg(target_os = "linux")]
@@ -54,7 +56,7 @@ mod test_pthread;
 
 #[cfg(any(linux_android, freebsdlike, netbsdlike, target_os = "macos"))]
 mod test_ptrace;
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 mod test_timerfd;
 
 #[cfg(all(

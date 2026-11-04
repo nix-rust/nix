@@ -16,7 +16,7 @@ feature! {
 feature! {
     #![feature = "event"]
 
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     #[allow(missing_docs)]
     pub mod epoll;
 
@@ -24,7 +24,7 @@ feature! {
     pub mod event;
 
     /// Event file descriptor.
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
     pub mod eventfd;
 }
 
@@ -189,7 +189,7 @@ feature! {
     pub mod inotify;
 }
 
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 feature! {
     #![feature = "time"]
     pub mod timerfd;
