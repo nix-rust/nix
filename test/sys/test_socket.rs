@@ -1854,7 +1854,7 @@ pub fn test_syscontrol() {
     // connect(fd.as_raw_fd(), &sockaddr).expect("connect failed");
 }
 
-#[cfg(any(bsd, linux_android))]
+#[cfg(any(bsd, linux_android, target_os = "illumos"))]
 fn loopback_address(
     family: AddressFamily,
 ) -> Option<nix::ifaddrs::InterfaceAddress> {
@@ -2261,7 +2261,13 @@ pub fn test_recvif_ipv6() {
     }
 }
 
-#[cfg(any(linux_android, target_os = "freebsd", apple_targets, netbsdlike))]
+#[cfg(any(
+    linux_android,
+    target_os = "freebsd",
+    apple_targets,
+    netbsdlike,
+    target_os = "illumos"
+))]
 // qemu doesn't seem to be emulating this correctly in these architectures
 #[cfg_attr(
     all(
@@ -2350,6 +2356,111 @@ pub fn test_recv_ipv6pktinfo() {
         assert_eq!(msg.bytes, 8);
         assert_eq!(*iovec[0], [1u8, 2, 3, 4, 5, 6, 7, 8]);
     }
+}
+
+/// IP_RECVDSTADDR reports the destination address of a datagram.
+#[cfg(target_os = "illumos")]
+#[test]
+pub fn test_recv_ipv4_dstaddr() {
+    use nix::sys::socket::sockopt::Ipv4RecvDstAddr;
+    use nix::sys::socket::{
+        bind, getsockname, recvmsg, sendto, setsockopt, socket, AddressFamily,
+        ControlMessageOwned, MsgFlags, SockFlag, SockType, SockaddrIn,
+    };
+    use std::io::IoSliceMut;
+
+    let receive = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    bind(receive.as_raw_fd(), &SockaddrIn::new(127, 0, 0, 1, 0)).unwrap();
+    let addr: SockaddrIn = getsockname(receive.as_raw_fd()).unwrap();
+    setsockopt(&receive, Ipv4RecvDstAddr, &true).unwrap();
+
+    let send = socket(
+        AddressFamily::Inet,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    sendto(send.as_raw_fd(), b"x", &addr, MsgFlags::empty()).unwrap();
+
+    let mut buf = [0u8; 1];
+    let mut iov = [IoSliceMut::new(&mut buf)];
+    let mut space = cmsg_space!(libc::in_addr);
+    let msg = recvmsg::<()>(
+        receive.as_raw_fd(),
+        &mut iov,
+        Some(&mut space),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    let Some(ControlMessageOwned::Ipv4RecvDstAddr(dst)) =
+        msg.cmsgs().unwrap().next()
+    else {
+        panic!("no IP_RECVDSTADDR control message received");
+    };
+    assert_eq!(u32::from_be(dst.s_addr), 0x7f00_0001);
+}
+
+/// A traffic class set with the IPV6_TCLASS socket option is reported to a
+/// receiver that enabled IPV6_RECVTCLASS.
+#[cfg(any(linux_android, target_os = "illumos"))]
+#[cfg_attr(qemu, ignore)]
+#[test]
+pub fn test_recv_ipv6_tclass() {
+    use nix::sys::socket::sockopt::{Ipv6RecvTClass, Ipv6TClass};
+    use nix::sys::socket::{
+        bind, getsockname, recvmsg, sendto, setsockopt, socket, AddressFamily,
+        ControlMessageOwned, MsgFlags, SockFlag, SockType, SockaddrIn6,
+    };
+    use std::io::IoSliceMut;
+    use std::net::{Ipv6Addr, SocketAddrV6};
+
+    let Ok(receive) = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    ) else {
+        skip!("IPv6 not available");
+    };
+    let lo = SockaddrIn6::from(SocketAddrV6::new(Ipv6Addr::LOCALHOST, 0, 0, 0));
+    if bind(receive.as_raw_fd(), &lo).is_err() {
+        skip!("IPv6 loopback not available");
+    }
+    let addr: SockaddrIn6 = getsockname(receive.as_raw_fd()).unwrap();
+    setsockopt(&receive, Ipv6RecvTClass, &true).unwrap();
+
+    let send = socket(
+        AddressFamily::Inet6,
+        SockType::Datagram,
+        SockFlag::empty(),
+        None,
+    )
+    .unwrap();
+    setsockopt(&send, Ipv6TClass, &0x28).unwrap();
+    sendto(send.as_raw_fd(), b"x", &addr, MsgFlags::empty()).unwrap();
+
+    let mut buf = [0u8; 1];
+    let mut iov = [IoSliceMut::new(&mut buf)];
+    let mut space = cmsg_space!(libc::c_int);
+    let msg = recvmsg::<()>(
+        receive.as_raw_fd(),
+        &mut iov,
+        Some(&mut space),
+        MsgFlags::empty(),
+    )
+    .unwrap();
+    let tclass = msg.cmsgs().unwrap().find_map(|cmsg| match cmsg {
+        ControlMessageOwned::Ipv6TClass(t) => Some(t),
+        _ => None,
+    });
+    assert_eq!(tclass, Some(0x28));
 }
 
 #[cfg(linux_android)]
