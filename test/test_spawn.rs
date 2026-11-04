@@ -191,3 +191,13 @@ fn spawnp_cmd_does_not_exist() {
         spawn::posix_spawnp(bin, &actions, &attr, args, envs).unwrap_err();
     assert_eq!(errno, Errno::ENOENT);
 }
+
+/// `posix_spawnattr_*` report errors through their return value, not errno.
+#[test]
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+fn spawnattr_set_flags_invalid() {
+    let mut attr = PosixSpawnAttr::init().unwrap();
+    // 0x0400 is not a valid posix_spawn flag.
+    let bogus = spawn::PosixSpawnFlags::from_bits_retain(0x0400);
+    assert_eq!(attr.set_flags(bogus), Err(Errno::EINVAL));
+}
