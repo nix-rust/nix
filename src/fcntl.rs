@@ -150,12 +150,12 @@ libc_bitflags!(
         /// If the specified path isn't a directory, fail.
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(linux_android, apple_targets, target_os = "freebsd", netbsdlike))]
+        #[cfg(any(linux_android, apple_targets, target_os = "freebsd", target_os = "illumos", netbsdlike))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
         /// Open for execute only.
-        #[cfg(target_os = "freebsd")]
+        #[cfg(any(target_os = "freebsd", target_os = "illumos"))]
         O_EXEC;
         /// Open with an exclusive file lock.
         #[cfg(any(bsd, target_os = "redox"))]
@@ -198,7 +198,7 @@ libc_bitflags!(
         /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
-        #[cfg(any(target_os = "linux", netbsdlike))]
+        #[cfg(any(target_os = "illumos", target_os = "linux", netbsdlike))]
         O_RSYNC;
         /// Open directory for search only. Skip search permission checks on
         /// later `openat()` calls using the obtained file descriptor.
