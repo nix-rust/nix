@@ -3203,8 +3203,7 @@ fn test_recvmm2() -> nix::Result<()> {
     for (ix, chunk) in recv_buf.chunks_mut(256).enumerate() {
         pkt_iovs.push(IoSliceMut::new(chunk));
         if ix % 2 == 1 {
-            recv_iovs.push(pkt_iovs);
-            pkt_iovs = Vec::new();
+            recv_iovs.push(std::mem::take(&mut pkt_iovs));
         }
     }
     drop(pkt_iovs);
