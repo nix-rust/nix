@@ -2542,17 +2542,17 @@ fn test_recvmsg_rxq_ovfl() {
     // Set SO_RXQ_OVFL flag.
     setsockopt(&in_socket, RxqOvfl, &1).unwrap();
 
-    // Set the receiver buffer size to hold only 2 messages.
+    // Set a receiver buffer size too small for 3 messages.
     setsockopt(&in_socket, RcvBuf, &bufsize).unwrap();
 
     let mut drop_counter = 0;
+    let mut first_round_drops = 0;
 
-    for _ in 0..2 {
+    for round in 0..2 {
         let iov = [IoSlice::new(&message)];
         let flags = MsgFlags::empty();
 
-        // Send the 3 messages (the receiver buffer can only hold 2 messages)
-        // to create an overflow.
+        // Send 3 messages to create an overflow.
         for _ in 0..3 {
             let l = sendmsg(
                 out_socket.as_raw_fd(),
@@ -2566,6 +2566,7 @@ fn test_recvmsg_rxq_ovfl() {
         }
 
         // Receive the message and check the drop counter if any.
+        let mut received = 0;
         loop {
             let mut buffer = vec![0u8; message.len()];
             let mut cmsgspace = nix::cmsg_space!(u32);
@@ -2579,6 +2580,7 @@ fn test_recvmsg_rxq_ovfl() {
                 MsgFlags::MSG_DONTWAIT,
             ) {
                 Ok(r) => {
+                    received += 1;
                     drop_counter = match r.cmsgs().unwrap().next() {
                         Some(ControlMessageOwned::RxqOvfl(drop_counter)) => {
                             drop_counter
@@ -2595,10 +2597,16 @@ fn test_recvmsg_rxq_ovfl() {
                 }
             }
         }
+        if round == 0 {
+            first_round_drops = 3 - received;
+        }
     }
 
-    // One packet lost.
-    assert_eq!(drop_counter, 1);
+    // How many messages fit depends on the kernel: since Linux 6.18 a message
+    // is queued only if it fits entirely. The second round's messages were
+    // queued after the first round's drops and before their own.
+    assert!(first_round_drops > 0);
+    assert_eq!(drop_counter, first_round_drops);
 }
 
 // Verifies the round-trip for `SO_RCVMARK`: the receiver enables it via the new
