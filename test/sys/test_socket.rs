@@ -2516,7 +2516,7 @@ fn test_recvmsg_rxq_ovfl() {
     use std::io::{IoSlice, IoSliceMut};
 
     let message = [0u8; 2048];
-    let bufsize = message.len() * 2;
+    let bufsize = message.len() * 2 + message.len() / 2;
 
     let in_socket = socket(
         AddressFamily::Inet,
