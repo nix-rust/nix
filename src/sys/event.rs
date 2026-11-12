@@ -284,9 +284,17 @@ libc_bitflags!(
         NOTE_FFCOPY;
         #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
+        #[deprecated(
+            since = "0.32.0",
+            note = "mask constants are unnecessary"
+        )]
         NOTE_FFCTRLMASK;
         #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
+        #[deprecated(
+            since = "0.32.0",
+            note = "mask constants are unnecessary"
+        )]
         NOTE_FFLAGSMASK;
         #[cfg(any(apple_targets, freebsdlike))]
         #[allow(missing_docs)]
@@ -315,8 +323,16 @@ libc_bitflags!(
         #[allow(missing_docs)]
         NOTE_OOB;
         #[allow(missing_docs)]
+        #[deprecated(
+            since = "0.32.0",
+            note = "mask constants are unnecessary"
+        )]
         NOTE_PCTRLMASK;
         #[allow(missing_docs)]
+        #[deprecated(
+            since = "0.32.0",
+            note = "mask constants are unnecessary"
+        )]
         NOTE_PDATAMASK;
         #[allow(missing_docs)]
         NOTE_RENAME;
