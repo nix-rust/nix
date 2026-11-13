@@ -41,9 +41,6 @@ jobs:
         with:
           TARGET: '${{ env.TARGET }}'
 
-      - name: before_cache_script
-        run: sudo rm -rf $CARGO_HOME/registry/index
-
   macos-aarch64:
     runs-on: macos-latest
     env:
@@ -67,9 +64,6 @@ jobs:
         uses: ./.github/actions/test
         with:
           TARGET: "${{ env.TARGET }}"
-
-      - name: before_cache_script
-        run: sudo rm -rf $CARGO_HOME/registry/index
 
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
@@ -129,11 +123,6 @@ jobs:
           RUSTFLAGS: --cfg qemu -D warnings
           RUSTDOCFLAGS: --cfg qemu
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-
-
-
   # Tasks for x86_64 Linux native builds
   x86_64_linux_native_builds:
     runs-on: ubuntu-latest
@@ -167,9 +156,6 @@ jobs:
         uses: ./.github/actions/test
         with:
           TARGET: '${{ matrix.TARGET }}'
-
-      - name: before_cache_script
-        run: sudo rm -rf $CARGO_HOME/registry/index;
         
   # Tasks for aarch64 Linux native builds
   aarch64_linux_native_builds:
@@ -204,9 +190,6 @@ jobs:
         uses: ./.github/actions/test
         with:
           TARGET: '${{ matrix.TARGET }}'
-
-      - name: before_cache_script
-        run: sudo rm -rf $CARGO_HOME/registry/index;
 
   # Jobs that use nested virtualization
   vmactions:
@@ -450,9 +433,6 @@ jobs:
           BUILD: '${{ env.BUILD }}'
           NOHACK: '${{ matrix.NOHACK  }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-
   # Check that Nix will build on the MSRV, on a variety of operating systems.
   # But don't check the tests.  Those are not required to build on MSRV.
   msrv:
@@ -496,10 +476,6 @@ jobs:
           NODOC: '${{ env.NODOC  }}'
           NOHACK: '${{ env.NOHACK  }}'
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-
-
   redox:
     runs-on: ubuntu-latest
     needs: [rustfmt, minver, macos, x86_64_linux_native_builds]
@@ -526,11 +502,6 @@ jobs:
           TARGET: '${{ env.TARGET }}'
           BUILD: '${{ env.BUILD }}'
           CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
-
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-  
-
 
   # Rust Tier 3 targets can't use Rustup
   tier3:
@@ -567,9 +538,6 @@ jobs:
           BUILD: '${{ env.BUILD }}'
           ZFLAGS: '${{ env.ZFLAGS }}'
           CLIPPYFLAGS: '${{ env.CLIPPYFLAGS }}'
-
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
 
   solaris:
     name: solaris (x86_64-pc-solaris)
@@ -613,9 +581,6 @@ jobs:
       - name: check
         run: cargo check
 
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-
   # Tasks that checks if the code is formatted right using `cargo fmt` tool
   rustfmt:
     runs-on: ubuntu-latest
@@ -630,7 +595,3 @@ jobs:
 
       - name: Check format
         run: cargo fmt --all -- --check **/*.rs
-
-      - name: before_cache_script
-        run: rm -rf $CARGO_HOME/registry/index
-
