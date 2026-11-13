@@ -1387,11 +1387,41 @@ impl SockaddrStorage {
 
 impl fmt::Debug for SockaddrStorage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("SockaddrStorage")
-            // Safe because sockaddr_storage has the least specific
-            // field types
-            .field("ss", unsafe { &self.ss })
-            .finish()
+        let mut ds = f.debug_tuple("SockaddrStorage");
+        // Only the union variant that matches the address family is guaranteed
+        // to be initialized. For example `getifaddrs` builds a storage via
+        // `from_raw(_, None)`, which initializes just that variant and leaves
+        // the rest of the union uninitialized. We must therefore dispatch on
+        // the family and format only the active variant, exactly like the
+        // `Display`, `Hash` and `PartialEq` impls do. Formatting the raw `ss`
+        // field would read the uninitialized tail of the union.
+        // See https://github.com/nix-rust/nix/issues/2612
+        unsafe {
+            match self.ss.ss_family as i32 {
+                #[cfg(linux_android)]
+                libc::AF_ALG => ds.field(&self.alg),
+                #[cfg(feature = "net")]
+                libc::AF_INET => ds.field(&self.sin),
+                #[cfg(feature = "net")]
+                libc::AF_INET6 => ds.field(&self.sin6),
+                #[cfg(any(bsd, solarish))]
+                #[cfg(feature = "net")]
+                libc::AF_LINK => ds.field(&self.dl),
+                #[cfg(linux_android)]
+                libc::AF_NETLINK => ds.field(&self.nl),
+                #[cfg(any(linux_android, target_os = "fuchsia"))]
+                #[cfg(feature = "net")]
+                libc::AF_PACKET => ds.field(&self.dl),
+                #[cfg(target_os = "macos")]
+                #[cfg(feature = "ioctl")]
+                libc::AF_SYSTEM => ds.field(&self.sctl),
+                libc::AF_UNIX => ds.field(&self.su),
+                #[cfg(any(linux_android, apple_targets))]
+                libc::AF_VSOCK => ds.field(&self.vsock),
+                _ => ds.field(&self.ss),
+            };
+        }
+        ds.finish()
     }
 }
 
@@ -2193,6 +2223,33 @@ mod tests {
             assert_eq!(
                 l.s6_addr,
                 [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
+            );
+        }
+    }
+
+    #[cfg(feature = "net")]
+    mod storage {
+        use super::*;
+
+        /// Regression test for
+        /// <https://github.com/nix-rust/nix/issues/2612>.
+        ///
+        /// `getifaddrs` builds a `SockaddrStorage` through `from_raw(_, None)`,
+        /// which only initializes the union variant that matches the address
+        /// family and leaves the rest of the storage uninitialized. The
+        /// `Debug` impl must format just that variant; dumping the whole
+        /// `sockaddr_storage` would read the uninitialized tail of the union.
+        #[test]
+        fn debug_reads_only_active_variant() {
+            let sin = SockaddrIn::new(10, 0, 0, 1, 8080);
+            // Intentionally pass `None` for the length so only the `sin`
+            // variant of the union gets initialized, like `getifaddrs` does.
+            let ss = unsafe { SockaddrStorage::from_raw(sin.as_ptr(), None) }
+                .unwrap();
+            let debug = format!("{ss:?}");
+            assert!(
+                debug.contains("SockaddrIn"),
+                "Debug should format the active variant, got: {debug}"
             );
         }
     }
