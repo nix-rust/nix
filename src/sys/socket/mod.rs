@@ -47,6 +47,7 @@ pub use self::addr::{AddressFamily, UnixAddr};
     target_os = "cygwin",
 )))]
 #[cfg(feature = "net")]
+#[cfg_attr(docsrs, doc(cfg(feature = "net")))]
 pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
 #[cfg(any(
     solarish,
@@ -56,6 +57,7 @@ pub use self::addr::{LinkAddr, SockaddrIn, SockaddrIn6};
     target_os = "cygwin",
 ))]
 #[cfg(feature = "net")]
+#[cfg_attr(docsrs, doc(cfg(feature = "net")))]
 pub use self::addr::{SockaddrIn, SockaddrIn6};
 
 #[cfg(linux_android)]
