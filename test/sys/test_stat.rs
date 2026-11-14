@@ -369,7 +369,8 @@ fn test_mkdirat_fail() {
     apple_targets,
     target_os = "haiku",
     target_os = "redox",
-    target_os = "solaris"
+    target_os = "solaris",
+    target_os = "openbsd",
 )))]
 fn test_mknod() {
     use stat::{lstat, mknod, SFlag};
@@ -389,7 +390,8 @@ fn test_mknod() {
     freebsdlike,
     apple_targets,
     target_os = "haiku",
-    target_os = "redox"
+    target_os = "redox",
+    target_os = "openbsd",
 )))]
 fn test_mknodat() {
     use fcntl::{AtFlags, OFlag};
