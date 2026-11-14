@@ -1872,7 +1872,7 @@ impl<S> MultiHeaders<S> {
     {
         // we will be storing pointers to addresses inside mhdr - convert it into boxed
         // slice so it can'be changed later by pushing anything into self.addresses
-        let mut addresses = vec![std::mem::MaybeUninit::<S>::uninit(); num_slices].into_boxed_slice();
+        let mut addresses = vec![std::mem::MaybeUninit::<S>::zeroed(); num_slices].into_boxed_slice();
 
         let msg_controllen = cmsg_buffer.as_ref().map_or(0, |v| v.capacity());
 
@@ -2212,7 +2212,7 @@ pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'i
     where S: SockaddrLike + 'a,
     'inner: 'outer
 {
-    let mut address = mem::MaybeUninit::uninit();
+    let mut address = mem::MaybeUninit::zeroed();
 
     let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
         .map(|v| (v.as_mut_ptr(), v.len()))
@@ -2425,7 +2425,7 @@ pub fn recvfrom<T: SockaddrLike>(
     buf: &mut [u8],
 ) -> Result<(usize, Option<T>)> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut addr = mem::MaybeUninit::<T>::zeroed();
         let mut len = mem::size_of_val(&addr) as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
@@ -2533,7 +2533,7 @@ pub fn setsockopt<F: AsFd, O: SetSockOpt>(
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html)
 pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut addr = mem::MaybeUninit::<T>::zeroed();
         let mut len = T::size();
 
         let ret = libc::getpeername(fd, addr.as_mut_ptr().cast(), &mut len);
@@ -2549,7 +2549,7 @@ pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
 /// [Further reading](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html)
 pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
     unsafe {
-        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut addr = mem::MaybeUninit::<T>::zeroed();
         let mut len = T::size();
 
         let ret = libc::getsockname(fd, addr.as_mut_ptr().cast(), &mut len);
