@@ -6,10 +6,11 @@
 use cfg_if::cfg_if;
 #[cfg(apple_targets)]
 use std::convert::TryFrom;
-use std::ffi;
 use std::iter::Iterator;
 use std::mem;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::option::Option;
+use std::{ffi, option};
 
 use crate::net::if_::*;
 use crate::sys::socket::{SockaddrLike, SockaddrStorage};
@@ -144,6 +145,18 @@ impl Iterator for InterfaceAddressIterator {
     }
 }
 
+impl ToSocketAddrs for InterfaceAddress {
+    type Iter = option::IntoIter<SocketAddr>;
+
+    fn to_socket_addrs(&self) -> std::io::Result<Self::Iter> {
+        let opt = match self.address {
+            Some(sas) => sas.to_socket_addrs()?,
+            None => None.into_iter(),
+        };
+        Ok(opt)
+    }
+}
+
 /// Get interface addresses using libc's `getifaddrs`
 ///
 /// Note that the underlying implementation differs between OSes. Only the
@@ -183,6 +196,8 @@ pub fn getifaddrs() -> Result<InterfaceAddressIterator> {
 
 #[cfg(test)]
 mod tests {
+    use std::net::Ipv4Addr;
+
     use super::*;
 
     // Only checks if `getifaddrs` can be invoked without panicking.
@@ -213,5 +228,16 @@ mod tests {
             }
         }
         panic!("No address?");
+    }
+
+    #[test]
+    fn test_tosockaddrs() -> Result<()> {
+        let with_addrs = getifaddrs()?
+            .filter_map(|ifaddr| ifaddr.to_socket_addrs().unwrap().next())
+            .filter(|sa| sa.ip() == Ipv4Addr::LOCALHOST)
+            .collect::<Vec<SocketAddr>>();
+        // Assumes a modern *nix must have v4 loopback to work.
+        assert_eq!(1, with_addrs.len());
+        Ok(())
     }
 }
