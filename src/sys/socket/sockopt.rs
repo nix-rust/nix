@@ -17,7 +17,7 @@ use std::os::unix::io::{AsFd, AsRawFd};
 
 // Constants
 // TCP_CA_NAME_MAX isn't defined in user space include files
-#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(target_os = "freebsd", target_os = "illumos", target_os = "linux"))]
 #[cfg(feature = "net")]
 const TCP_CA_NAME_MAX: usize = 16;
 
@@ -491,7 +491,7 @@ sockopt_impl!(
     libc::SO_PRIORITY,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[deprecated(since = "0.30.0", note = "Use Ipv4Tos instead")]
@@ -504,7 +504,7 @@ sockopt_impl!(
     libc::IP_TOS,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -527,7 +527,7 @@ sockopt_impl!(
     libc::IP_RECVTOS,
     bool
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -538,7 +538,7 @@ sockopt_impl!(
     libc::IPV6_TCLASS,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -713,7 +713,7 @@ sockopt_impl!(
     libc::TCP_KEEPALIVE,
     u32
 );
-#[cfg(any(freebsdlike, linux_android))]
+#[cfg(any(freebsdlike, linux_android, target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1036,7 +1036,7 @@ sockopt_impl!(
     libc::SO_PASSCRED,
     bool
 );
-#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(target_os = "freebsd", target_os = "illumos", target_os = "linux"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1060,7 +1060,7 @@ sockopt_impl!(
     libc::IP_PKTINFO,
     bool
 );
-#[cfg(any(linux_android, bsd))]
+#[cfg(any(linux_android, bsd, target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1097,7 +1097,7 @@ sockopt_impl!(
     libc::IP_RECVIF,
     bool
 );
-#[cfg(bsd)]
+#[cfg(any(bsd, target_os = "illumos"))]
 #[cfg(feature = "net")]
 sockopt_impl!(
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
@@ -1220,7 +1220,7 @@ sockopt_impl!(
     libc::IP_MTU,
     libc::c_int
 );
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 sockopt_impl!(
     /// Set or retrieve the current time-to-live field that is used in every
     /// packet sent from this socket.
@@ -1241,7 +1241,12 @@ sockopt_impl!(
     libc::IP_RECVTTL,
     bool
 );
-#[cfg(any(apple_targets, linux_android, target_os = "freebsd"))]
+#[cfg(any(
+    apple_targets,
+    linux_android,
+    target_os = "freebsd",
+    target_os = "illumos"
+))]
 sockopt_impl!(
     /// Set the unicast hop limit for the socket.
     Ipv6Ttl,
@@ -1276,7 +1281,7 @@ sockopt_impl!(
     libc::IPV6_ORIGDSTADDR,
     bool
 );
-#[cfg(apple_targets)]
+#[cfg(any(apple_targets, target_os = "illumos"))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IP packet.
     IpDontFrag,
@@ -1287,7 +1292,8 @@ sockopt_impl!(
 );
 #[cfg(any(
     all(linux_android, not(target_env = "uclibc")),
-    apple_targets
+    apple_targets,
+    target_os = "illumos"
 ))]
 sockopt_impl!(
     /// Set "don't fragment packet" flag on the IPv6 packet.
@@ -1332,7 +1338,7 @@ sockopt_impl!(
     libc::SO_ATTACH_REUSEPORT_CBPF,
     libc::sock_fprog
 );
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "illumos", target_os = "linux"))]
 sockopt_impl!(
     /// Enable/disable TCP corking. If enabled all queued partial frames are
     /// sent when the option is cleared again.

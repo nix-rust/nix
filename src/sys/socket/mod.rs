@@ -367,7 +367,12 @@ libc_bitflags! {
         /// [open(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
-        #[cfg(any(linux_android, freebsdlike, netbsdlike))]
+        #[cfg(any(
+            linux_android,
+            freebsdlike,
+            netbsdlike,
+            target_os = "illumos"
+        ))]
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
@@ -849,7 +854,7 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(libc::in_pktinfo),
-    #[cfg(any(linux_android, bsd))]
+    #[cfg(any(linux_android, bsd, target_os = "illumos"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
@@ -857,7 +862,7 @@ pub enum ControlMessageOwned {
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
-    #[cfg(bsd)]
+    #[cfg(any(bsd, target_os = "illumos"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
@@ -902,7 +907,7 @@ pub enum ControlMessageOwned {
     Ipv4Tos(u8),
 
     /// Retrieve the DSCP (Traffic Class) header field of the incoming IPv6 packet.
-    #[cfg(any(linux_android, target_os = "freebsd"))]
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
     #[cfg(feature = "net")]
     #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6TClass(i32),
@@ -1073,7 +1078,12 @@ impl ControlMessageOwned {
                 let timestamping = Timestamps { system, hw_trans, hw_raw };
                 ControlMessageOwned::ScmTimestampsns(timestamping)
             }
-            #[cfg(any(target_os = "freebsd", linux_android, apple_targets))]
+            #[cfg(any(
+                target_os = "freebsd",
+                linux_android,
+                apple_targets,
+                target_os = "illumos"
+            ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
                 let info = unsafe { ptr::read_unaligned(p as *const libc::in6_pktinfo) };
@@ -1091,7 +1101,7 @@ impl ControlMessageOwned {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::sockaddr_dl) };
                 ControlMessageOwned::Ipv4RecvIf(dl)
             },
-            #[cfg(bsd)]
+            #[cfg(any(bsd, target_os = "illumos"))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = unsafe { ptr::read_unaligned(p as *const libc::in_addr) };
@@ -1175,7 +1185,11 @@ impl ControlMessageOwned {
                 let tos = unsafe { ptr::read_unaligned(p as *const u8) };
                 ControlMessageOwned::Ipv4Tos(tos)
             },
-            #[cfg(any(linux_android, target_os = "freebsd"))]
+            #[cfg(any(
+                linux_android,
+                target_os = "freebsd",
+                target_os = "illumos"
+            ))]
             #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_TCLASS) => {
                 let tc = unsafe { ptr::read_unaligned(p as *const i32) };
