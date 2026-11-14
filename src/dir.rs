@@ -192,11 +192,27 @@ impl Drop for Iter<'_> {
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct OwningIter(Dir);
 
+impl OwningIter {
+    /// Rewinds the directory to the beginning and returns it.
+    pub fn into_dir(self) -> Dir {
+        unsafe { libc::rewinddir((self.0).0.as_ptr()) }
+        self.0
+    }
+}
+
 impl Iterator for OwningIter {
     type Item = Result<Entry>;
 
     fn next(&mut self) -> Option<Self::Item> {
         readdir(&mut self.0)
+    }
+}
+
+// Useful for using `openat(fd, entry.file_name(), ...)` or `fstatat(fd, entry.file_name(), ...)`on the directory
+// while iterating over it.
+impl std::os::fd::AsFd for OwningIter {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd<'_> {
+        self.0.as_fd()
     }
 }
 
