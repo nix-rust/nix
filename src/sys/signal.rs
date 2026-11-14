@@ -98,7 +98,8 @@ libc_enum! {
         #[cfg(not(target_os = "haiku"))]
         SIGIO,
         #[cfg(any(linux_android, target_os = "emscripten",
-                  target_os = "fuchsia", target_os = "aix"))]
+                  target_os = "fuchsia", target_os = "aix",
+                  target_os = "illumos"))]
         /// Power failure imminent.
         SIGPWR,
         /// Bad system call
@@ -172,6 +173,7 @@ impl FromStr for Signal {
                 linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
+                target_os = "illumos",
             ))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
@@ -258,6 +260,7 @@ impl Signal {
                 target_os = "emscripten",
                 target_os = "fuchsia",
                 target_os = "aix",
+                target_os = "illumos",
             ))]
             Signal::SIGPWR => "SIGPWR",
             Signal::SIGSYS => "SIGSYS",
@@ -369,6 +372,14 @@ const SIGNALS: [Signal; 30] = [
     SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
     SIGPROF, SIGWINCH, SIGIO, SIGSYS, SIGEMT,
 ];
+#[cfg(target_os = "illumos")]
+#[cfg(feature = "signal")]
+const SIGNALS: [Signal; 32] = [
+    SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGKILL,
+    SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD, SIGCONT,
+    SIGSTOP, SIGTSTP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ, SIGVTALRM,
+    SIGPROF, SIGWINCH, SIGIO, SIGPWR, SIGSYS, SIGEMT, SIGINFO,
+];
 #[cfg(not(any(
     linux_android,
     target_os = "fuchsia",
@@ -376,6 +387,7 @@ const SIGNALS: [Signal; 30] = [
     target_os = "aix",
     target_os = "redox",
     target_os = "haiku",
+    target_os = "illumos",
     target_os = "solaris",
     target_os = "cygwin"
 )))]

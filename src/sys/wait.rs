@@ -28,6 +28,7 @@ libc_bitflags!(
                   apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WEXITED;
@@ -40,6 +41,7 @@ libc_bitflags!(
                   apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WSTOPPED;
@@ -48,6 +50,7 @@ libc_bitflags!(
                   apple_targets,
                   target_os = "freebsd",
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "redox",
                   target_os = "netbsd"))]
         WNOWAIT;
@@ -242,6 +245,7 @@ impl WaitStatus {
         target_os = "android",
         target_os = "freebsd",
         target_os = "haiku",
+        target_os = "illumos",
         all(target_os = "linux", not(target_env = "uclibc")),
     ))]
     unsafe fn from_siginfo(siginfo: &libc::siginfo_t) -> Result<WaitStatus> {
@@ -327,6 +331,7 @@ pub fn wait() -> Result<WaitStatus> {
     target_os = "android",
     target_os = "freebsd",
     target_os = "haiku",
+    target_os = "illumos",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 #[derive(Debug)]
@@ -355,6 +360,7 @@ pub enum Id<'fd> {
     target_os = "android",
     target_os = "freebsd",
     target_os = "haiku",
+    target_os = "illumos",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {

@@ -31,6 +31,7 @@ fn test_wait_signal() {
     target_os = "android",
     target_os = "freebsd",
     //target_os = "haiku",
+    target_os = "illumos",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 #[cfg(not(any(
@@ -79,6 +80,7 @@ fn test_wait_exit() {
     target_os = "android",
     target_os = "freebsd",
     target_os = "haiku",
+    target_os = "illumos",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 #[cfg(not(any(
@@ -136,6 +138,7 @@ fn test_waitstatus_pid() {
     target_os = "android",
     target_os = "freebsd",
     target_os = "haiku",
+    target_os = "illumos",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
 fn test_waitid_pid() {
@@ -262,6 +265,28 @@ mod ptrace {
         match unsafe { fork() }.expect("Error: Fork Failed") {
             Child => ptrace_child(),
             Parent { child } => ptrace_waitid_parent(child),
+        }
+    }
+}
+
+#[test]
+#[cfg(any(
+    target_os = "illumos",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+fn test_waitid_nowait() {
+    let _m = crate::FORK_MTX.lock();
+
+    // Safe: Child only calls `_exit`, which is async-signal-safe.
+    match unsafe { fork() }.unwrap() {
+        Child => unsafe { _exit(7) },
+        Parent { child } => {
+            // WNOWAIT leaves the child in a waitable state, so it can still
+            // be reaped afterwards.
+            let flags = WaitPidFlag::WEXITED | WaitPidFlag::WNOWAIT;
+            let status = Ok(WaitStatus::Exited(child, 7));
+            assert_eq!(waitid(Id::Pid(child), flags), status);
+            assert_eq!(waitpid(child, None), status);
         }
     }
 }
