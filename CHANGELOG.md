@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Added `CLONE_NEWTIME` flag for Linux to `CloneFlags`.
+  ([#2574](https://github.com/nix-rust/nix/issues/2574))
 - Enable module `ioctl` for Cygwin
   ([#2715](https://github.com/nix-rust/nix/pull/2715))
 - Add
