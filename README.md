@@ -103,6 +103,7 @@ The following targets are supported by `nix`:
     <li>x86_64-unknown-openbsd</li>
     <li>x86_64-unknown-redox</li>
     <li>i686-unknown-hurd-gnu</li>
+    <li>wasm32-unknown-emscripten</li>
    </td>
   </tr>
 </table>

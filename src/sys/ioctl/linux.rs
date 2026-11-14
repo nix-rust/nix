@@ -5,6 +5,7 @@ use cfg_if::cfg_if;
     target_os = "android",
     target_os = "fuchsia",
     target_os = "cygwin",
+    target_os = "emscripten",
     target_env = "musl",
     target_env = "ohos"
 ))]
@@ -14,6 +15,7 @@ pub type ioctl_num_type = ::libc::c_int;
     target_os = "android",
     target_os = "fuchsia",
     target_os = "cygwin",
+    target_os = "emscripten",
     target_env = "musl",
     target_env = "ohos"
 )))]
