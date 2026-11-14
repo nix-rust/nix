@@ -681,6 +681,63 @@ sockopt_impl!(
     libc::SO_PEERCRED,
     super::UnixCredentials
 );
+/// Return the supplementary groups of the foreign process connected to this
+/// socket (`SO_PEERGROUPS`, Linux 4.13+), as they were when the peer called
+/// `connect(2)`, `listen(2)` or `socketpair(2)`, like [`PeerCredentials`].
+///
+/// These are the groups the peer process actually had, including ones the
+/// group database does not list for its user. Together with
+/// `PeerCredentials` this is enough to check the peer's group membership.
+///
+/// The groups are mapped into the user namespace of the calling process; a
+/// group with no mapping there is reported as the overflow gid (usually
+/// 65534). Fails with `ENODATA` on a socket without a peer and with
+/// `ENOPROTOOPT` on kernels older than 4.13.
+#[cfg(all(target_os = "linux", feature = "user"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "user")))]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct PeerGroups;
+
+#[cfg(all(target_os = "linux", feature = "user"))]
+impl super::GetSockOpt for PeerGroups {
+    type Val = Vec<crate::unistd::Gid>;
+
+    fn get<F: AsFd>(&self, fd: &F) -> Result<Self::Val> {
+        const GID_SIZE: usize = mem::size_of::<libc::gid_t>();
+        let mut groups: Vec<libc::gid_t> = Vec::with_capacity(16);
+        loop {
+            let capacity = groups.capacity() * GID_SIZE;
+            let mut len = capacity as socklen_t;
+            // SAFETY: `groups` has room for `len` bytes; the kernel writes at
+            // most that many and stores the length it used (or needs) in `len`
+            let res = unsafe {
+                libc::getsockopt(
+                    fd.as_fd().as_raw_fd(),
+                    libc::SOL_SOCKET,
+                    libc::SO_PEERGROUPS,
+                    groups.as_mut_ptr().cast(),
+                    &mut len,
+                )
+            };
+            match Errno::result(res) {
+                Ok(_) => {
+                    // SAFETY: the kernel initialized `len` bytes of `groups`
+                    unsafe { groups.set_len(len as usize / GID_SIZE) };
+                    return Ok(groups
+                        .into_iter()
+                        .map(crate::unistd::Gid::from_raw)
+                        .collect());
+                }
+                // too small: the kernel reported the size it needs in `len`;
+                // a size that is not larger would retry forever
+                Err(Errno::ERANGE) if len as usize > capacity => groups
+                    .reserve_exact((len as usize + GID_SIZE - 1) / GID_SIZE),
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
 #[cfg(target_os = "linux")]
 sockopt_impl!(
     /// Return the pidfd of the foreign process connected to this socket.
