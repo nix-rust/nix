@@ -52,6 +52,9 @@ pub fn test_timerfd_interval() {
 }
 
 #[test]
+// illumos does not clear the expiration when disarming a CLOCK_MONOTONIC
+// timer, so timerfd_gettime() keeps reporting it.
+#[cfg_attr(target_os = "illumos", ignore = "illumos kernel bug")]
 pub fn test_timerfd_unset() {
     let timer =
         TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();

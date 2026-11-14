@@ -16,6 +16,7 @@ mod test_kmod;
 #[cfg(any(
     freebsdlike,
     all(target_os = "linux", not(target_env = "ohos")),
+    target_os = "illumos",
     target_os = "netbsd"
 ))]
 mod test_mq;
