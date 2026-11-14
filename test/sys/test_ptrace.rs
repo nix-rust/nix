@@ -410,3 +410,187 @@ fn test_ptrace_syscall_info() {
         },
     }
 }
+
+/// This test verifies the interaction between
+/// PTRACE_SEIZE, PTRACE_INTERRUPT, PTRACE_LISTEN,
+/// and job-control signals.
+///
+/// The difference from [`test_ptrace_listen_with_interrupt`] is in this test,
+/// the process is trapped by a group stop state change (SIGCONT). But in the `*_with_interrupt`
+/// test, the listening is finished by trapping the process via `ptrace::interrupt`.
+#[cfg(all(
+    target_os = "linux",
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    ))
+))]
+#[test]
+fn test_ptrace_listen_with_sigstop() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::*;
+    use nix::sys::wait::WaitPidFlag;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    require_capability!("test_ptrace_listen", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => loop {
+            sleep(Duration::from_millis(1000));
+        },
+        Parent { child } => {
+            // > "Only a PTRACE_SEIZEd process can accept PTRACE_INTERRUPT and PTRACE_LISTEN commands."
+            ptrace::seize(child, Options::empty()).unwrap();
+
+            ptrace::interrupt(child).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGTRAP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            // > "after the tracer sees the tracee ptrace-stop
+            //    and until it restarts or kills it, the tracee will not run, and
+            //    will not send notifications (except SIGKILL death) to the tracer,
+            //    even if the tracer enters into another waitpid(2) call."
+            kill(child, Some(Signal::SIGSTOP)).unwrap();
+
+            ptrace::listen(child).unwrap();
+
+            // We get `ESRCH` since the process is not stopped
+            assert_eq!(ptrace::cont(child, None), Err(Errno::ESRCH));
+
+            // We continue to undo the group-stop
+            kill(child, Some(Signal::SIGCONT)).unwrap();
+
+            // https://github.com/torvalds/linux/blob/master/kernel/ptrace.c#L1262
+            // > "If an async event (e.g. group stop state change) happens, tracee will enter STOP trap again."
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGTRAP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            ptrace::cont(child, None).unwrap();
+
+            // This time, we are notified with the `SIGCONT` sent with `kill`,
+            // and stopped again. So, we can run `ptrace::cont` again to continue the process.
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, Signal::SIGCONT))
+            );
+
+            // The process finally continues.
+            ptrace::cont(child, None).unwrap();
+
+            kill(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
+                    let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    while ptrace::cont(child, Some(Signal::SIGKILL)).is_ok() {
+                        let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    }
+                }
+                _ => panic!("The process should have been killed"),
+            }
+        }
+    }
+}
+
+/// Check the docs for [`test_ptrace_listen_with_sigstop`].
+#[cfg(all(
+    target_os = "linux",
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    ))
+))]
+#[test]
+fn test_ptrace_listen_with_interrupt() {
+    use nix::sys::ptrace;
+    use nix::sys::signal::*;
+    use nix::sys::wait::WaitPidFlag;
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::fork;
+    use nix::unistd::ForkResult::*;
+    use std::thread::sleep;
+    use std::time::Duration;
+
+    require_capability!("test_ptrace_listen", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => loop {
+            sleep(Duration::from_millis(1000));
+        },
+        Parent { child } => {
+            // > "Only a PTRACE_SEIZEd process can accept PTRACE_INTERRUPT and PTRACE_LISTEN commands."
+            ptrace::seize(child, Options::empty()).unwrap();
+
+            ptrace::interrupt(child).unwrap();
+
+            // with interrupt, the process
+            // > "stops with PTRACE_EVENT_STOP with WSTOPSIG(status) == SIGTRAP"
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGTRAP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            ptrace::listen(child).unwrap();
+
+            // We get `ESRCH` since the process is not stopped
+            assert_eq!(ptrace::cont(child, None), Err(Errno::ESRCH));
+
+            // https://github.com/torvalds/linux/blob/master/kernel/ptrace.c#L1264
+            // > "The ptracer can issue INTERRUPT to finish listening and re-trap
+            // >  tracee into STOP."
+            ptrace::interrupt(child).unwrap();
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceEvent(
+                    child,
+                    Signal::SIGTRAP,
+                    libc::PTRACE_EVENT_STOP
+                ))
+            );
+
+            ptrace::cont(child, None).unwrap();
+
+            kill(child, Some(Signal::SIGKILL)).unwrap();
+            match waitpid(child, None) {
+                Ok(WaitStatus::Signaled(pid, Signal::SIGKILL, _))
+                    if pid == child =>
+                {
+                    let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    while ptrace::cont(child, Some(Signal::SIGKILL)).is_ok() {
+                        let _ = waitpid(child, Some(WaitPidFlag::WNOHANG));
+                    }
+                }
+                _ => panic!("The process should have been killed"),
+            }
+        }
+    }
+}
