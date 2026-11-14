@@ -412,3 +412,14 @@ where
         None => Ok(f(ptr::null())),
     }
 }
+
+#[cfg(feature = "process")]
+pub(crate) fn c_slice_to_pointers<S: AsRef<CStr>>(
+    slice: &[S],
+) -> Box<[*const libc::c_char]> {
+    slice
+        .iter()
+        .map(|s| s.as_ref().as_ptr())
+        .chain(std::iter::once(std::ptr::null()))
+        .collect()
+}
