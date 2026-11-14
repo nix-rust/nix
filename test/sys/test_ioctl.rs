@@ -203,7 +203,6 @@ mod bsd {
 #[cfg(linux_android)]
 mod linux_ioctls {
     use std::mem;
-    use std::os::unix::io::AsRawFd;
 
     use libc::{termios, TCGETS, TCSBRK, TCSETS, TIOCNXCL};
     use tempfile::tempfile;
@@ -214,7 +213,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_none_bad() {
         let file = tempfile().unwrap();
-        let res = unsafe { tiocnxcl(file.as_raw_fd()) };
+        let res = unsafe { tiocnxcl(&file) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -223,7 +222,7 @@ mod linux_ioctls {
     fn test_ioctl_read_bad() {
         let file = tempfile().unwrap();
         let mut termios = unsafe { mem::zeroed() };
-        let res = unsafe { tcgets(file.as_raw_fd(), &mut termios) };
+        let res = unsafe { tcgets(&file, &mut termios) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -231,7 +230,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_write_int_bad() {
         let file = tempfile().unwrap();
-        let res = unsafe { tcsbrk(file.as_raw_fd(), 0) };
+        let res = unsafe { tcsbrk(&file, 0) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -240,7 +239,7 @@ mod linux_ioctls {
     fn test_ioctl_write_ptr_bad() {
         let file = tempfile().unwrap();
         let termios: termios = unsafe { mem::zeroed() };
-        let res = unsafe { tcsets(file.as_raw_fd(), &termios) };
+        let res = unsafe { tcsets(&file, &termios) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -251,7 +250,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_none() {
         let file = tempfile().unwrap();
-        let res = unsafe { log_status(file.as_raw_fd()) };
+        let res = unsafe { log_status(&file) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -270,7 +269,7 @@ mod linux_ioctls {
     fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
         let data: v4l2_audio = unsafe { mem::zeroed() };
-        let res = unsafe { s_audio(file.as_raw_fd(), &data) };
+        let res = unsafe { s_audio(&file, &data) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -281,7 +280,7 @@ mod linux_ioctls {
     #[test]
     fn test_ioctl_write_int() {
         let file = tempfile().unwrap();
-        let res = unsafe { hcidevup(file.as_raw_fd(), 0) };
+        let res = unsafe { hcidevup(&file, 0) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -291,7 +290,7 @@ mod linux_ioctls {
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::zeroed() };
-        let res = unsafe { g_audio(file.as_raw_fd(), &mut data) };
+        let res = unsafe { g_audio(&file, &mut data) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -301,7 +300,7 @@ mod linux_ioctls {
     fn test_ioctl_readwrite() {
         let file = tempfile().unwrap();
         let mut data: v4l2_audio = unsafe { mem::zeroed() };
-        let res = unsafe { enum_audio(file.as_raw_fd(), &mut data) };
+        let res = unsafe { enum_audio(&file, &mut data) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -332,7 +331,7 @@ mod linux_ioctls {
     fn test_ioctl_write_buf() {
         let file = tempfile().unwrap();
         let data: [spi_ioc_transfer; 4] = unsafe { mem::zeroed() };
-        let res = unsafe { spi_ioc_message(file.as_raw_fd(), &data[..]) };
+        let res = unsafe { spi_ioc_message(&file, &data[..]) };
         assert!(res == Err(Errno::ENOTTY) || res == Err(Errno::ENOSYS));
     }
 
@@ -342,7 +341,6 @@ mod linux_ioctls {
 #[cfg(target_os = "freebsd")]
 mod freebsd_ioctls {
     use std::mem;
-    use std::os::unix::io::AsRawFd;
 
     use libc::termios;
     use tempfile::tempfile;
@@ -359,7 +357,7 @@ mod freebsd_ioctls {
     #[test]
     fn test_ioctl_none() {
         let file = tempfile().unwrap();
-        let res = unsafe { tiocnxcl(file.as_raw_fd()) };
+        let res = unsafe { tiocnxcl(&file) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -368,7 +366,7 @@ mod freebsd_ioctls {
     fn test_ioctl_read() {
         let file = tempfile().unwrap();
         let mut termios = unsafe { mem::zeroed() };
-        let res = unsafe { tiocgeta(file.as_raw_fd(), &mut termios) };
+        let res = unsafe { tiocgeta(&file, &mut termios) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 
@@ -377,7 +375,7 @@ mod freebsd_ioctls {
     fn test_ioctl_write_ptr() {
         let file = tempfile().unwrap();
         let termios: termios = unsafe { mem::zeroed() };
-        let res = unsafe { tiocseta(file.as_raw_fd(), &termios) };
+        let res = unsafe { tiocseta(&file, &termios) };
         assert_eq!(res, Err(Errno::ENOTTY));
     }
 }
