@@ -59,6 +59,33 @@ fn test_mq_send_and_receive() {
 }
 
 #[test]
+fn test_mq_send_and_receive_noattr() {
+    let mq_name = "/a_nix_test_queue";
+
+    let oflag0 = MQ_OFlag::O_CREAT | MQ_OFlag::O_WRONLY;
+    let mode = Mode::S_IWUSR | Mode::S_IRUSR | Mode::S_IRGRP | Mode::S_IROTH;
+    let r0 = mq_open(mq_name, oflag0, mode, None);
+    if let Err(Errno::ENOSYS) = r0 {
+        println!("message queues not supported or module not loaded?");
+        return;
+    };
+    let mqd0 = r0.unwrap();
+    let msg_to_send = "msg_1";
+    mq_send(&mqd0, msg_to_send.as_bytes(), 1).unwrap();
+
+    let oflag1 = MQ_OFlag::O_CREAT | MQ_OFlag::O_RDONLY;
+    let mqd1 = mq_open(mq_name, oflag1, mode, None).unwrap();
+    let mut buf = [0u8; 32];
+    let mut prio = 0u32;
+    let len = mq_receive(&mqd1, &mut buf, &mut prio).unwrap();
+    assert_eq!(prio, 1);
+
+    mq_close(mqd1).unwrap();
+    mq_close(mqd0).unwrap();
+    assert_eq!(msg_to_send, str::from_utf8(&buf[0..len]).unwrap());
+}
+
+#[test]
 fn test_mq_timedreceive() {
     const MSG_SIZE: mq_attr_member_t = 32;
     let attr = MqAttr::new(0, 10, MSG_SIZE, 0);
