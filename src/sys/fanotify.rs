@@ -15,7 +15,7 @@ use crate::fcntl::OFlag;
 use crate::unistd::{close, read, write};
 use crate::{NixPath, Result};
 use std::marker::PhantomData;
-use std::mem::{size_of, MaybeUninit};
+use std::mem::{size_of};
 use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd, RawFd};
 use std::ptr;
 
@@ -358,21 +358,18 @@ impl Fanotify {
         let metadata_size = size_of::<libc::fanotify_event_metadata>();
         const BUFSIZ: usize = 4096;
         let mut buffer = [0u8; BUFSIZ];
-        let mut events = Vec::new();
         let mut offset = 0;
 
         let nread = read(&self.fd, &mut buffer)?;
 
+        let mut events = Vec::with_capacity(nread / metadata_size);
+
         while (nread - offset) >= metadata_size {
             let metadata = unsafe {
-                let mut metadata =
-                    MaybeUninit::<libc::fanotify_event_metadata>::uninit();
-                ptr::copy_nonoverlapping(
-                    buffer.as_ptr().add(offset),
-                    metadata.as_mut_ptr().cast(),
-                    (BUFSIZ - offset).min(metadata_size),
-                );
-                metadata.assume_init()
+                ptr::read_unaligned(
+                    buffer.as_ptr().add(offset)
+                        as *const libc::fanotify_event_metadata,
+                )
             };
 
             events.push(FanotifyEvent(metadata));
