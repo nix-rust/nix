@@ -26,6 +26,9 @@ targets = [
   "x86_64-unknown-illumos"
 ]
 
+[lib]
+crate-type = ["staticlib", "rlib"]
+
 [dependencies]
 libc = { version = "0.2.186", features = ["extra_traits"] }
 bitflags = "2.3.3"
