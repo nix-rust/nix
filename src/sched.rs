@@ -161,9 +161,23 @@ pub use self::sched_affinity::*;
 #[cfg(any(linux_android, freebsdlike))]
 mod sched_affinity {
     use crate::errno::Errno;
-    use crate::unistd::Pid;
+    use crate::unistd::{sysconf, Pid, SysconfVar};
     use crate::Result;
     use std::mem;
+
+    #[cfg(target_os = "freebsd")]
+    type libc_cpu_set = libc::cpuset_t;
+    #[cfg(not(target_os = "freebsd"))]
+    type libc_cpu_set = libc::cpu_set_t;
+
+    /// Helper function to construct a zeroed libc cpu set structure.
+    fn zeroed_libc_cpu_set() -> libc_cpu_set {
+        unsafe { mem::zeroed() }
+    }
+
+    fn libc_cpu_set_bits_len() -> usize {
+        mem::size_of::<libc_cpu_set>() * 8
+    }
 
     /// CpuSet represent a bit-mask of CPUs.
     /// CpuSets are used by sched_setaffinity and
@@ -172,65 +186,132 @@ mod sched_affinity {
     /// This is a wrapper around `libc::cpu_set_t`.
     #[repr(transparent)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-    pub struct CpuSet {
-        #[cfg(not(target_os = "freebsd"))]
-        cpu_set: libc::cpu_set_t,
-        #[cfg(target_os = "freebsd")]
-        cpu_set: libc::cpuset_t,
+    pub enum CpuSet {
+        Sized(libc_cpu_set),
+        Dynamic(Vec<libc_cpu_set>),
     }
 
     impl CpuSet {
+        fn libc_cpu_set(&self) -> &lib_cpu_set {
+            match self {
+                Self::Sized(value) => &value,
+                Self::Dynamic(vec) => &unsafe { *vec.as_ptr() },
+            }
+        }
+
+        fn libc_cpu_set_mut(&mut self) -> &lib_cpu_set {
+            match self {
+                Self::Sized(value) => &mut value,
+                Self::Dynamic(vec) => &mut unsafe { *vec.as_mut_ptr() },
+            }
+        }
+
         /// Create a new and empty CpuSet.
         pub fn new() -> CpuSet {
-            CpuSet {
-                cpu_set: unsafe { mem::zeroed() },
-            }
+            Self::Sized(zeroed_libc_cpu_set())
+        }
+
+        pub fn new_dynamic() -> CpuSet {
+            const DEFAULT_ALLOC_SIZE: usize = 4;
+
+            vec![zeroed_libc_cpu_set(); 4]
         }
 
         /// Test to see if a CPU is in the CpuSet.
         /// `field` is the CPU id to test
         pub fn is_set(&self, field: usize) -> Result<bool> {
-            if field >= CpuSet::count() {
-                Err(Errno::EINVAL)
-            } else {
-                Ok(unsafe { libc::CPU_ISSET(field, &self.cpu_set) })
+            if let Self::Sized(_) = self {
+                if field >= self.n_bits() {
+                    return Err(Errno::EINVAL);
+                }
             }
+
+            let reference = self.libc_cpu_set();
+            Ok(unsafe { libc::CPU_ISSET(field, reference) })
         }
 
         /// Add a CPU to CpuSet.
         /// `field` is the CPU id to add
         pub fn set(&mut self, field: usize) -> Result<()> {
-            if field >= CpuSet::count() {
-                Err(Errno::EINVAL)
-            } else {
-                unsafe {
-                    libc::CPU_SET(field, &mut self.cpu_set);
+            if let Self::Sized(_) = self {
+                if field >= self.n_bits() {
+                    return Err(Errno::EINVAL);
                 }
-                Ok(())
             }
+
+            if let Self::Dynamic(vec) = self {
+                let vec_len = vec.len();
+                let cpu_set_bits_len = libc_cpu_set_bits_len();
+                // To be able to accommodate the bit specified by `field`, this is the number
+                // of bytes that `vec` needs to have.
+                let expected_vec_len =
+                    (field + (cpu_set_bits_len - 1)) / cpu_set_bits_len;
+                if vec_len < expected_vec_len {
+                    vec.resize_with(expected_vec_len, zeroed_libc_cpu_set());
+                }
+            }
+
+            let mut_ref = self.libc_cpu_set_mut();
+            unsafe {
+                libc::CPU_SET(field, mut_ref);
+            }
+            Ok(())
         }
 
         /// Remove a CPU from CpuSet.
         /// `field` is the CPU id to remove
         pub fn unset(&mut self, field: usize) -> Result<()> {
-            if field >= CpuSet::count() {
-                Err(Errno::EINVAL)
-            } else {
-                unsafe {
-                    libc::CPU_CLR(field, &mut self.cpu_set);
+            if let Self::Sized(_) = self {
+                if field >= self.n_bits() {
+                    return Err(Errno::EINVAL);
                 }
-                Ok(())
+            }
+
+            if let Self::Dynamic(vec) = self {
+                let vec_len = vec.len();
+                let cpu_set_bits_len = libc_cpu_set_bits_len();
+                // To be able to accommodate the bit specified by `field`, this is the number
+                // of bytes that `vec` needs to have.
+                let expected_vec_len =
+                    (field + (cpu_set_bits_len - 1)) / cpu_set_bits_len;
+                if vec_len < expected_vec_len {
+                    vec.resize_with(expected_vec_len, zeroed_libc_cpu_set());
+                }
+            }
+
+            let mut_ref = self.libc_cpu_set_mut();
+            unsafe {
+                libc::CPU_CLR(field, mut_ref);
+            }
+            Ok(())
+        }
+
+        /// Return the maximum number of CPU that `self` can handle.
+        const fn n_bytes(&self) -> usize {
+            let size_of_libc_cpu_set = mem::size_of::<libc_cpu_set>();
+
+            match self {
+                Self::Sized(_) => size_of_libc_cpu_set,
+                Self::Dynamic(vec) => {
+                    let vec_len = vec.len();
+                    vec_len * size_of_libc_cpu_set
+                }
             }
         }
 
-        /// Return the maximum number of CPU in CpuSet
-        pub const fn count() -> usize {
-            #[cfg(not(target_os = "freebsd"))]
-            let bytes = mem::size_of::<libc::cpu_set_t>();
-            #[cfg(target_os = "freebsd")]
-            let bytes = mem::size_of::<libc::cpuset_t>();
+        /// Return the maximum number of CPU that `self` can handle.
+        const fn n_bits(&self) -> usize {
+            let size_of_libc_cpu_set = mem::size_of::<libc_cpu_set>();
 
-            8 * bytes
+            let n_bytes = match self {
+                Self::Sized(_) => size_of_libc_cpu_set,
+                Self::Dynamic(vec) => {
+                    let vec_len = vec.len();
+                    vec_len * size_of_libc_cpu_set
+                }
+            };
+
+            n_bytes * 8
         }
     }
 
@@ -262,11 +343,12 @@ mod sched_affinity {
     /// sched_setaffinity(Pid::from_raw(0), &cpu_set).unwrap();
     /// ```
     pub fn sched_setaffinity(pid: Pid, cpuset: &CpuSet) -> Result<()> {
+        let cpuset_n_bytes = cpuset.n_bytes();
         let res = unsafe {
             libc::sched_setaffinity(
                 pid.into(),
-                mem::size_of::<CpuSet>() as libc::size_t,
-                &cpuset.cpu_set,
+                cpuset_n_bytes,
+                cpuset.libc_cpu_set(),
             )
         };
 
@@ -296,12 +378,28 @@ mod sched_affinity {
     /// }
     /// ```
     pub fn sched_getaffinity(pid: Pid) -> Result<CpuSet> {
-        let mut cpuset = CpuSet::new();
+        use crate::unistd::sysconf;
+        use crate::unistd::SysconfVar;
+
+        let n_cores_available = sysconf(SysconfVar::_NPROCESSORS_ONLN)?;
+        let mut cpuset = match n_cores_available {
+            Some(n) => {
+                // cast is safe as n should be a positive number
+                let n = n as usize;
+                if n > libc_cpu_set_bits_len() {
+                    CpuSet::new_dynamic()
+                } else {
+                    CpuSet::new()
+                }
+            }
+            None => CpuSet::new_dynamic(),
+        };
+
         let res = unsafe {
             libc::sched_getaffinity(
                 pid.into(),
-                mem::size_of::<CpuSet>() as libc::size_t,
-                &mut cpuset.cpu_set,
+                cpuset.n_bytes(),
+                cpuset.libc_cpu_set(),
             )
         };
 
