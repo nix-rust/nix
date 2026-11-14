@@ -137,7 +137,9 @@ impl std::os::fd::AsFd for Dir {
 
 impl AsRawFd for Dir {
     fn as_raw_fd(&self) -> RawFd {
-        unsafe { libc::dirfd(self.0.as_ptr()) }
+        let fd = unsafe { libc::dirfd(self.0.as_ptr()) };
+        assert!(fd >= 0, "dirfd returned error: {}", Errno::last());
+        fd
     }
 }
 
