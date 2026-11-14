@@ -371,10 +371,11 @@ libc_bitflags! {
         MSG_CMSG_CLOEXEC;
         /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
         /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
+        ///
+        /// On Apple targets, this flag is only honoured from macOS 11 / iOS 14.
         #[cfg(any(linux_android,
-                  freebsdlike,
+                  bsd,
                   solarish,
-                  netbsdlike,
                   target_os = "fuchsia",
                   target_os = "haiku"))]
         MSG_NOSIGNAL;
