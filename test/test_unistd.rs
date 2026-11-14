@@ -1,4 +1,6 @@
-use libc::{_exit, mode_t, off_t};
+#[cfg(not(any(tvos, watchos)))]
+use libc::_exit;
+use libc::{mode_t, off_t};
 use nix::errno::Errno;
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 use nix::fcntl::readlink;
@@ -16,11 +18,18 @@ use nix::sys::signal::{
     sigaction, SaFlags, SigAction, SigHandler, SigSet, Signal,
 };
 use nix::sys::stat::{self, Mode, SFlag};
+#[cfg(not(any(tvos, watchos)))]
 use nix::sys::wait::*;
+#[cfg(not(any(tvos, watchos)))]
 use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 use std::env;
-#[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+#[cfg(not(any(
+    target_os = "fuchsia",
+    target_os = "redox",
+    tvos,
+    watchos
+)))]
 use std::ffi::CString;
 #[cfg(not(target_os = "redox"))]
 use std::fs::DirBuilder;
@@ -37,7 +46,7 @@ use tempfile::{tempdir, tempfile};
 use crate::*;
 
 #[test]
-#[cfg(not(any(target_os = "netbsd")))]
+#[cfg(not(any(target_os = "netbsd", tvos, watchos)))]
 fn test_fork_and_waitpid() {
     let _m = crate::FORK_MTX.lock();
 
@@ -97,6 +106,7 @@ fn test_rfork_and_waitpid() {
 }
 
 #[test]
+#[cfg(not(any(tvos, watchos)))]
 fn test_wait() {
     // Grab FORK_MTX so wait doesn't reap a different test's child process
     let _m = crate::FORK_MTX.lock();
@@ -342,7 +352,7 @@ fn test_initgroups() {
     setgroups(&old_groups).unwrap();
 }
 
-#[cfg(not(any(target_os = "fuchsia", target_os = "redox")))]
+#[cfg(not(any(target_os = "fuchsia", target_os = "redox", tvos, watchos)))]
 macro_rules! execve_test_factory (
     ($test_name:ident, $syscall:ident, $exe: expr $(, $pathname:expr, $flags:expr)*) => (
 
@@ -452,7 +462,7 @@ cfg_if! {
         // https://github.com/nix-rust/nix/issues/555
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         execve_test_factory!(test_fexecve, fexecve, &File::open("/bin/sh").unwrap());
-    } else if #[cfg(any(solarish, apple_targets, netbsdlike))] {
+    } else if #[cfg(all(any(solarish, apple_targets, netbsdlike), not(any(tvos, watchos))))] {
         execve_test_factory!(test_execve, execve, CString::new("/bin/sh").unwrap().as_c_str());
         // No fexecve() on ios, macos, NetBSD, OpenBSD.
     }
