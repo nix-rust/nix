@@ -115,3 +115,31 @@ fn test_local_flags() {
     let read = read(&pty.master, &mut buf).unwrap_err();
     assert_eq!(read, Errno::EAGAIN);
 }
+
+/// tcgetattr must preserve c_cflag bits without a named flag, such as the baud
+/// rate bits on illumos; otherwise writing the settings back hangs up the pty.
+#[test]
+#[cfg(not(target_os = "redox"))]
+fn test_tcgetattr_preserves_speed() {
+    use nix::sys::termios::{cfgetospeed, tcsetattr, SetArg};
+    use std::os::unix::io::AsRawFd;
+
+    let _m = crate::PTSNAME_MTX.lock();
+    let pty = openpty(None, None).unwrap();
+
+    let mut raw = std::mem::MaybeUninit::<libc::termios>::uninit();
+    assert_eq!(
+        unsafe { libc::tcgetattr(pty.slave.as_raw_fd(), raw.as_mut_ptr()) },
+        0
+    );
+    let raw = unsafe { raw.assume_init() };
+    let expected = unsafe { libc::cfgetospeed(&raw) };
+
+    let termios = tcgetattr(&pty.slave).unwrap();
+    assert_eq!(cfgetospeed(&termios), expected.try_into().unwrap());
+
+    // A round trip must not change the speed (or hang up the terminal).
+    tcsetattr(&pty.slave, SetArg::TCSANOW, &termios).unwrap();
+    let termios = tcgetattr(&pty.slave).unwrap();
+    assert_eq!(cfgetospeed(&termios), expected.try_into().unwrap());
+}
