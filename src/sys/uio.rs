@@ -141,14 +141,14 @@ pub fn pread<Fd: AsFd>(fd: Fd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     Errno::result(res).map(|r| r as usize)
 }
 
+#[allow(rustdoc::broken_intra_doc_links)]   // Only broken on uclibc
 /// A slice of memory in a remote process, starting at address `base`
 /// and consisting of `len` bytes.
 ///
 /// This is the same underlying C structure as `IoSlice`,
 /// except that it refers to memory in some other process, and is
 /// therefore not represented in Rust by an actual slice as `IoSlice` is. It
-/// is used with [`process_vm_readv`](fn.process_vm_readv.html)
-/// and [`process_vm_writev`](fn.process_vm_writev.html).
+/// is used with [`process_vm_readv`] and [`process_vm_writev`].
 #[cfg(linux_android)]
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
