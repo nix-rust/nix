@@ -3,6 +3,48 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.32.0] - 2026-11-14
+
+### Added
+
+- Add `SeekData` and `SeekHole` to `Whence` for Android
+  ([#2676](https://github.com/nix-rust/nix/pull/2676))
+- Added `getres` and `setres` for Redox OS
+  ([#2767](https://github.com/nix-rust/nix/pull/2767))
+- Add `nix::sys::socket::sockopt:TcpCork` on Linux.
+  ([#2769](https://github.com/nix-rust/nix/pull/2769))
+- Made the `sys::prctl` module available on Android the same as on other Linux
+  targets. ([#2770](https://github.com/nix-rust/nix/pull/2770))
+- Add the `sockopt::RcvMark` socket option (Linux 5.19+, `SO_RCVMARK`) and
+  decode the resulting `(SOL_SOCKET, SO_MARK)` ancillary message as a new
+  `ControlMessageOwned::SoMark(u32)` variant. Previously
+  the cmsg fell through to the catch-all `Unknown` arm, which forced a
+  per-recv `Vec<u8>` allocation for four bytes.
+  ([#2785](https://github.com/nix-rust/nix/pull/2785))
+- Enable module `ioctl` for Haiku
+  ([#2792](https://github.com/nix-rust/nix/pull/2792))
+
+### Changed
+
+- Made `fcntl::vmsplice` an unsafe function.
+  ([#2777](https://github.com/nix-rust/nix/pull/2777))
+- Change `sys::socket::accept` and `sys::socket::accept4` to return `OwnedFd`
+  instead of `RawFd`.
+  Change `sys::socket::accept` and `sys::socket::accept4` to take `AsFd`
+  instead of `RawFd`. ([#2780](https://github.com/nix-rust/nix/pull/2780))
+
+### Fixed
+
+- Fixed undefined behavior in `recvfrom`.
+  ([#2717](https://github.com/nix-rust/nix/pull/2717))
+- Fixed the documented feature requirement of `SockaddrIn`, `SockaddrIn6` and
+  `LinkAddr`: docs.rs now shows that they need the `net` feature
+  ([#2854](https://github.com/nix-rust/nix/pull/2854))
+- Fixed the `PosixSpawnAttr` and `PosixSpawnFileActions` methods ignoring
+  errors, as the `posix_spawn*` functions return the error number directly
+  instead of -1. ([#2865](https://github.com/nix-rust/nix/pull/2865))
+
+
 ## [0.31.3] - 2026-05-11
 
 ### Added
