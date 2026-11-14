@@ -37,3 +37,46 @@ fn test_sched_affinity() {
     // Finally, reset the initial CPU set
     sched_setaffinity(Pid::from_raw(0), &initial_affinity).unwrap();
 }
+
+#[cfg(all(linux_android, not(target_env = "musl"), not(target_env = "ohos")))]
+#[test]
+fn test_sched_priority() {
+    use nix::sched::{
+        sched_get_priority_max, sched_get_priority_min, sched_getparam,
+        sched_getscheduler, sched_setscheduler, SchedParam, Scheduler,
+    };
+
+    let pid = Pid::from_raw(0);
+    let sched = sched_getscheduler(pid).unwrap();
+    // default is NORMAL aka OTHER
+    assert_eq!(sched, Scheduler::SCHED_NORMAL);
+
+    let priority = sched_getparam(pid).unwrap().sched_priority;
+    assert_eq!(priority, 0);
+
+    let max = sched_get_priority_max(Scheduler::SCHED_FIFO).unwrap();
+    let _ = sched_get_priority_min(Scheduler::SCHED_FIFO).unwrap();
+
+    // can't set priority unless process has correct capabilities and PREEMPT_RT kernel
+    match sched_setscheduler(
+        pid,
+        Scheduler::SCHED_FIFO,
+        SchedParam::from_priority(max),
+    ) {
+        Ok(_) => {
+            assert_eq!(sched_getscheduler(pid).unwrap(), Scheduler::SCHED_FIFO);
+            assert_eq!(sched_getparam(pid).unwrap().sched_priority, max);
+        }
+        Err(nix::errno::Errno::EPERM) => {
+            // expected, assert that it didn't change
+            assert_eq!(
+                sched_getscheduler(pid).unwrap(),
+                Scheduler::SCHED_NORMAL
+            );
+            assert_eq!(sched_getparam(pid).unwrap().sched_priority, 0);
+        }
+        Err(e) => {
+            panic!("unexpected error: {e}");
+        }
+    }
+}
