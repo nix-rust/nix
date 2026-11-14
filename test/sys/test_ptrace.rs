@@ -13,8 +13,6 @@ use nix::unistd::getpid;
 #[cfg(linux_android)]
 use std::mem;
 
-use crate::*;
-
 #[test]
 fn test_ptrace() {
     // Just make sure ptrace can be called at all, for now.
@@ -408,5 +406,75 @@ fn test_ptrace_syscall_info() {
             let si = ptrace::syscall_info(child).unwrap();
             assert!(si.op >= libc::PTRACE_SYSCALL_INFO_ENTRY);
         },
+    }
+}
+
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+#[test]
+fn test_ptrace_set_syscall_info() {
+    use nix::sys::mman::{mmap_anonymous, MapFlags, ProtFlags};
+    use nix::sys::ptrace;
+    use nix::sys::signal::{raise, Signal::*};
+    use nix::sys::wait::{waitpid, WaitStatus};
+    use nix::unistd::{fork, ForkResult::*};
+    use std::num::NonZero;
+
+    require_capability!("test_ptrace_set_syscall_info", CAP_SYS_PTRACE);
+
+    let _m = crate::FORK_MTX.lock();
+    match unsafe { fork() }.expect("Error: Fork Failed") {
+        Child => {
+            ptrace::traceme().unwrap();
+            raise(SIGSTOP).unwrap();
+
+            unsafe {
+                let my_memory = mmap_anonymous(
+                    None,
+                    NonZero::new(1).unwrap(),
+                    ProtFlags::PROT_WRITE,
+                    MapFlags::MAP_PRIVATE,
+                )
+                .unwrap_or_else(|_| ::libc::_exit(1))
+                .cast::<u8>();
+
+                *my_memory.as_ptr() = 42;
+                ::libc::_exit(0);
+            }
+        }
+        Parent { child } => {
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, SIGSTOP))
+            );
+            ptrace::setoptions(child, Options::PTRACE_O_TRACESYSGOOD).unwrap();
+            ptrace::syscall(child, None).unwrap();
+
+            // Hijack the syscall and remove PROT_WRITE to force a SEGFAULT in the child
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::PtraceSyscall(child))
+            );
+            let mut si = ptrace::syscall_info(child).unwrap();
+            assert_eq!(si.op, libc::PTRACE_SYSCALL_INFO_ENTRY);
+            unsafe {
+                si.u.entry.args[2] = ProtFlags::PROT_NONE.bits() as u64;
+            }
+            let set_syscall_res = ptrace::set_syscall_info(child, &si);
+            ptrace::cont(child, None).unwrap();
+
+            if set_syscall_res.is_err() {
+                assert_eq!(
+                    waitpid(child, None),
+                    Ok(WaitStatus::Exited(child, 0))
+                );
+                crate::skip!("PTRACE_SET_SYSCALL_INFO failed: Linux >= 6.16 is required, skipping test.");
+            }
+
+            assert_eq!(
+                waitpid(child, None),
+                Ok(WaitStatus::Stopped(child, SIGSEGV))
+            );
+            ptrace::detach(child, SIGSEGV).unwrap();
+        }
     }
 }
