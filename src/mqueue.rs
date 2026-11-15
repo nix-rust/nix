@@ -165,7 +165,14 @@ where
                 &mq_attr.mq_attr as *const libc::mq_attr,
             )
         },
-        None => unsafe { libc::mq_open(cstr.as_ptr(), oflag.bits()) },
+        None => unsafe {
+            libc::mq_open(
+                cstr.as_ptr(),
+                oflag.bits(),
+                mode.bits() as libc::c_int,
+                ::std::ptr::null() as *const libc::mq_attr,
+            )
+        },
     })?;
 
     Errno::result(res).map(MqdT)
