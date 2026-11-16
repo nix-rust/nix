@@ -101,6 +101,7 @@ impl ClockId {
         netbsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
+        target_os = "illumos",
         target_os = "redox",
     ))]
     /// Returns the execution time of the calling process.
@@ -157,6 +158,7 @@ impl ClockId {
         netbsdlike,
         target_os = "emscripten",
         target_os = "fuchsia",
+        target_os = "illumos",
     ))]
     /// Returns the execution time of the calling thread.
     pub const CLOCK_THREAD_CPUTIME_ID: ClockId =

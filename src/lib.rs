@@ -203,6 +203,7 @@ mod poll_timeout;
 #[cfg(any(
     target_os = "freebsd",
     target_os = "haiku",
+    target_os = "illumos",
     target_os = "linux",
     target_os = "netbsd",
     apple_targets
