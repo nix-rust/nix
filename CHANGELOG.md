@@ -3,6 +3,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.32.1] - 2026-11-16
+
+### Fixed
+
+- Fixed `sockopt_impl!` hygiene issue
+  ([#2814](https://github.com/nix-rust/nix/pull/2814))
+
 ## [0.32.0] - 2026-11-14
 
 ### Added
