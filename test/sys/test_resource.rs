@@ -11,6 +11,7 @@ use nix::sys::resource::{getrusage, UsageWho};
 /// been updated.
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 pub fn test_resource_limits_nofile() {
     let (mut soft_limit, hard_limit) =
         getrlimit(Resource::RLIMIT_NOFILE).unwrap();

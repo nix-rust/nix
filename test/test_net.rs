@@ -11,12 +11,14 @@ const LOOPBACK: &[u8] = b"loop";
 
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_if_nametoindex() {
     if_nametoindex(LOOPBACK).expect("assertion failed");
 }
 
 #[test]
 #[cfg_attr(target_os = "cygwin", ignore)]
+#[cfg_attr(target_os = "emscripten", ignore)]
 fn test_if_indextoname() {
     let loopback_index = if_nametoindex(LOOPBACK).expect("assertion failed");
     assert_eq!(

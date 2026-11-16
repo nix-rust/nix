@@ -21,6 +21,7 @@ cfg_if! {
         target_os = "aix",
         target_os = "illumos",
         all(target_os = "linux", not(target_env = "gnu")),
+        target_os = "emscripten",
         target_os = "cygwin"
     ))]{
         use libc::rlimit;
@@ -53,6 +54,7 @@ libc_enum! {
             target_os = "aix",
             target_os = "illumos",
             all(target_os = "linux", not(any(target_env = "gnu", target_env = "uclibc"))),
+            target_os = "emscripten",
             target_os = "cygwin"
         ), repr(i32))]
     #[non_exhaustive]
