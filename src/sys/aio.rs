@@ -250,10 +250,11 @@ pub trait Aio {
     /// # use std::{thread, time};
     /// # use std::io::Write;
     /// # use std::os::unix::io::AsFd;
+    /// # use std::pin::pin;
     /// # use tempfile::tempfile;
     /// let wbuf = b"CDEF";
     /// let mut f = tempfile().unwrap();
-    /// let mut aiocb = Box::pin(AioWrite::new(f.as_fd(),
+    /// let mut aiocb = pin!(AioWrite::new(f.as_fd(),
     ///     2,   //offset
     ///     &wbuf[..],
     ///     0,   //priority
@@ -291,10 +292,11 @@ pub trait Aio {
     /// # use nix::sys::signal::SigevNotify;
     /// # use std::{thread, time};
     /// # use std::os::unix::io::AsFd;
+    /// # use std::pin::pin;
     /// # use tempfile::tempfile;
     /// const WBUF: &[u8] = b"abcdef123456";
     /// let mut f = tempfile().unwrap();
-    /// let mut aiocb = Box::pin(AioWrite::new(f.as_fd(),
+    /// let mut aiocb = pin!(AioWrite::new(f.as_fd(),
     ///     2,   //offset
     ///     WBUF,
     ///     0,   //priority
@@ -328,9 +330,10 @@ pub trait Aio {
     /// # use nix::sys::signal::SigevNotify::SigevNone;
     /// # use std::{thread, time};
     /// # use std::os::unix::io::AsFd;
+    /// # use std::pin::pin;
     /// # use tempfile::tempfile;
     /// let f = tempfile().unwrap();
-    /// let mut aiof = Box::pin(AioFsync::new(f.as_fd(), AioFsyncMode::O_SYNC,
+    /// let mut aiof = pin!(AioFsync::new(f.as_fd(), AioFsyncMode::O_SYNC,
     ///     0, SigevNone));
     /// assert!(!aiof.as_mut().in_progress());
     /// aiof.as_mut().submit().expect("aio_fsync failed early");
@@ -424,9 +427,10 @@ pin_project! {
 /// # use nix::sys::signal::SigevNotify::SigevNone;
 /// # use std::{thread, time};
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// let f = tempfile().unwrap();
-/// let mut aiof = Box::pin(AioFsync::new(f.as_fd(), AioFsyncMode::O_SYNC,
+/// let mut aiof = pin!(AioFsync::new(f.as_fd(), AioFsyncMode::O_SYNC,
 ///     0, SigevNone));
 /// aiof.as_mut().submit().expect("aio_fsync failed early");
 /// while (aiof.as_mut().error() == Err(Errno::EINPROGRESS)) {
@@ -525,6 +529,7 @@ pin_project! {
 /// # use std::{thread, time};
 /// # use std::io::Write;
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"abcdef123456";
 /// const LEN: usize = 4;
@@ -532,7 +537,7 @@ pin_project! {
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
 /// {
-///     let mut aior = Box::pin(
+///     let mut aior = pin!(
 ///         AioRead::new(
 ///             f.as_fd(),
 ///             2,   //offset
@@ -645,6 +650,7 @@ pin_project! {
 /// # use std::{thread, time};
 /// # use std::io::{IoSliceMut, Write};
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// const INITIAL: &[u8] = b"abcdef123456";
 /// let mut rbuf0 = vec![0; 4];
@@ -654,7 +660,7 @@ pin_project! {
 /// let mut f = tempfile().unwrap();
 /// f.write_all(INITIAL).unwrap();
 /// {
-///     let mut aior = Box::pin(
+///     let mut aior = pin!(
 ///         AioReadv::new(
 ///             f.as_fd(),
 ///             2,   //offset
@@ -768,10 +774,11 @@ pin_project! {
 /// # use nix::sys::signal::SigevNotify;
 /// # use std::{thread, time};
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
-/// let mut aiow = Box::pin(
+/// let mut aiow = pin!(
 ///     AioWrite::new(
 ///         f.as_fd(),
 ///         2,   //offset
@@ -885,13 +892,14 @@ pin_project! {
 /// # use std::{thread, time};
 /// # use std::io::IoSlice;
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// const wbuf0: &[u8] = b"abcdef";
 /// const wbuf1: &[u8] = b"123456";
 /// let len = wbuf0.len() + wbuf1.len();
 /// let wbufs = [IoSlice::new(wbuf0), IoSlice::new(wbuf1)];
 /// let mut f = tempfile().unwrap();
-/// let mut aiow = Box::pin(
+/// let mut aiow = pin!(
 ///     AioWritev::new(
 ///         f.as_fd(),
 ///         2,   //offset
@@ -1005,10 +1013,11 @@ impl AsRef<libc::aiocb> for AioWritev<'_> {
 /// # use std::{thread, time};
 /// # use std::io::Write;
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// let wbuf = b"CDEF";
 /// let mut f = tempfile().unwrap();
-/// let mut aiocb = Box::pin(AioWrite::new(f.as_fd(),
+/// let mut aiocb = pin!(AioWrite::new(f.as_fd(),
 ///     2,   //offset
 ///     &wbuf[..],
 ///     0,   //priority
@@ -1050,10 +1059,11 @@ pub fn aio_cancel_all<F: AsFd>(fd: F) -> Result<AioCancelStat> {
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
-/// let mut aiocb = Box::pin(AioWrite::new(f.as_fd(),
+/// let mut aiocb = pin!(AioWrite::new(f.as_fd(),
 ///     2,   //offset
 ///     WBUF,
 ///     0,   //priority
@@ -1100,12 +1110,13 @@ pub fn aio_suspend(
 /// a handful of I/O operations in parallel.
 /// ```
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use nix::sys::aio::*;
 /// # use nix::sys::signal::SigevNotify;
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
-/// let mut aiow = Box::pin(AioWrite::new(
+/// let mut aiow = pin!(AioWrite::new(
 ///     f.as_fd(),
 ///     2,      // offset
 ///     WBUF,
@@ -1124,6 +1135,7 @@ pub fn aio_suspend(
 /// combined with kqueue.
 /// ```
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use std::thread;
 /// # use std::time;
 /// # use nix::errno::Errno;
@@ -1132,7 +1144,7 @@ pub fn aio_suspend(
 /// # use tempfile::tempfile;
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
-/// let mut aiow = Box::pin(AioWrite::new(
+/// let mut aiow = pin!(AioWrite::new(
 ///     f.as_fd(),
 ///     2,      // offset
 ///     WBUF,
@@ -1190,6 +1202,7 @@ pub fn aio_suspend(
 )]
 /// # use libc::c_int;
 /// # use std::os::unix::io::AsFd;
+/// # use std::pin::pin;
 /// # use std::sync::atomic::{AtomicBool, Ordering};
 /// # use std::thread;
 /// # use std::time;
@@ -1210,7 +1223,7 @@ pub fn aio_suspend(
 ///
 /// const WBUF: &[u8] = b"abcdef123456";
 /// let mut f = tempfile().unwrap();
-/// let mut aiow = Box::pin(AioWrite::new(
+/// let mut aiow = pin!(AioWrite::new(
 ///     f.as_fd(),
 ///     2,      // offset
 ///     WBUF,
