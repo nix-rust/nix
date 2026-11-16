@@ -590,9 +590,12 @@ impl SigSet {
         let mut signum = mem::MaybeUninit::uninit();
         let res = unsafe { libc::sigwait(&self.sigset as *const libc::sigset_t, signum.as_mut_ptr()) };
 
-        Errno::result(res).map(|_| unsafe {
-            Signal::try_from(signum.assume_init()).unwrap()
-        })
+        // Some libcs return -1 and set errno instead of returning an error code.
+        let res = Errno::result(res)?;
+        if res != 0 {
+            return Err(Errno::from_raw(res));
+        }
+        Signal::try_from(unsafe { signum.assume_init() })
     }
 
     /// Wait for a signal
@@ -1022,7 +1025,12 @@ fn do_pthread_sigmask(how: SigmaskHow,
                              )
     };
 
-    Errno::result(res).map(drop)
+    let res = Errno::result(res)?;
+    if res == 0 {
+        Ok(())
+    } else {
+        Err(Errno::from_raw(res))
+    }
 }
 
 /// Manages the signal mask (set of blocked signals) for the calling thread.
