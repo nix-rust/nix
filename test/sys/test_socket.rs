@@ -697,6 +697,87 @@ mod recvfrom {
 
     #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
     #[test]
+    pub fn recvmmsg_after_sendmmsg_reports_sender() {
+        // Regression test for #2871: `sendmmsg` leaves each header's
+        // `msg_name` pointing into the caller-supplied address storage,
+        // which is typically freed before the same `MultiHeaders` is
+        // reused for `recvmmsg`. Receiving must report the real sender
+        // address instead of uninitialized memory.
+        use nix::sys::socket::{
+            recvmmsg, sendmmsg, MsgFlags, MultiHeaders, RecvMsg,
+        };
+        use std::io::{IoSlice, IoSliceMut};
+
+        let dir = std::env::temp_dir();
+        let recv_path =
+            dir.join(format!("nix-test-2871-recv-{}.sock", std::process::id()));
+        let send_path =
+            dir.join(format!("nix-test-2871-send-{}.sock", std::process::id()));
+        let _ = std::fs::remove_file(&recv_path);
+        let _ = std::fs::remove_file(&send_path);
+
+        let rsock = socket(
+            AddressFamily::Unix,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .unwrap();
+        bind(rsock.as_raw_fd(), &UnixAddr::new(&recv_path).unwrap()).unwrap();
+        let recv_addr: UnixAddr = getsockname(rsock.as_raw_fd()).unwrap();
+
+        let ssock = socket(
+            AddressFamily::Unix,
+            SockType::Datagram,
+            SockFlag::empty(),
+            None,
+        )
+        .unwrap();
+        bind(ssock.as_raw_fd(), &UnixAddr::new(&send_path).unwrap()).unwrap();
+        let send_addr: UnixAddr = getsockname(ssock.as_raw_fd()).unwrap();
+
+        let mut data = MultiHeaders::<UnixAddr>::preallocate(1, None);
+        {
+            let iovs = [[IoSlice::new(b"hello")]];
+            // Dropped at the end of this block, before `recvmmsg` runs.
+            let addrs = vec![Some(recv_addr)];
+            let sent = sendmmsg(
+                ssock.as_raw_fd(),
+                &mut data,
+                &iovs,
+                addrs,
+                [],
+                MsgFlags::empty(),
+            )
+            .unwrap()
+            .count();
+            assert_eq!(sent, 1);
+        }
+
+        let mut buf = [0u8; 16];
+        let mut iovs = [[IoSliceMut::new(&mut buf)]];
+        let res: Vec<RecvMsg<UnixAddr>> = recvmmsg(
+            rsock.as_raw_fd(),
+            &mut data,
+            &mut iovs,
+            MsgFlags::empty(),
+            None,
+        )
+        .expect("recvmmsg")
+        .collect();
+        assert_eq!(res.len(), 1);
+        let nbytes = res[0].bytes;
+        let sender = res[0].address;
+        drop(res);
+        assert_eq!(&buf[..nbytes], b"hello");
+        assert_eq!(sender.as_ref(), Some(&send_addr));
+
+        let _ = std::fs::remove_file(&recv_path);
+        let _ = std::fs::remove_file(&send_path);
+    }
+
+    #[cfg(any(linux_android, target_os = "freebsd", target_os = "netbsd"))]
+    #[test]
     pub fn udp_recvmmsg_dontwait_short_read() {
         use nix::sys::socket::{recvmmsg, MsgFlags};
         use std::io::IoSliceMut;

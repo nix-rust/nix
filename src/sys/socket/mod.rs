@@ -1940,12 +1940,21 @@ pub fn recvmmsg<'a, XS, S, I>(
 where
     XS: IntoIterator<Item = &'a mut I>,
     I: AsMut<[IoSliceMut<'a>]> + 'a,
+    S: SockaddrLike,
 {
     let mut count = 0;
+    let addresses = &mut data.addresses;
     for (i, (slice, mmsghdr)) in slices.into_iter().zip(data.items.iter_mut()).enumerate() {
         let p = &mut mmsghdr.msg_hdr;
         p.msg_iov = slice.as_mut().as_mut_ptr().cast();
         p.msg_iovlen = slice.as_mut().len() as _;
+        // `sendmmsg` overwrites `msg_name` with a pointer into the
+        // caller-supplied address storage, which may already be freed by
+        // the time `recvmmsg` reuses these headers. Point it back at the
+        // preallocated storage, as `preallocate` did, so the kernel writes
+        // the sender address where the results are read back from. See #2871.
+        p.msg_name = addresses[i].as_mut_ptr().cast();
+        p.msg_namelen = S::size();
 
         // Doing an unchecked addition is alright here, as the only way to obtain an instance of `MultiHeaders`
         // is through the `preallocate` function, which takes an `usize` as an argument to define its size,
