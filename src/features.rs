@@ -1,4 +1,5 @@
 //! Feature tests for OS functionality
+#[cfg(not(target_os = "horizon"))]
 pub use self::os::*;
 
 #[cfg(any(linux_android, target_os = "emscripten"))]
