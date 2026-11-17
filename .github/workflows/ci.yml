@@ -65,6 +65,65 @@ jobs:
         with:
           TARGET: "${{ env.TARGET }}"
 
+  ios:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          [
+            x86_64-apple-ios,
+            aarch64-apple-ios,
+            aarch64-apple-ios-sim,
+            aarch64-apple-ios-macabi,
+          ]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install rust ios targets
+        if: ${{ !cancelled() }}
+        run: |
+          rustup target add ${{ matrix.target }}
+
+      - name: Check
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          cargo check --target ${{ matrix.target }} --all-features
+
+      - name: Clippy
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          cargo clippy --target ${{ matrix.target }} --all-features -- -D warnings
+
+      - name: Build for iOS
+        if: ${{ !cancelled() }}
+        run: |
+          cargo build --target ${{ matrix.target }} --all-features
+
+      - name: Test on iOS simulator
+        if: ${{ matrix.target == 'aarch64-apple-ios-sim' && !cancelled() }}
+        env:
+          CARGO_TARGET_AARCH64_APPLE_IOS_SIM_RUNNER: xcrun simctl spawn booted
+        run: |
+          DEVICE_ID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [device for runtime in json.load(sys.stdin)["devices"].values() for device in runtime]
+          print(next(device["udid"] for device in devices if device["name"].startswith("iPhone")))
+          ')"
+          if ! xcrun simctl list devices booted | grep -Fq "$DEVICE_ID"; then
+            xcrun simctl boot "$DEVICE_ID"
+          fi
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          cargo test --target ${{ matrix.target }}
+
   # Use cross for QEMU-based testing
   # cross needs to execute Docker, GitHub Action already has it installed
   cross:

@@ -10,6 +10,13 @@ use std::path::Path;
 use std::slice;
 use std::str::FromStr;
 
+fn short_tempdir() -> tempfile::TempDir {
+    tempfile::Builder::new()
+        .prefix("nix")
+        .tempdir_in("/tmp")
+        .unwrap()
+}
+
 #[cfg(target_os = "linux")]
 #[cfg_attr(qemu, ignore)]
 #[test]
@@ -290,7 +297,7 @@ pub fn test_getsockname() {
     use nix::sys::socket::bind;
     use nix::sys::socket::{socket, AddressFamily, SockFlag, SockType};
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = short_tempdir();
     let sockname = tempdir.path().join("sock");
     let sock = socket(
         AddressFamily::Unix,
@@ -333,7 +340,7 @@ pub fn test_recvmsg_sockaddr_un() {
         self, bind, socket, AddressFamily, MsgFlags, SockFlag, SockType,
     };
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = short_tempdir();
     let sockname = tempdir.path().join("sock");
     let sock = socket(
         AddressFamily::Unix,
@@ -1678,7 +1685,7 @@ pub fn test_named_unixdomain() {
     use nix::unistd::{read, write};
     use std::thread;
 
-    let tempdir = tempfile::tempdir().unwrap();
+    let tempdir = short_tempdir();
     let sockname = tempdir.path().join("sock");
     let s1 = socket(
         AddressFamily::Unix,

@@ -22,6 +22,10 @@ fn which(exe_name: &str) -> Option<std::path::PathBuf> {
 }
 
 #[test]
+#[cfg_attr(
+    target_os = "ios",
+    ignore = "iOS does not provide the external true utility"
+)]
 fn spawn_true() {
     let _guard = FORK_MTX.lock();
 
@@ -51,6 +55,10 @@ fn spawn_true() {
 }
 
 #[test]
+#[cfg_attr(
+    target_os = "ios",
+    ignore = "iOS does not provide the external sleep utility"
+)]
 fn spawn_sleep() {
     let _guard = FORK_MTX.lock();
 
@@ -107,6 +115,10 @@ fn spawn_cmd_does_not_exist() {
 }
 
 #[test]
+#[cfg_attr(
+    target_os = "ios",
+    ignore = "iOS does not provide the external true utility"
+)]
 fn spawnp_true() {
     let _guard = FORK_MTX.lock();
 
@@ -135,6 +147,10 @@ fn spawnp_true() {
 }
 
 #[test]
+#[cfg_attr(
+    target_os = "ios",
+    ignore = "iOS does not provide the external sleep utility"
+)]
 fn spawnp_sleep() {
     let _guard = FORK_MTX.lock();
 
