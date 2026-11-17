@@ -25,6 +25,7 @@ use crate::{Error, NixPath, Result};
 #[cfg(not(target_os = "redox"))]
 use cfg_if::cfg_if;
 use libc::{c_char, c_int, c_long, c_uint, gid_t, off_t, pid_t, size_t, uid_t};
+#[cfg(not(any(tvos, watchos)))]
 use std::convert::Infallible;
 #[cfg(not(target_os = "redox"))]
 use std::ffi::CString;
@@ -284,6 +285,7 @@ impl ForkResult {
 /// special care must be taken to only invoke code you can control and audit.
 ///
 /// [async-signal-safe]: https://man7.org/linux/man-pages/man7/signal-safety.7.html
+#[cfg(not(any(tvos, watchos)))]
 #[inline]
 pub unsafe fn fork() -> Result<ForkResult> {
     use self::ForkResult::*;
@@ -1096,6 +1098,7 @@ pub fn fchownat<Fd: std::os::fd::AsFd, P: ?Sized + NixPath>(
 
 feature! {
 #![feature = "process"]
+#[cfg(not(any(tvos, watchos)))]
 fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
     use std::iter::once;
     args.iter()
@@ -1110,6 +1113,7 @@ fn to_exec_array<S: AsRef<CStr>>(args: &[S]) -> Vec<*const c_char> {
 /// See the `::nix::unistd::execve` system call for additional details.  `execv`
 /// performs the same action but does not allow for customization of the
 /// environment for the new process.
+#[cfg(not(any(tvos, watchos)))]
 #[inline]
 pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
     let args_p = to_exec_array(argv);
@@ -1131,6 +1135,7 @@ pub fn execv<S: AsRef<CStr>>(path: &CStr, argv: &[S]) -> Result<Infallible> {
 /// of `::std::ffi::CString`s for `args` and `env` (for `execve`). Each element
 /// in the `args` list is an argument to the new process. Each element in the
 /// `env` list should be a string in the form "key=value".
+#[cfg(not(any(tvos, watchos)))]
 #[inline]
 pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
     path: &CStr,
@@ -1154,6 +1159,7 @@ pub fn execve<SA: AsRef<CStr>, SE: AsRef<CStr>>(
 /// for file names not specified with a leading slash.  For example, `execv`
 /// would not work if "bash" was specified for the path argument, but `execvp`
 /// would assuming that a bash executable was on the system `PATH`.
+#[cfg(not(any(tvos, watchos)))]
 #[inline]
 pub fn execvp<S: AsRef<CStr>>(
     filename: &CStr,
