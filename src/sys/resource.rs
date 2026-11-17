@@ -104,6 +104,7 @@ libc_enum! {
             target_os = "freebsd",
             netbsdlike,
             target_os = "aix",
+            apple_targets,
         ))]
         /// The maximum number of simultaneous processes for this user id.
         RLIMIT_NPROC,
