@@ -118,6 +118,15 @@ impl WatchDescriptor {
     pub fn as_raw(self) -> i32 {
         self.wd
     }
+
+    /// Constructs a `WatchDescriptor` for an existing libc raw watch descriptor.
+    ///
+    /// # Safety
+    ///
+    /// `wd` is a valid `WatchDescriptor` for the inotify instance it is going to be used with.
+    pub unsafe fn from_raw(wd: i32) -> Self {
+        WatchDescriptor { wd }
+    }
 }
 
 /// A single inotify event.
