@@ -1324,6 +1324,16 @@ fn test_ttyname() {
         .open(Path::new(&sname))
         .expect("open failed");
 
+    // On illumos, the slave is only a terminal once ptem and ldterm are
+    // pushed onto it (see pts(4D)).
+    #[cfg(target_os = "illumos")]
+    for module in [&b"ptem\0"[..], &b"ldterm\0"[..]] {
+        let r = unsafe {
+            libc::ioctl(fds.as_raw_fd(), libc::I_PUSH, module.as_ptr())
+        };
+        assert!(r >= 0, "I_PUSH failed");
+    }
+
     let name = ttyname(fds).expect("ttyname failed");
     assert!(name.starts_with("/dev"));
 }

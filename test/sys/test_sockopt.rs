@@ -1244,7 +1244,8 @@ fn test_solfilter() {
     //
     // So we only test the binding here
     assert_eq!(Err(Errno::ENOENT), setsockopt(&s, attach, data));
-    assert_eq!(Err(Errno::ENOENT), setsockopt(&s, detach, data));
+    // Detaching a filter that is not attached fails with ENXIO.
+    assert_eq!(Err(Errno::ENXIO), setsockopt(&s, detach, data));
 }
 
 #[cfg(target_os = "linux")]
