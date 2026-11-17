@@ -34,6 +34,7 @@ use crate::{sys::stat::Mode, NixPath, Result};
     linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
+    target_os = "illumos",
     target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
@@ -149,12 +150,12 @@ libc_bitflags!(
         /// If the specified path isn't a directory, fail.
         O_DIRECTORY;
         /// Implicitly follow each `write()` with an `fdatasync()`.
-        #[cfg(any(linux_android, apple_targets, target_os = "freebsd", netbsdlike))]
+        #[cfg(any(linux_android, apple_targets, target_os = "freebsd", target_os = "illumos", netbsdlike))]
         O_DSYNC;
         /// Error out if a file was not created.
         O_EXCL;
         /// Open for execute only.
-        #[cfg(target_os = "freebsd")]
+        #[cfg(any(target_os = "freebsd", target_os = "illumos"))]
         O_EXEC;
         /// Open with an exclusive file lock.
         #[cfg(any(bsd, target_os = "redox"))]
@@ -197,7 +198,7 @@ libc_bitflags!(
         /// This should not be combined with `O_WRONLY` or `O_RDONLY`.
         O_RDWR;
         /// Similar to `O_DSYNC` but applies to `read`s instead.
-        #[cfg(any(target_os = "linux", netbsdlike))]
+        #[cfg(any(target_os = "illumos", target_os = "linux", netbsdlike))]
         O_RSYNC;
         /// Open directory for search only. Skip search permission checks on
         /// later `openat()` calls using the obtained file descriptor.
@@ -751,15 +752,17 @@ pub enum FcntlArg<'a> {
     /// Get the first lock that blocks the lock description
     F_GETLK(&'a mut libc::flock),
     /// Acquire or release an open file description lock
-    #[cfg(linux_android)]
+    ///
+    /// On illumos, these locks can currently only cover the whole file.
+    #[cfg(any(linux_android, target_os = "illumos"))]
     F_OFD_SETLK(&'a libc::flock),
     /// Like [`F_OFD_SETLK`] except that if a conflicting lock is held on
     /// the file, then wait for that lock to be released.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     F_OFD_SETLKW(&'a libc::flock),
     /// Determine whether it would be possible to create the given lock.  If not, return details
     /// about one existing lock that would prevent it.
-    #[cfg(linux_android)]
+    #[cfg(any(linux_android, target_os = "illumos"))]
     F_OFD_GETLK(&'a mut libc::flock),
     /// Add seals to the file
     #[cfg(any(
@@ -879,11 +882,11 @@ pub fn fcntl<Fd: std::os::fd::AsFd>(fd: Fd, arg: FcntlArg) -> Result<c_int> {
             F_SETLKW(flock) => libc::fcntl(fd, libc::F_SETLKW, flock),
             #[cfg(not(target_os = "redox"))]
             F_GETLK(flock) => libc::fcntl(fd, libc::F_GETLK, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "illumos"))]
             F_OFD_SETLK(flock) => libc::fcntl(fd, libc::F_OFD_SETLK, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "illumos"))]
             F_OFD_SETLKW(flock) => libc::fcntl(fd, libc::F_OFD_SETLKW, flock),
-            #[cfg(linux_android)]
+            #[cfg(any(linux_android, target_os = "illumos"))]
             F_OFD_GETLK(flock) => libc::fcntl(fd, libc::F_OFD_GETLK, flock),
             #[cfg(any(
                 linux_android,
@@ -1548,6 +1551,7 @@ pub fn fspacectl_all<Fd: std::os::fd::AsFd>(
     linux_android,
     target_os = "emscripten",
     target_os = "fuchsia",
+    target_os = "illumos",
     target_os = "wasi",
     target_env = "uclibc",
     target_os = "freebsd"
@@ -1614,6 +1618,7 @@ mod posix_fadvise {
     freebsdlike,
     target_os = "emscripten",
     target_os = "fuchsia",
+    target_os = "illumos",
     target_os = "wasi",
 ))]
 pub fn posix_fallocate<Fd: std::os::fd::AsFd>(
