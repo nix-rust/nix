@@ -237,7 +237,9 @@ impl From<libc::termios> for Termios {
             inner: RefCell::new(termios),
             input_flags: InputFlags::from_bits_truncate(termios.c_iflag),
             output_flags: OutputFlags::from_bits_truncate(termios.c_oflag),
-            control_flags: ControlFlags::from_bits_truncate(termios.c_cflag),
+            // Keep bits without a named flag, as `update_wrapper` does: on
+            // some platforms (e.g. illumos) they hold the baud rate.
+            control_flags: ControlFlags::from_bits_retain(termios.c_cflag),
             local_flags: LocalFlags::from_bits_truncate(termios.c_lflag),
             control_chars: termios.c_cc,
             #[cfg(any(linux_android, target_os = "haiku"))]
