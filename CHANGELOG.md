@@ -33,6 +33,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   Change `sys::socket::accept` and `sys::socket::accept4` to take `AsFd`
   instead of `RawFd`. ([#2780](https://github.com/nix-rust/nix/pull/2780))
 
+## [0.31.4] - 2026-11-16
+
 ### Fixed
 
 - Fixed undefined behavior in `recvfrom`.
@@ -43,7 +45,6 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed the `PosixSpawnAttr` and `PosixSpawnFileActions` methods ignoring
   errors, as the `posix_spawn*` functions return the error number directly
   instead of -1. ([#2865](https://github.com/nix-rust/nix/pull/2865))
-
 
 ## [0.31.3] - 2026-05-11
 
