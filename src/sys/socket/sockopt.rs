@@ -875,6 +875,21 @@ sockopt_impl!(
     libc::SO_BINDTODEVICE,
     OsString<[u8; libc::IFNAMSIZ]>
 );
+#[cfg(apple_targets)]
+#[cfg(feature = "net")]
+sockopt_impl!(
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    /// Bind this IPv4 socket to a network interface by its index.
+    ///
+    /// The interface index can be obtained with
+    /// [`if_nametoindex`](crate::net::if_::if_nametoindex). An index of zero
+    /// removes the binding.
+    Ipv4BoundIf,
+    Both,
+    libc::IPPROTO_IP,
+    libc::IP_BOUND_IF,
+    u32
+);
 #[cfg(linux_android)]
 #[cfg(feature = "net")]
 sockopt_impl!(
