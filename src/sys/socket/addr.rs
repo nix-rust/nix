@@ -1234,8 +1234,18 @@ impl SockaddrLike for SockaddrStorage {
         match self.as_unix_addr() {
             // The UnixAddr type knows its own length
             Some(ua) => ua.len(),
-            // For all else, we're just a boring SockaddrStorage
-            None => mem::size_of_val(self) as libc::socklen_t,
+            None => match self.family() {
+                // Some systems (e.g. illumos) only accept the exact size of
+                // an IP address in bind, connect and sendto.
+                Some(AddressFamily::Inet) => {
+                    mem::size_of::<libc::sockaddr_in>() as libc::socklen_t
+                }
+                Some(AddressFamily::Inet6) => {
+                    mem::size_of::<libc::sockaddr_in6>() as libc::socklen_t
+                }
+                // For all else, we're just a boring SockaddrStorage
+                _ => mem::size_of_val(self) as libc::socklen_t,
+            },
         }
     }
 
