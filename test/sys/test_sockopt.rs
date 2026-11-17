@@ -273,7 +273,7 @@ fn test_so_type_unknown() {
 // same as the host.
 // So the syscall doesn't work properly unless the kernel is also emulated.
 #[test]
-#[cfg(any(target_os = "freebsd", target_os = "linux"))]
+#[cfg(any(target_os = "freebsd", target_os = "illumos", target_os = "linux"))]
 #[cfg_attr(qemu, ignore)]
 fn test_tcp_congestion() {
     use std::ffi::OsString;
@@ -364,7 +364,7 @@ fn test_so_tcp_keepalive() {
     setsockopt(&fd, sockopt::KeepAlive, &true).unwrap();
     assert!(getsockopt(&fd, sockopt::KeepAlive).unwrap());
 
-    #[cfg(any(linux_android, freebsdlike))]
+    #[cfg(any(linux_android, freebsdlike, target_os = "illumos"))]
     {
         let x = getsockopt(&fd, sockopt::TcpKeepIdle).unwrap();
         setsockopt(&fd, sockopt::TcpKeepIdle, &(x + 1)).unwrap();
@@ -374,9 +374,11 @@ fn test_so_tcp_keepalive() {
         setsockopt(&fd, sockopt::TcpKeepCount, &(x + 1)).unwrap();
         assert_eq!(getsockopt(&fd, sockopt::TcpKeepCount).unwrap(), x + 1);
 
+        // illumos caps the interval at tcp_rto_max (60s by default), which is
+        // also the default value, so lower it instead of raising it.
         let x = getsockopt(&fd, sockopt::TcpKeepInterval).unwrap();
-        setsockopt(&fd, sockopt::TcpKeepInterval, &(x + 1)).unwrap();
-        assert_eq!(getsockopt(&fd, sockopt::TcpKeepInterval).unwrap(), x + 1);
+        setsockopt(&fd, sockopt::TcpKeepInterval, &(x - 1)).unwrap();
+        assert_eq!(getsockopt(&fd, sockopt::TcpKeepInterval).unwrap(), x - 1);
     }
 }
 
@@ -408,7 +410,7 @@ fn test_get_mtu() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 fn test_ttl_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -472,7 +474,7 @@ fn test_ipv6_multicast_hops() {
 }
 
 #[test]
-#[cfg(apple_targets)]
+#[cfg(any(apple_targets, target_os = "illumos"))]
 fn test_dontfrag_opts() {
     let fd4 = socket(
         AddressFamily::Inet,
@@ -502,7 +504,11 @@ fn test_dontfrag_opts() {
 }
 
 #[test]
-#[cfg(any(all(linux_android, not(target_env = "uclibc")), apple_targets))]
+#[cfg(any(
+    all(linux_android, not(target_env = "uclibc")),
+    apple_targets,
+    target_os = "illumos"
+))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
@@ -551,7 +557,7 @@ fn test_so_priority() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 fn test_ip_tos() {
     let fd = socket(
         AddressFamily::Inet,
@@ -566,7 +572,7 @@ fn test_ip_tos() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 // Disable the test under emulation because it fails in Cirrus-CI.  Lack
 // of QEMU support is suspected.
 #[cfg_attr(qemu, ignore)]
@@ -1088,7 +1094,7 @@ fn test_ipv4_recv_tos_opts() {
 }
 
 #[test]
-#[cfg(any(linux_android, target_os = "freebsd"))]
+#[cfg(any(linux_android, target_os = "freebsd", target_os = "illumos"))]
 fn test_ipv6_recv_traffic_class_opts() {
     let fd = socket(
         AddressFamily::Inet6,
@@ -1272,7 +1278,7 @@ pub fn test_so_attach_reuseport_cbpf() {
     });
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "illumos", target_os = "linux"))]
 #[test]
 fn test_tcp_cork() {
     let fd = socket(

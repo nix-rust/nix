@@ -60,9 +60,11 @@ libc_bitflags! {
         MAP_ANON;
         /// The mapping is not backed by any file.
         MAP_ANONYMOUS;
-        /// Put the mapping into the first 2GB of the process address space.
+        /// Put the mapping into the first 2GB of the process address space
+        /// (the first 4GB on illumos).
         #[cfg(any(all(linux_android,
                       any(target_arch = "x86", target_arch = "x86_64")),
+                  all(target_os = "illumos", target_arch = "x86_64"),
                   all(target_os = "linux", target_env = "musl", any(target_arch = "x86", target_arch = "x86_64")),
                   all(target_os = "linux", target_env = "ohos", target_arch = "x86_64"),
                   all(target_os = "freebsd", target_pointer_width = "64")))]
