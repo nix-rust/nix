@@ -3,7 +3,10 @@ name: CI
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  push: []
+  push:
+    branches:
+      - master
+      - 'r[0-9].[0-9]*'
   merge_group:
     types: [checks_requested]
 
