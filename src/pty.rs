@@ -208,19 +208,22 @@ pub unsafe fn ptsname(fd: &PtyMaster) -> Result<String> {
 ///
 /// `ptsname_r()` returns the name of the slave pseudoterminal device corresponding to the master
 /// referred to by `fd`. This is the threadsafe version of `ptsname()`, but it is not part of the
-/// POSIX standard and is instead a Linux-specific extension.
+/// POSIX standard and is instead an extension available on Linux, Android and
+/// illumos.
 ///
 /// This value is useful for opening the slave ptty once the master has already been opened with
 /// `posix_openpt()`.
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 #[inline]
 pub fn ptsname_r(fd: &PtyMaster) -> Result<String> {
     let mut name_buf = Vec::<libc::c_char>::with_capacity(64);
     let name_buf_ptr = name_buf.as_mut_ptr();
     let cname = unsafe {
         let cap = name_buf.capacity();
-        if libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap) != 0 {
-            return Err(crate::Error::last());
+        // ptsname_r returns the error number; illumos does not set errno.
+        let ret = libc::ptsname_r(fd.as_raw_fd(), name_buf_ptr, cap);
+        if ret != 0 {
+            return Err(Errno::from_raw(ret));
         }
         CStr::from_ptr(name_buf.as_ptr())
     };

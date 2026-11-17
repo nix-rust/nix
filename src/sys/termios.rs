@@ -293,7 +293,7 @@ libc_enum! {
         B38400,
         #[cfg(not(target_os = "aix"))]
         B57600,
-        #[cfg(bsd)]
+        #[cfg(any(bsd, target_os = "illumos"))]
         B76800,
         #[cfg(not(target_os = "aix"))]
         B115200,
@@ -317,21 +317,21 @@ libc_enum! {
                   target_os = "freebsd",
                   target_os = "netbsd"))]
         B921600,
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "illumos"))]
         B1000000,
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "illumos"))]
         B1152000,
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "illumos"))]
         B1500000,
-        #[cfg(linux_android)]
+        #[cfg(any(linux_android, target_os = "illumos"))]
         B2000000,
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+        #[cfg(any(target_os = "android", target_os = "illumos", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B2500000,
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+        #[cfg(any(target_os = "android", target_os = "illumos", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B3000000,
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+        #[cfg(any(target_os = "android", target_os = "illumos", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B3500000,
-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_arch = "sparc64"))))]
+        #[cfg(any(target_os = "android", target_os = "illumos", all(target_os = "linux", not(target_arch = "sparc64"))))]
         B4000000,
     }
     impl TryFrom<libc::speed_t>
@@ -461,7 +461,7 @@ impl SpecialCharacterIndices {
 }
 
 pub use libc::NCCS;
-#[cfg(any(bsd, linux_android, target_os = "aix", target_os = "solaris"))]
+#[cfg(any(bsd, linux_android, solarish, target_os = "aix"))]
 pub use libc::_POSIX_VDISABLE;
 
 libc_bitflags! {
@@ -501,6 +501,7 @@ libc_bitflags! {
         OPOST;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "illumos",
                   target_os = "openbsd"))]
         OLCUC;
         ONLCR;
@@ -509,6 +510,7 @@ libc_bitflags! {
         ONLRET as tcflag_t;
         #[cfg(any(linux_android,
                   target_os = "haiku",
+                  target_os = "illumos",
                   apple_targets))]
         OFDEL as tcflag_t;
         #[cfg(any(linux_android,

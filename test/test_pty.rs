@@ -13,7 +13,7 @@ use nix::unistd::{pause, write};
 
 /// Test equivalence of `ptsname` and `ptsname_r`
 #[test]
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 fn test_ptsname_equivalence() {
     let _m = crate::PTSNAME_MTX.lock();
 
@@ -49,7 +49,7 @@ fn test_ptsname_copy() {
 
 /// Test data copying of `ptsname_r`
 #[test]
-#[cfg(linux_android)]
+#[cfg(any(linux_android, target_os = "illumos"))]
 fn test_ptsname_r_copy() {
     // Open a new PTTY master
     let master_fd = posix_openpt(OFlag::O_RDWR).unwrap();
