@@ -3,6 +3,20 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 # Change Log
 
+## [0.31.4] - 2026-11-16
+
+### Fixed
+
+- Fixed undefined behavior in `recvfrom`.
+  ([#2717](https://github.com/nix-rust/nix/pull/2717))
+- Fixed the documented feature requirement of `SockaddrIn`, `SockaddrIn6` and
+  `LinkAddr`: docs.rs now shows that they need the `net` feature
+  ([#2854](https://github.com/nix-rust/nix/pull/2854))
+- Fixed the `PosixSpawnAttr` and `PosixSpawnFileActions` methods ignoring
+  errors, as the `posix_spawn*` functions return the error number directly
+  instead of -1. ([#2865](https://github.com/nix-rust/nix/pull/2865))
+
+
 ## [0.31.3] - 2026-05-11
 
 ### Added
