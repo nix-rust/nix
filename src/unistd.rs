@@ -1962,7 +1962,6 @@ pub fn getgroups() -> Result<Vec<Gid>> {
 /// # try_main().unwrap();
 /// ```
 #[cfg(not(any(
-    apple_targets,
     target_os = "redox",
     target_os = "haiku"
 )))]
