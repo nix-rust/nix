@@ -61,7 +61,7 @@ macro_rules! setsockopt_impl {
                 let level = $level;
                 let flag = $flag;
                 let res = unsafe {
-                    libc::setsockopt(
+                    $crate::libc::setsockopt(
                         fd.as_fd().as_raw_fd(),
                         level,
                         flag,
@@ -114,7 +114,7 @@ macro_rules! getsockopt_impl {
                 let level = $level;
                 let flag = $flag;
                 let res = unsafe {
-                    libc::getsockopt(
+                    $crate::libc::getsockopt(
                         fd.as_fd().as_raw_fd(),
                         level,
                         flag,
@@ -179,71 +179,71 @@ macro_rules! getsockopt_impl {
 #[macro_export]
 macro_rules! sockopt_impl {
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, GetOnly, $level, $flag, bool, $crate::sys::socket::sockopt::GetBool);
     };
 
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($(#[$attr])* $name, GetOnly, $level, $flag, u8, $crate::sys::socket::sockopt::GetU8);
+        $crate::sockopt_impl!($(#[$attr])* $name, GetOnly, $level, $flag, u8, $crate::sys::socket::sockopt::GetU8);
     };
 
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, usize) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, GetOnly, $level, $flag, usize, $crate::sys::socket::sockopt::GetUsize);
     };
 
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, OwnedFd) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, GetOnly, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::GetOwnedFd);
     };
 
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, SetOnly, $level, $flag, bool, $crate::sys::socket::sockopt::SetBool);
     };
 
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($(#[$attr])* $name, SetOnly, $level, $flag, u8, $crate::sys::socket::sockopt::SetU8);
+        $crate::sockopt_impl!($(#[$attr])* $name, SetOnly, $level, $flag, u8, $crate::sys::socket::sockopt::SetU8);
     };
 
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, usize) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, SetOnly, $level, $flag, usize, $crate::sys::socket::sockopt::SetUsize);
     };
 
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, OwnedFd) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, SetOnly, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::SetOwnedFd);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, bool) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, bool, $crate::sys::socket::sockopt::GetBool, $crate::sys::socket::sockopt::SetBool);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, u8) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, u8, $crate::sys::socket::sockopt::GetU8, $crate::sys::socket::sockopt::SetU8);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, usize) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, usize, $crate::sys::socket::sockopt::GetUsize, $crate::sys::socket::sockopt::SetUsize);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, OwnedFd) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, OwnedFd, $crate::sys::socket::sockopt::GetOwnedFd, $crate::sys::socket::sockopt::SetOwnedFd);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path,
      OsString<$array:ty>) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, std::ffi::OsString, $crate::sys::socket::sockopt::GetOsString<$array>,
                       $crate::sys::socket::sockopt::SetOsString);
     };
@@ -254,7 +254,7 @@ macro_rules! sockopt_impl {
      */
     ($(#[$attr:meta])* $name:ident, GetOnly, $level:expr, $flag:path, $ty:ty) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, GetOnly, $level, $flag, $ty, $crate::sys::socket::sockopt::GetStruct<$ty>);
     };
 
@@ -265,12 +265,12 @@ macro_rules! sockopt_impl {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
-        getsockopt_impl!($name, $level, $flag, $ty, $getter);
+        $crate::getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
     ($(#[$attr:meta])* $name:ident, SetOnly, $level:expr, $flag:path, $ty:ty) =>
     {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, SetOnly, $level, $flag, $ty, $crate::sys::socket::sockopt::SetStruct<$ty>);
     };
 
@@ -281,7 +281,7 @@ macro_rules! sockopt_impl {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
-        setsockopt_impl!($name, $level, $flag, $ty, $setter);
+        $crate::setsockopt_impl!($name, $level, $flag, $ty, $setter);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, $ty:ty,
@@ -291,12 +291,12 @@ macro_rules! sockopt_impl {
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub struct $name;
 
-        setsockopt_impl!($name, $level, $flag, $ty, $setter);
-        getsockopt_impl!($name, $level, $flag, $ty, $getter);
+        $crate::setsockopt_impl!($name, $level, $flag, $ty, $setter);
+        $crate::getsockopt_impl!($name, $level, $flag, $ty, $getter);
     };
 
     ($(#[$attr:meta])* $name:ident, Both, $level:expr, $flag:path, $ty:ty) => {
-        sockopt_impl!($(#[$attr])*
+        $crate::sockopt_impl!($(#[$attr])*
                       $name, Both, $level, $flag, $ty, $crate::sys::socket::sockopt::GetStruct<$ty>,
                       $crate::sys::socket::sockopt::SetStruct<$ty>);
     };
