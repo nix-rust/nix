@@ -42,7 +42,7 @@ pub fn if_indextoname(index: c_uint) -> Result<CString> {
 libc_bitflags!(
     /// Standard interface flags, used by `getifaddrs`
     pub struct InterfaceFlags: IflagsType {
-    
+
         /// Interface is running. (see
         /// [`netdevice(7)`](https://man7.org/linux/man-pages/man7/netdevice.7.html))
         IFF_UP as IflagsType;
@@ -271,6 +271,7 @@ impl fmt::Display for InterfaceFlags {
     bsd,
     target_os = "fuchsia",
     target_os = "linux",
+    target_os = "android",
     solarish,
 ))]
 mod if_nameindex {
@@ -398,6 +399,7 @@ mod if_nameindex {
     bsd,
     target_os = "fuchsia",
     target_os = "linux",
+    target_os = "android",
     solarish,
 ))]
 pub use if_nameindex::*;
