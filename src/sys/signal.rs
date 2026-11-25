@@ -172,6 +172,7 @@ impl FromStr for Signal {
                 linux_android,
                 target_os = "emscripten",
                 target_os = "fuchsia",
+                target_os = "aix",
             ))]
             "SIGPWR" => Signal::SIGPWR,
             "SIGSYS" => Signal::SIGSYS,
