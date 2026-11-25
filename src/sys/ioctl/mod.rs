@@ -271,7 +271,7 @@ macro_rules! convert_ioctl_res {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -295,8 +295,9 @@ macro_rules! convert_ioctl_res {
 macro_rules! ioctl_none {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int)
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_none!($ioty, $nr) as $crate::sys::ioctl::ioctl_num_type))
             }
@@ -314,7 +315,7 @@ macro_rules! ioctl_none {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -325,11 +326,10 @@ macro_rules! ioctl_none {
 /// # #[macro_use] extern crate nix;
 /// # use libc::TIOCNXCL;
 /// # use std::fs::File;
-/// # use std::os::unix::io::AsRawFd;
 /// ioctl_none_bad!(tiocnxcl, TIOCNXCL);
 /// fn main() {
 ///     let file = File::open("/dev/ttyUSB0").unwrap();
-///     unsafe { tiocnxcl(file.as_raw_fd()) }.unwrap();
+///     unsafe { tiocnxcl(&file) }.unwrap();
 /// }
 /// ```
 // TODO: add an example using request_code_*!()
@@ -337,8 +337,9 @@ macro_rules! ioctl_none {
 macro_rules! ioctl_none_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int)
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type))
             }
@@ -358,7 +359,7 @@ macro_rules! ioctl_none_bad {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *mut DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -376,9 +377,10 @@ macro_rules! ioctl_none_bad {
 macro_rules! ioctl_read {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_read!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -397,7 +399,7 @@ macro_rules! ioctl_read {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *mut DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -414,9 +416,10 @@ macro_rules! ioctl_read {
 macro_rules! ioctl_read_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -436,7 +439,7 @@ macro_rules! ioctl_read_bad {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *const DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *const DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -453,9 +456,10 @@ macro_rules! ioctl_read_bad {
 macro_rules! ioctl_write_ptr {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *const $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$ty>()) as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -474,7 +478,7 @@ macro_rules! ioctl_write_ptr {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *const DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *const DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -491,9 +495,10 @@ macro_rules! ioctl_write_ptr {
 macro_rules! ioctl_write_ptr_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *const $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -514,7 +519,7 @@ cfg_if! {
         /// The generated function has the following signature:
         ///
         /// ```rust,ignore
-        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
+        /// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
         ///
         /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
@@ -534,9 +539,10 @@ cfg_if! {
         macro_rules! ioctl_write_int {
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
-                pub unsafe fn $name(fd: $crate::libc::c_int,
+                pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                                     data: $crate::sys::ioctl::ioctl_param_type)
                                     -> $crate::Result<$crate::libc::c_int> {
+                    let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
                     unsafe {
                         convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write_int!($ioty, $nr) as $crate::sys::ioctl::ioctl_num_type, data))
                     }
@@ -555,7 +561,7 @@ cfg_if! {
         /// The generated function has the following signature:
         ///
         /// ```rust,ignore
-        /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
+        /// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
         ///
         /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
@@ -577,9 +583,10 @@ cfg_if! {
         macro_rules! ioctl_write_int {
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
-                pub unsafe fn $name(fd: $crate::libc::c_int,
+                pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                                     data: $crate::sys::ioctl::ioctl_param_type)
                                     -> $crate::Result<$crate::libc::c_int> {
+                    let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
                     unsafe {
                         convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of::<$crate::libc::c_int>()) as $crate::sys::ioctl::ioctl_num_type, data))
                     }
@@ -599,7 +606,7 @@ cfg_if! {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: libc::c_int) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: libc::c_int) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -623,9 +630,10 @@ cfg_if! {
 macro_rules! ioctl_write_int_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: $crate::libc::c_int)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -645,7 +653,7 @@ macro_rules! ioctl_write_int_bad {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *mut DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -662,9 +670,10 @@ macro_rules! ioctl_write_int_bad {
 macro_rules! ioctl_readwrite {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             let ioty = $ioty;
             let nr = $nr;
             unsafe {
@@ -685,7 +694,7 @@ macro_rules! ioctl_readwrite {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: *mut DATA_TYPE) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: *mut DATA_TYPE) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -694,9 +703,10 @@ macro_rules! ioctl_readwrite {
 macro_rules! ioctl_readwrite_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: *mut $ty)
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, $nr as $crate::sys::ioctl::ioctl_num_type, data))
             }
@@ -716,7 +726,7 @@ macro_rules! ioctl_readwrite_bad {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: &mut [DATA_TYPE]) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: &mut [DATA_TYPE]) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -725,9 +735,10 @@ macro_rules! ioctl_readwrite_bad {
 macro_rules! ioctl_read_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: &mut [$ty])
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_read!($ioty, $nr, ::std::mem::size_of_val(data)) as $crate::sys::ioctl::ioctl_num_type, data.as_mut_ptr()))
             }
@@ -747,7 +758,7 @@ macro_rules! ioctl_read_buf {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: &[DATA_TYPE]) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: &[DATA_TYPE]) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -766,9 +777,10 @@ macro_rules! ioctl_read_buf {
 macro_rules! ioctl_write_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: &[$ty])
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_write!($ioty, $nr, ::std::mem::size_of_val(data)) as $crate::sys::ioctl::ioctl_num_type, data.as_ptr()))
             }
@@ -788,7 +800,7 @@ macro_rules! ioctl_write_buf {
 /// The generated function has the following signature:
 ///
 /// ```rust,ignore
-/// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: &mut [DATA_TYPE]) -> Result<libc::c_int>
+/// pub unsafe fn FUNCTION_NAME<Fd: AsFd>(fd: Fd, data: &mut [DATA_TYPE]) -> Result<libc::c_int>
 /// ```
 ///
 /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
@@ -797,9 +809,10 @@ macro_rules! ioctl_write_buf {
 macro_rules! ioctl_readwrite_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
-        pub unsafe fn $name(fd: $crate::libc::c_int,
+        pub unsafe fn $name<Fd: ::std::os::fd::AsFd>(fd: Fd,
                             data: &mut [$ty])
                             -> $crate::Result<$crate::libc::c_int> {
+            let fd = ::std::os::fd::AsRawFd::as_raw_fd(&fd.as_fd());
             unsafe {
                 convert_ioctl_res!($crate::libc::ioctl(fd, request_code_readwrite!($ioty, $nr, ::std::mem::size_of_val(data)) as $crate::sys::ioctl::ioctl_num_type, data.as_mut_ptr()))
             }
