@@ -3,7 +3,6 @@ use nix::sys::signal::*;
 use nix::unistd::*;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicBool, Ordering};
-#[cfg(not(target_os = "redox"))]
 use std::thread;
 
 #[test]
@@ -86,7 +85,6 @@ extern "C" fn test_sigaction_handler(signal: libc::c_int) {
     SIGNALED.store(signal == Signal::SIGINT, Ordering::Relaxed);
 }
 
-#[cfg(not(target_os = "redox"))]
 extern "C" fn test_sigaction_action(
     _: libc::c_int,
     _: *mut libc::siginfo_t,
@@ -95,14 +93,19 @@ extern "C" fn test_sigaction_action(
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_signal_sigaction() {
     let _m = crate::SIGNAL_MTX.lock();
 
     let action_handler = SigHandler::SigAction(test_sigaction_action);
+    #[cfg(not(target_os = "redox"))]
     assert_eq!(
         unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(),
         Errno::ENOTSUP
+    );
+    #[cfg(target_os = "redox")]
+    assert_eq!(
+        unsafe { signal(Signal::SIGINT, action_handler) }.unwrap_err(),
+        Errno::EOPNOTSUPP
     );
 }
 
@@ -186,7 +189,6 @@ fn test_extend() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_thread_signal_set_mask() {
     thread::spawn(|| {
         let prev_mask = SigSet::thread_get_mask()
@@ -211,7 +213,6 @@ fn test_thread_signal_set_mask() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_thread_signal_block() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -226,7 +227,6 @@ fn test_thread_signal_block() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_thread_signal_unblock() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -241,7 +241,6 @@ fn test_thread_signal_unblock() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_thread_signal_swap() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
@@ -272,7 +271,6 @@ fn test_from_and_into_iterator() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_sigaction() {
     let _m = crate::SIGNAL_MTX.lock();
     thread::spawn(|| {
@@ -319,7 +317,6 @@ fn test_sigaction() {
 }
 
 #[test]
-#[cfg(not(target_os = "redox"))]
 fn test_sigwait() {
     thread::spawn(|| {
         let mut mask = SigSet::empty();
