@@ -819,3 +819,27 @@ pub fn write_user(pid: Pid, offset: AddressType, data: c_long) -> Result<()> {
             .map(drop)
     }
 }
+
+/// Restart the stopped tracee, but prevent it from executing, as with `ptrace(PTRACE_LISTEN, ...)`
+///
+/// Works only on tracees attached by [`seize`].
+#[cfg(all(
+    target_os = "linux",
+    not(any(
+        target_arch = "mips",
+        target_arch = "mips32r6",
+        target_arch = "mips64",
+        target_arch = "mips64r6"
+    ))
+))]
+pub fn listen(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_LISTEN,
+            pid,
+            ptr::null_mut(),
+            ptr::null_mut(),
+        )
+        .map(drop)
+    }
+}
