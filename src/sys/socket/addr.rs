@@ -2290,9 +2290,26 @@ mod tests {
         #[cfg(solarish)]
         #[test]
         fn solarish_tap() {
-            let bytes = [25u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
-            let ptr = bytes.as_ptr();
-            let sa = ptr as *const libc::sockaddr;
+            let mut bytes = [0u8, 0, 0, 0, 6, 0, 6, 0, 24, 101, 144, 221, 76, 176];
+            // First two elements in array correspond to single 2-byte integer
+            // representing sa_family
+            let family: u16 = 25;
+            // Copy to the array based on the native endianness of the machine
+            bytes[0..2].copy_from_slice(&family.to_ne_bytes());
+
+            // Only 1-byte alignment guaranteed by u8 array. Put into buffer that
+            // guarantees sufficient alignment per POSIX, to take pointer.
+            let mut ss = mem::MaybeUninit::<libc::sockaddr_storage>::zeroed();
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    bytes.as_ptr(),
+                    ss.as_mut_ptr() as *mut u8,
+                    bytes.len(),
+                );
+            }
+            let ss = unsafe { ss.assume_init() };
+
+            let sa = &ss as *const _ as *const libc::sockaddr;
             let len = Some(bytes.len() as socklen_t);
             let _sock_addr = unsafe { SockaddrStorage::from_raw(sa, len) };
 
