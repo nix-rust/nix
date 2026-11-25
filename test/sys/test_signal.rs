@@ -122,12 +122,12 @@ fn test_signal() {
     assert!(SIGNALED.load(Ordering::Relaxed));
 
     let h = unsafe { signal(Signal::SIGINT, SigHandler::SigDfl) }.unwrap();
-    #[cfg(not(solarish))]
+    #[cfg(not(any(solarish,target_os = "aix")))]
     assert!(matches!(h, SigHandler::Handler(_)));
 
     // System V based OSes (e.g. illumos and Solaris) always resets the
     // disposition to SIG_DFL prior to calling the signal handler
-    #[cfg(solarish)]
+    #[cfg(any(solarish,target_os = "aix"))]
     assert!(matches!(h, SigHandler::SigDfl));
 
     // Restore default signal handler
