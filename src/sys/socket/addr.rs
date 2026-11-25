@@ -1885,6 +1885,66 @@ mod datalink {
         }
     }
 
+    /// A Rust representation of [libc::sockaddr_ll] with the additional
+    /// guarantee of valid data, so that this can be made into a [LinkAddr]
+    /// without the need of `unsafe` code.
+    ///
+    /// # Examples
+    ///
+    /// ```edition2021
+    /// use nix::sys::socket::{LinkAddr, SockAddrLl};
+    ///
+    /// let addr = LinkAddr::from(SockAddrLl {
+    ///     sll_family: libc::AF_PACKET as u16,
+    ///     sll_ifindex: 0,
+    ///     sll_protocol: 0,
+    ///     sll_addr: [0; 8],
+    ///     sll_halen: 0,
+    ///     sll_hatype: 0,
+    ///     sll_pkttype: 0,
+    /// });
+    /// ```
+    #[derive(Copy, Clone, Debug)]
+    pub struct SockAddrLl {
+        /// See [libc::sockaddr_ll::sll_family]
+        pub sll_family: u16,
+        /// See [libc::sockaddr_ll::sll_protocol]
+        pub sll_protocol: u16,
+        /// See [libc::sockaddr_ll::sll_ifindex]
+        pub sll_ifindex: i32,
+        /// See [libc::sockaddr_ll::sll_hatype]
+        pub sll_hatype: u16,
+        /// See [libc::sockaddr_ll::sll_pkttype]
+        pub sll_pkttype: u8,
+        /// See [libc::sockaddr_ll::sll_halen]
+        pub sll_halen: u8,
+        /// See [libc::sockaddr_ll::sll_addr]
+        pub sll_addr: [u8; 8]
+    }
+
+
+    impl From<SockAddrLl> for libc::sockaddr_ll {
+        #[inline]
+        fn from(sll: SockAddrLl) -> Self {
+            Self {
+                sll_family: sll.sll_family,
+                sll_protocol: sll.sll_protocol,
+                sll_ifindex: sll.sll_ifindex,
+                sll_hatype: sll.sll_hatype,
+                sll_pkttype: sll.sll_pkttype,
+                sll_halen: sll.sll_halen,
+                sll_addr: sll.sll_addr,
+            }
+        }
+    }
+
+    impl From<SockAddrLl> for LinkAddr {
+        #[inline]
+        fn from(sll: SockAddrLl) -> Self {
+            Self(sll.into())
+        }
+    }
+
     impl fmt::Display for LinkAddr {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             if let Some(addr) = self.addr() {
