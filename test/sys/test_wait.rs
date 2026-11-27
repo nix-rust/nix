@@ -6,7 +6,7 @@ use nix::unistd::ForkResult::*;
 use nix::unistd::*;
 
 #[test]
-#[cfg(not(any(target_os = "redox", target_os = "haiku")))]
+#[cfg(not(target_os = "haiku"))]
 fn test_wait_signal() {
     let _m = crate::FORK_MTX.lock();
 
