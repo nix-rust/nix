@@ -2125,7 +2125,6 @@ feature! {
 ///
 /// See also [pause(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/pause.html).
 #[inline]
-#[cfg(not(target_os = "redox"))]
 pub fn pause() {
     unsafe { libc::pause() };
 }

@@ -44,7 +44,6 @@ impl ClockId {
         target_os = "ios",
         target_os = "tvos",
         target_os = "watchos",
-        target_os = "redox",
         target_os = "hermit"
     )))]
     pub fn set_time(self, timespec: TimeSpec) -> Result<()> {
@@ -224,7 +223,6 @@ pub fn clock_gettime(clock_id: ClockId) -> Result<TimeSpec> {
     target_os = "ios",
     target_os = "tvos",
     target_os = "watchos",
-    target_os = "redox",
     target_os = "hermit"
 )))]
 pub fn clock_settime(clock_id: ClockId, timespec: TimeSpec) -> Result<()> {
